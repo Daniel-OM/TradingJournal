@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+
+{% block style %}
+<style>
+.info-item label {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-item p {
+    margin-bottom: 0;
+    font-size: 1rem;
+}
+
+.badge.fs-6 {
+    font-size: 0.875rem !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-eye me-2"></i>Detalle de Watchlist</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('watchlist_endpoints.watchlist') }}">Watchlist</a></li>
+                <li class="breadcrumb-item active">{{ entry.symbol }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="{{ url_for('watchlist_endpoints.edit_watchlist_entry', id=entry.id) }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-edit me-2"></i>Editar
+        </a>
+        {% if not entry.date_exit %}
+            <button type="button" class="btn btn-outline-danger" onclick="removeFromWatchlist({{ entry.id }}, '{{ entry.symbol }}')">
+                <i class="fas fa-times me-2"></i>Dar de Baja
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-outline-success" onclick="reactivateEntry({{ entry.id }}, '{{ entry.symbol }}')">
+                <i class="fas fa-undo me-2"></i>Reactivar
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Información principal -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ entry.symbol }}</h4>
+                {% if entry.company_name %}
+                    <h5 class="text-white mb-0">{{ entry.company_name }}</h5>
+                {% endif %}
+                <div>
+                    {% if entry.date_exit %}
+                        <span class="badge bg-danger fs-6">Inactivo desde {{ entry.date_exit.strftime('%d/%m/%Y') }}</span>
+                    {% else %}
+                        <span class="badge bg-success fs-6">Active
+                            <small class="fw-bold">
+                                {% if entry.date_exit %}
+                                    {{ (entry.date_exit - entry.date).days }}
+                                {% else %}
+                                    {{ (date.today() - entry.date).days }}
+                                {% endif %} days
+                            </small>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">                
+                <div class="col">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Fecha de Entrada:</label>
+                                <p>{{ entry.date.strftime('%d/%m/%Y') }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Watchlist:</label>
+                                {% if entry.strategy %}<p>{{ entry.watchlist.name }}</p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Puntuación:</label>
+                                {% if entry.score %}<p>{{ "%.2f"|format(entry.score * 100) }}%</p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Hashtags:</label>
+                                {% if hashtags_list %}
+                                <div>
+                                    {% for tag in hashtags_list %}
+                                        <span class="badge bg-primary me-1 mb-1">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">ATR:</label>
+                                {% if entry.atr %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.atr) }}%</span></p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Precio:</label>
+                                {% if entry.price %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.price) }}</span></p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Volumen:</label>
+                                {% if entry.volume %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.volume) }}</span></p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Avg. Volumen:</label>
+                                {% if entry.avg_volume %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.avg_volume) }}</span></p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Objetivo de Beneficio:</label>
+                                {% if entry.profit_target %}<p>{{ "%.2f"|format(entry.profit_target) }}</p>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-primary">Risk/Reward:</label>
+                                {% if entry.risk_reward %}<p><span class="badge bg-info fs-6">{{ entry.risk_reward }}</span></p>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel de estadísticas rápidas -->
+    <div class="col-md-4">
+        <!-- Niveles de Soporte y Resistencia -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Technical Levels</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if levels %}
+                        {% if entry.price %}
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Soportes</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for level in levels %}
+                                    {% if level.price < entry.price %}
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>${{ "%.2f"|format(level.price) }}</span>
+                                            {% if level.description %}
+                                                <small class="text-muted">{{ level.description }}</small>
+                                            {% endif %}
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Resistencias</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for level in levels %}
+                                    {% if level.price > entry.price %}
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>${{ "%.2f"|format(level.price) }}</span>
+                                            {% if level.description %}
+                                                <small class="text-muted">{{ level.description }}</small>
+                                            {% endif %}
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% else %}
+                        <div class="col-md-6">
+                            <h6>Levels</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for level in levels %}
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>${{ "%.2f"|format(level.price) }}</span>
+                                        {% if level.description %}
+                                            <small class="text-muted">{{ level.description }}</small>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Descripción y Notas -->
+<div class="row mb-4">
+    {% if entry.description %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">Descripción</h6>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ entry.description }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if entry.negative_action %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">Acción Negativa</h6>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ entry.negative_action }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if entry.other_notes %}
+        <div class="col-md-12 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Otras Notas</h6>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ entry.other_notes }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+
+<!-- Modal de confirmación para dar de baja -->
+<div class="modal fade" id="removeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar baja de activo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres dar de baja el activo <strong id="assetSymbol"></strong> de la watchlist?</p>
+                <p class="text-muted small">Se agregará la fecha de salida al registro.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmRemove">Dar de Baja</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para reactivar -->
+<div class="modal fade" id="reactivateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar reactivación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres reactivar el activo <strong id="reactivateAssetSymbol"></strong>?</p>
+                <p class="text-muted small">Se quitará la fecha de salida del registro.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmReactivate">Reactivar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let entryToRemove = null;
+let entryToReactivate = null;
+
+function removeFromWatchlist(entryId, symbol) {
+    entryToRemove = entryId;
+    document.getElementById('assetSymbol').textContent = symbol;
+    const modal = new bootstrap.Modal(document.getElementById('removeModal'));
+    modal.show();
+}
+
+function reactivateEntry(entryId, symbol) {
+    entryToReactivate = entryId;
+    document.getElementById('reactivateAssetSymbol').textContent = symbol;
+    const modal = new bootstrap.Modal(document.getElementById('reactivateModal'));
+    modal.show();
+}
+
+document.getElementById('confirmRemove').addEventListener('click', function() {
+    if (entryToRemove) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url_for('watchlist_endpoints.delete_watchlist_entry', id=0) }}`.replace('0', entryToRemove);
+        
+        {% if csrf_token %}
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+        {% endif %}
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+});
+
+document.getElementById('confirmReactivate').addEventListener('click', function() {
+    if (entryToReactivate) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url_for('watchlist_endpoints.reactivate_watchlist_entry', id=0) }}`.replace('0', entryToReactivate);
+        
+        {% if csrf_token %}
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+        {% endif %}
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+});
+</script>
+{% endblock %}
