@@ -1,0 +1,1127 @@
+
+{% extends "base.html" %}
+
+{% block style %}
+    <link href="{{ url_for('static', filename='css/chart.css') }}" rel="stylesheet">
+    <style>
+        .back-btn {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .header-content {
+            text-align: center;
+        }
+
+        .trade-symbol {
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .trade-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .status-profit {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+
+        .status-loss {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+        }
+
+        .main-content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 4px solid;
+        }
+
+        .section.primary { border-left-color: #007bff; }
+        .section.success { border-left-color: #28a745; }
+        .section.warning { border-left-color: #ffc107; }
+        .section.danger { border-left-color: #dc3545; }
+        .section.info { border-left-color: #17a2b8; }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .profit-value {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .loss-value {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .description-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid #dee2e6;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .scoring-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .scoring-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .scoring-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .scoring-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .error-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            border-left-color: #dc3545;
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .error-description {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .error-meta {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .severity-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .severity-low { background: #d1ecf1; color: #0c5460; }
+        .severity-medium { background: #fff3cd; color: #856404; }
+        .severity-high { background: #f8d7da; color: #721c24; }
+
+        .impact-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .transaction-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-date {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .transaction-details {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: right;
+        }
+
+        .hashtags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .hashtag {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .media-item {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .media-item:hover {
+            transform: scale(1.05);
+        }
+
+        .media-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .trade-symbol {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <button class="back-btn" onclick="goBack()">← Volver</button>
+        <div class="header-content">
+            <div class="trade-symbol" id="tradeSymbol">{{trade_data['symbol']}}</div>
+            <div class="trade-subtitle" id="tradeSubtitle">{{trade_data['company_name']}} - Operación {{trade_data['trade_type']}}</div>
+            <div class="status-badge status-profit" id="statusBadge">{{trade_data['profit_loss']}} {% if trade_data['balance'] %}({{ trade_data['profit_loss'] / trade_data['balance']}}%){% endif %}</div>
+        </div>
+    </div>
+    <!-- TODO: Generate a global score on the trade based on the conditions of the strategy met and inverse 
+     related to the amount and severity of errors -->
+    <div class="main-content">
+        <div class="left-column">
+            <!-- Información Básica -->
+            <div class="section primary">
+                <h2 class="section-title">📊 Información de la Operación</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Fecha de Entrada</div>
+                        <div class="info-value" id="entryDate"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Hora de Entrada</div>
+                        <div class="info-value" id="entryTime"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Precio de Entrada</div>
+                        <div class="info-value" id="entryPrice"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Fecha de Salida</div>
+                        <div class="info-value" id="exitDate"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Hora de Salida</div>
+                        <div class="info-value" id="exitTime"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Precio de Salida</div>
+                        <div class="info-value" id="exitPrice"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Balance</div>
+                        <div class="info-value" id="balance"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Stop Loss</div>
+                        <div class="info-value" id="stopLoss"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Take Profit</div>
+                        <div class="info-value" id="takeProfit"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Cantidad</div>
+                        <div class="info-value" id="quantity"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Cantidad Pendiente</div>
+                        <div class="info-value" id="pendingQuantity"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Comisión</div>
+                        <div class="info-value" id="commission"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultado -->
+            <div class="section success">
+                <h2 class="section-title">💰 Resultado de la Operación</h2>
+                <div class="row">
+                    <div class="info-item col md-col-6">
+                        <div class="info-label">Profit/Loss</div>
+                        <div class="info-value profit-value" id="profitLoss"></div>
+                    </div>
+                    <div class="info-item col md-col-6">
+                        <div class="info-label">Rendimiento</div>
+                        <div class="info-value profit-value" id="return"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="info-item col md-col-6">
+                        <div class="info-label">Estrategia</div>
+                        <div class="info-value" id="strategy"></div>
+                    </div>
+                    <div class="info-item col md-col-6">
+                        <div class="info-label">Duración</div>
+                        <div class="info-value" id="duration"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis y Notas -->
+            <div class="section info">
+                <h2 class="section-title">📝 Análisis y Notas</h2>
+                
+                <div class="info-item">
+                    <div class="info-label">Descripción</div>
+                    <div class="description-box" id="description"></div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Por qué fue rentable</div>
+                    <div class="description-box" id="whyProfitable"></div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Factores influyentes</div>
+                    <div class="description-box" id="influencingFactors"></div>
+                </div>
+
+                <div class="hashtags" id="hashtags">
+                    <span class="hashtag">#breakout</span>
+                    <span class="hashtag">#volumen</span>
+                    <span class="hashtag">#tecnología</span>
+                    <span class="hashtag">#earnings</span>
+                </div>
+            </div>
+
+            <!-- Transacciones -->
+            <div class="section warning">
+                <h2 class="section-title">🔄 Historial de Transacciones</h2>
+                <div id="transactionsList">
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-date">15 Jul 2025 - 09:30</div>
+                            <div class="transaction-details">Compra: 100 acciones a $150.00 - Comisión: $1.25</div>
+                        </div>
+                        <div class="transaction-amount loss-value">-$15,001.25</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-date">15 Jul 2025 - 15:45</div>
+                            <div class="transaction-details">Venta: 100 acciones a $162.50 - Comisión: $1.25</div>
+                        </div>
+                        <div class="transaction-amount profit-value">+$16,248.75</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <!-- Scoring/Criterios -->
+            <div class="section primary">
+                <h2 class="section-title">⭐ Evaluación por Criterios</h2>
+                <div id="scoringList">
+                </div>
+            </div>
+
+            <!-- Errores -->
+            <div class="section danger">
+                <h2 class="section-title">⚠️ Errores Identificados <div id="errorsNumber"></div></h2>
+                <div id="errorsList">
+                </div>
+            </div>
+
+            <!-- Media/Screenshots -->
+            <div class="section info">
+                <h2 class="section-title">📸 Screenshots y Media</h2>
+                <div class="media-gallery" id="mediaGallery">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock chart -->
+    <div class="card main-card">
+        <div class="card-header text-center py-3">
+            <h2 class="mb-0" style="background: linear-gradient(90deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="fas fa-chart-candlestick me-2"></i>Trading Analytics Pro
+            </h2>
+        </div>
+        <div class="card-body">
+            <!-- Controles -->
+            <div class="controls-panel">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-play-circle me-2"></i>Controles de Replay</h5>
+                        <div class="btn-group me-3" role="group">
+                            <button id="playBtn" class="btn btn-custom">
+                                <i class="fas fa-play"></i> Play
+                            </button>
+                            <button id="pauseBtn" class="btn btn-custom" disabled>
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger-custom" disabled>
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button id="nextBtn" class="btn btn-success-custom">
+                                <i class="fas fa-step-forward"></i> Siguiente
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="time-display" id="currentTime">
+                            2024-01-15 09:30:00
+                        </div>
+                        <div class="speed-slider">
+                            <label class="form-label">Velocidad: <span id="speedValue">1x</span></label>
+                            <input type="range" class="form-range" id="speedSlider" min="1" max="10" value="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha de inicio del replay:</label>
+                        <input type="datetime-local" class="form-control" id="startTime" 
+                                value="2024-01-15T09:30">
+                    </div>
+                    <div class="col-md-6">
+                        <button id="resetBtn" class="btn btn-custom mt-4">
+                            <i class="fas fa-refresh"></i> Reiniciar Replay
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico Diario -->
+            <div class="chart-container">
+                <h4 class="chart-title">Gráfico Diario</h4>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomChart('daily', 1.2)">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="zoom-btn" onclick="zoomChart('daily', 0.8)">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                </div>
+                <canvas id="dailyChart" width="800" height="300"></canvas>
+                <div class="loading-spinner" id="dailySpinner">
+                    <div class="spinner-border" role="status"></div>
+                </div>
+            </div>
+
+            <!-- Gráfico Intradía -->
+            <div class="chart-container">
+                <h4 class="chart-title">Gráfico Intradía (1 minuto)</h4>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomChart('intraday', 1.2)">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="zoom-btn" onclick="zoomChart('intraday', 0.8)">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                </div>
+                <canvas id="intradayChart" width="800" height="300"></canvas>
+                <div class="loading-spinner" id="intradaySpinner">
+                    <div class="spinner-border" role="status"></div>
+                </div>
+            </div>
+
+            <!-- Información de transacciones -->
+            <div class="controls-panel mt-3">
+                <h5><i class="fas fa-exchange-alt me-2"></i>Transacciones Recientes</h5>
+                <div id="transactionsList" class="mt-3">
+                    <!-- Las transacciones se mostrarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn btn-primary" onclick="editTrade()">✏️ Editar Trade</button>
+        <button class="btn btn-danger" onclick="deleteTrade()">🗑️ Eliminar</button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
+    <script>
+        // Sample trade data - replace with real data from your backend
+        const tradeData = JSON.parse('{{ trade_data|tojson }}');
+        window.candleData = tradeData['candles'];
+        window.transactionData = tradeData['transactions'];
+
+        function loadTradeData() {
+            // Load basic trade info
+            document.getElementById('tradeSymbol').textContent = tradeData.symbol;
+            document.getElementById('tradeSubtitle').textContent = 
+                `${tradeData.company_name} - Operación ${tradeData.trade_type}`;
+            
+            // Calculate and display profit/loss
+            const pnlPercent = ((tradeData.profit_loss / (tradeData.entry_price * tradeData.quantity)) * 100).toFixed(2); // TODO: Calculate the return correctly and with last asset price
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.textContent = `${tradeData.profit_loss >= 0 ? '+' : ''}$${tradeData.profit_loss.toFixed(2)} (${pnlPercent}%)`;
+            statusBadge.className = `status-badge ${tradeData.profit_loss >= 0 ? 'status-profit' : 'status-loss'}`;
+
+            // Load trade details
+            document.getElementById('entryDate').textContent = tradeData.entry_date || '';
+            document.getElementById('entryTime').textContent = tradeData.entry_time || '';
+            document.getElementById('entryPrice').textContent = `$${tradeData.entry_price?.toFixed(2)}`;
+            document.getElementById('exitDate').textContent = tradeData.exit_date || '';
+            document.getElementById('exitTime').textContent = tradeData.exit_time || '';
+            document.getElementById('exitPrice').textContent = `$${tradeData.exit_price?.toFixed(2)}`;
+            document.getElementById('stopLoss').textContent = `$${tradeData.stop_loss?.toFixed(2)}`;
+            document.getElementById('takeProfit').textContent = `$${tradeData.take_profit?.toFixed(2)}`;
+            document.getElementById('quantity').textContent = tradeData.quantity ? `${tradeData.quantity} acciones` : '';
+            document.getElementById('pendingQuantity').textContent = tradeData.quantity && tradeData.exit_quantity ? `${tradeData.exit_quantity - tradeData.quantity} acciones` : '';
+            document.getElementById('balance').textContent = `$${tradeData.balance?.toFixed(2)}`;
+            document.getElementById('commission').textContent = `$${tradeData.commission?.toFixed(2)}`;
+
+            // Load result info
+            document.getElementById('profitLoss').textContent = tradeData.profit_loss ? `${tradeData.profit_loss >= 0 ? '+' : '-'}$${tradeData.profit_loss.toFixed(2)}` : '';
+            document.getElementById('profitLoss').className = tradeData.profit_loss ? `info-value ${tradeData.profit_loss >= 0 ? 'profit-value' : 'loss-value'}` : '';
+            document.getElementById('return').textContent = `${pnlPercent >= 0 ? '+' : ''}${pnlPercent}%`;
+            document.getElementById('return').className = `info-value ${pnlPercent >= 0 ? 'profit-value' : 'loss-value'}`;
+            document.getElementById('strategy').textContent = tradeData.strategy?.name;
+
+            // Calculate duration
+            if (tradeData.entry_date && tradeData.exit_date) {
+                const entryDateTime = new Date(`${tradeData.entry_date}T${tradeData.entry_time}`);
+                const exitDateTime = new Date(`${tradeData.exit_date}T${tradeData.exit_time}`);
+                const duration = exitDateTime - entryDateTime;
+                const hours = Math.floor(duration / (1000 * 60 * 60));
+                const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+                document.getElementById('duration').textContent = `${hours}h ${minutes}min`;
+            }
+
+            // Load analysis
+            document.getElementById('description').innerHTML = tradeData.description;
+            document.getElementById('whyProfitable').innerHTML = tradeData.why_profitable;
+            document.getElementById('influencingFactors').innerHTML = tradeData.influencing_factors;
+
+            // Load hashtags
+            const hashtagsContainer = document.getElementById('hashtags');
+            const hashtags = tradeData.hashtags.split(',');
+            hashtagsContainer.innerHTML = '';
+            hashtags.forEach(hashtag => {
+                const hashtagElement = document.createElement('span');
+                hashtagElement.className = 'hashtag';
+                hashtagElement.textContent = hashtag.trim();
+                hashtagsContainer.appendChild(hashtagElement);
+            });
+
+            // Load scoring
+            loadScoring();
+            
+            // Load errors
+            loadErrors();
+            
+            // Load transactions
+            loadTransactions();
+        }
+
+        function loadScoring() {
+            const scoringContainer = document.getElementById('scoringList');
+            scoringContainer.innerHTML = '';
+            
+            let totalScore = 0;
+            let totalMaxPoints = 0;
+            
+            tradeData.strategy.conditions.forEach(condition => {
+                const checked = tradeData.conditions.find(obj => obj.scoring_id === parseInt(condition.id));
+                const scoringItem = document.createElement('div');
+                scoringItem.className = 'scoring-item';
+                scoringItem.innerHTML = `
+                    <div>
+                        <div class="scoring-name">${condition.name}</div>
+                        <div class="scoring-description">${condition.description}</div>
+                    </div>
+                    <div class="scoring-value">${checked ? checked.value: 0.0}/${condition.score}</div>
+                `;
+                scoringContainer.appendChild(scoringItem);
+                
+                totalScore += checked ? checked.value : 0;
+                totalMaxPoints += condition.score;
+            });
+            
+            // Add total score
+            const totalScoreDiv = document.createElement('div');
+            totalScoreDiv.style.cssText = 'margin-top: 20px; text-align: center; padding: 15px; background: white; border-radius: 10px;';
+            totalScoreDiv.innerHTML = `
+                <div class="info-label">Puntuación Total Ponderada</div>
+                <div style="font-size: 2rem; font-weight: bold; color: #28a745;">${(totalScore/totalMaxPoints*100).toFixed(0)}%</div>
+            `;
+            scoringContainer.appendChild(totalScoreDiv);
+        }
+
+        function loadErrors() {
+            const errorsContainer = document.getElementById('errorsList');
+            errorsContainer.innerHTML = '';
+            
+            if (tradeData.errors.length === 0) {
+                errorsContainer.innerHTML = '<div class="no-data">No se identificaron errores en esta operación</div>';
+                return;
+            }
+            document.getElementById('errorsNumber').innerHTML = `(${tradeData.errors.length})`;
+            tradeData.errors.forEach(error => {
+                const errorItem = document.createElement('div');
+                errorItem.className = 'error-item';
+                
+                const severityClass = `severity-${error.severity}`;
+                const impactClass = `severity-${error.impact_level}`;
+                
+                errorItem.innerHTML = `
+                    <div class="error-header">
+                        <div class="error-description">${error.description}</div>
+                        <div>
+                            <span class="severity-badge ${severityClass}">${error.severity.charAt(0).toUpperCase() + error.severity.slice(1)}</span>
+                            <!-- <span class="impact-badge ${impactClass}">${error.impact_level?.charAt(0).toUpperCase() + error.impact_level?.slice(1)}</span> -->
+                        </div>
+                    </div>
+                    <div class="error-meta">Categoría: ${error.category} | Detectado el ${tradeData.entry_date}</div>
+                `;
+                errorsContainer.appendChild(errorItem);
+            });
+        }
+
+        function loadTransactions() {
+            const transactionsContainer = document.getElementById('transactionsList');
+            transactionsContainer.innerHTML = '';
+            
+            tradeData.transactions.forEach(transaction => {
+                const transactionItem = document.createElement('div');
+                transactionItem.className = 'transaction-item';
+                
+                const amount = transaction.type === 'LONG' 
+                    ? -(transaction.quantity * transaction.price + transaction.commission)
+                    : (transaction.quantity * transaction.price - transaction.commission);
+                
+                const amountClass = amount >= 0 ? 'profit-value' : 'loss-value';
+                const transactionTypeText = transaction.type === 'LONG' ? 'Compra' : 'Venta';
+                
+                // Format date
+                const date = new Date(transaction.date);
+                const formattedDate = date.toLocaleDateString('es-ES', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                });
+                
+                transactionItem.innerHTML = `
+                    <div class="transaction-info">
+                        <div class="transaction-date">${formattedDate} - ${transaction.time}</div>
+                        <div class="transaction-details">${transactionTypeText}: ${transaction.quantity} acciones a $${transaction.price.toFixed(2)} - Comisión: $${transaction.commission.toFixed(2)}</div>
+                    </div>
+                    <div class="transaction-amount ${amountClass}">${amount >= 0 ? '+' : '-'}$${Math.abs(amount).toFixed(2)}</div>
+                `;
+                transactionsContainer.appendChild(transactionItem);
+            });
+        }
+
+        // Action buttons functionality
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Redirect to trades list or dashboard
+                window.location.href = '/trades';
+            }
+        }
+
+        function editTrade() {
+            window.location.href = `{{ url_for('journal_endpoints.edit_trade', trade_id=0) }}`.replace('0', tradeData.id);
+        }
+
+        async function deleteTrade() {
+            if (confirm('¿Estás seguro de que quieres borrar este trade?')) {
+                const url = `{{ url_for('journal_endpoints.delete_trade', trade_id=0) }}`.replace('0', tradeData.id);
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        // Si no hay redirección, recarga la página
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    alert('Error al borrar el trade');
+                }
+            }
+        }
+
+        // Media gallery functionality
+        function initializeMediaGallery() {
+            const mediaGallery = document.getElementById('mediaGallery');
+            mediaGallery.innerHTML = '';
+            
+            if (tradeData.media.length === 0) {
+                mediaGallery.innerHTML = '<div class="no-data">No hay screenshots disponibles para este trade</div>';
+                return;
+            }
+            
+            tradeData.media.forEach((media, index) => {
+                const mediaItem = document.createElement('div');
+                mediaItem.className = 'media-item';
+
+                // Detecta si es video por la extensión (incluye mkv)
+                const isVideo = media.url.match(/\.(mp4|webm|ogg|mkv)$/i);
+
+                if (isVideo) {
+                    let url = "{{ url_for('serve_media', filename='0') }}".replace('0', media.url);
+                    mediaItem.innerHTML = `
+                        <video src="${url}" controls width="100%" height="120" style="object-fit:cover;" poster="${media.poster || ''}">
+                            Tu navegador no soporta video.
+                        </video>
+                    `;
+                    mediaItem.addEventListener('click', () => {
+                        window.open(media.url, '_blank');
+                    });
+                } else {
+                    mediaItem.innerHTML = `
+                        <img src="${media.url}" alt="Screenshot ${index + 1}">
+                    `;
+                    mediaItem.addEventListener('click', () => {
+                        window.open(media.url, '_blank');
+                    });
+                }
+
+                mediaGallery.appendChild(mediaItem);
+            });
+        }
+
+        // Utility functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function calculateRiskRewardRatio() {
+            const risk = Math.abs(tradeData.entry_price - tradeData.stop_loss);
+            const reward = Math.abs(tradeData.take_profit - tradeData.entry_price);
+            return reward / risk;
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTradeData();
+            initializeMediaGallery();
+            
+            // Add some additional info that might be useful
+            console.log('Trade loaded:', tradeData);
+            console.log('Risk/Reward Ratio:', calculateRiskRewardRatio().toFixed(2));
+        });
+    </script>
+
+    <script>
+        // Función global para zoom
+        function zoomChart(chartType, factor) {
+            if (chartType === 'daily') {
+                chart.dailyZoom *= factor;
+                chart.dailyZoom = Math.max(0.5, Math.min(5, chart.dailyZoom));
+            } else {
+                chart.intradayZoom *= factor;
+                chart.intradayZoom = Math.max(0.5, Math.min(5, chart.intradayZoom));
+            }
+            chart.drawCharts();
+        }
+
+        // Inicializar la aplicación
+        let chart;
+        
+        // Función para inicializar con datos externos
+        function initializeChart(candleData = null, globalTransactionData = null) {
+            if (chart) {
+                // Si ya existe un chart, actualizarlo con nuevos datos
+                if (candleData) {
+                    chart.loadData(candleData, globalTransactionData);
+                } else {
+                    chart.generateData();
+                }
+                chart.reset();
+                chart.drawCharts();
+            } else {
+                // Crear nuevo chart
+                chart = new TradingChart(candleData, globalTransactionData);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar si hay datos disponibles en el contexto global
+            const globalCandleData = window.candleData || null;
+            const globalTransactionData = window.transactionData || null;
+            initializeChart(globalCandleData, globalTransactionData);
+            
+            // Configurar responsive
+            window.addEventListener('resize', function() {
+                chart.setupCanvas();
+                chart.drawCharts();
+            });
+
+            // Agregar controles de teclado
+            document.addEventListener('keydown', function(e) {
+                switch(e.code) {
+                    case 'Space':
+                        e.preventDefault();
+                        if (chart.isPlaying) {
+                            chart.pause();
+                        } else {
+                            chart.play();
+                        }
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        chart.nextStep();
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        chart.stop();
+                        break;
+                    case 'KeyR':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            chart.reset();
+                        }
+                        break;
+                }
+            });
+
+            // Agregar interactividad con el mouse para los gráficos
+            [chart.dailyCanvas, chart.intradayCanvas].forEach(canvas => {
+                let isDragging = false;
+                let lastX = 0;
+
+                canvas.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    lastX = e.clientX;
+                    canvas.style.cursor = 'grabbing';
+                });
+
+                canvas.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    
+                    const deltaX = e.clientX - lastX;
+                    lastX = e.clientX;
+                    
+                    // Simular scroll horizontal (aquí podrías implementar lógica de pan)
+                    console.log('Panning:', deltaX);
+                });
+
+                canvas.addEventListener('mouseup', function() {
+                    isDragging = false;
+                    canvas.style.cursor = 'default';
+                });
+
+                canvas.addEventListener('mouseleave', function() {
+                    isDragging = false;
+                    canvas.style.cursor = 'default';
+                });
+
+                // Zoom con rueda del ratón
+                canvas.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+                    const chartType = canvas === chart.dailyCanvas ? 'daily' : 'intraday';
+                    zoomChart(chartType, factor);
+                });
+            });
+
+            // Mostrar tooltip informativo
+            showWelcomeTooltip();
+        });
+
+        function showWelcomeTooltip() {
+            // Crear modal de bienvenida
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title">
+                                <i class="fas fa-rocket me-2"></i>¡Bienvenido a Trading Analytics Pro!
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-keyboard me-2"></i>Atajos de Teclado:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><kbd>Espacio</kbd> - Play/Pause</li>
+                                        <li><kbd>→</kbd> - Siguiente paso</li>
+                                        <li><kbd>Esc</kbd> - Detener</li>
+                                        <li><kbd>Ctrl+R</kbd> - Reiniciar</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-mouse me-2"></i>Interacciones:</h6>
+                                    <ul class="list-unstyled">
+                                        <li>🖱️ Rueda - Zoom in/out</li>
+                                        <li>🖱️ Arrastrar - Pan (próximamente)</li>
+                                        <li>🔍 Botones - Zoom manual</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="alert alert-light mt-3" role="alert">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Tip:</strong> Ajusta la velocidad del replay y observa cómo se actualizan 
+                                las velas y aparecen las transacciones en tiempo real.
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                                <i class="fas fa-play me-2"></i>¡Comenzar Trading!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Limpiar modal después de cerrar
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
+        }
+
+        // Funciones de utilidad adicionales
+        function formatPrice(price) {
+            return new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(price);
+        }
+
+        function formatVolume(volume) {
+            if (volume >= 1000000) {
+                return (volume / 1000000).toFixed(1) + 'M';
+            } else if (volume >= 1000) {
+                return (volume / 1000).toFixed(1) + 'K';
+            }
+            return volume.toString();
+        }
+
+        // Funciones para notificaciones
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+
+        // Exportar funciones para uso global si es necesario
+        window.TradingChart = TradingChart;
+        window.zoomChart = zoomChart;
+        window.initializeChart = initializeChart;
+    </script>
+{% endblock %}
