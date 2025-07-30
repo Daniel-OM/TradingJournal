@@ -17,7 +17,16 @@ class PrefixMiddleware:
             start_response('404', [('Content-Type', 'text/plain')])
             return [b"This URL does not belong to the app."]
 
-app = PrefixMiddleware(create_app(ProdConfig), prefix='/trading-journal')
+# app = PrefixMiddleware(create_app(ProdConfig), prefix='/trading-journal')
+
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+
+app = DispatcherMiddleware(None, {
+	'/trading-journal': create_app(ProdConfig),
+})
+
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=5002)
