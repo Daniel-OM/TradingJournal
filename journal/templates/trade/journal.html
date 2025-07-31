@@ -38,6 +38,14 @@
             <span class="close" onclick="closeModal()">&times;</span>
         </div>
         <div class="modal-body">
+            <!-- Gráfico de evolución del capital -->
+            <div class="chart-container">
+                <div class="chart-title">Evolución del Capital Durante la Sesión</div>
+                <div class="chart-wrapper">
+                    <canvas id="capitalChart"></canvas>
+                </div>
+            </div>
+
             <div class="summary" id="daySummary">
                 <!-- Summary will be generated here -->
             </div>
@@ -53,6 +61,7 @@
 {% block scripts %}
     <script>
         let tradingData = {};
+        let capitalChart = null;
         let currentDate = new Date();
         const monthNames = [
             'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -85,6 +94,7 @@
                 // Organiza los trades por fecha (usa exit_date o la propiedad que corresponda)
                 tradingData = {};
                 trades.forEach(trade => {
+                    // TODO: Usar el exit date es lo correcto?
                     const dateKey = trade.exit_date; // Asegúrate que tu to_dict() devuelva exit_date en formato 'YYYY-MM-DD'
                     if (!tradingData[dateKey]) tradingData[dateKey] = [];
                     tradingData[dateKey].push({
@@ -95,6 +105,7 @@
                         exit: trade.exit_price,
                         quantity: trade.quantity,
                         pnl: trade.profit_loss,
+                        equity: trade.equity,
                         time: trade.exit_time // o la propiedad de hora que uses
                     });
                 });
@@ -183,6 +194,531 @@
             getData();
         }
 
+        function createCapitalChart_old (trades, dots=false) {
+            const ctx = document.getElementById('capitalChart').getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (capitalChart) {
+                capitalChart.destroy();
+            }
+
+            // Procesar datos para crear la curva de evolución del capital
+            console.log('Trades: ', trades);
+            const chartData = processCapitalEvolution(trades);
+            console.log('Datos del gráfico: ', chartData);
+
+            capitalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [dots ? {
+                        label: 'Capital Acumulado',
+                        data: chartData.values,
+                        borderColor: '#4285F4',
+                        backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#4285F4',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    } : 
+                    {
+                        label: 'Capital Acumulado',
+                        data: chartData.values,
+                        borderColor: '#4285F4',
+                        backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0, // Sin puntos
+                        pointHoverRadius: 0,
+                        spanGaps: false // No conectar gaps
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#4285F4',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function (context) {
+                                    const value = context.parsed.y;
+                                    return `Capital: ${value >= 0 ? '+' : ''}$${value.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 8,
+                                color: '#666'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                color: '#666',
+                                callback: function (value) {
+                                    return (value >= 0 ? '+' : '') + '$' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
+        function createCapitalChart_2 (trades) {
+            const ctx = document.getElementById('capitalChart').getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (capitalChart) {
+                capitalChart.destroy();
+            }
+
+            // Procesar datos para crear la curva de evolución del capital
+            console.log('Trades: ', trades);
+            const chartData = processCapitalEvolution(trades);
+            console.log('Datos del gráfico: ', chartData);
+
+            // Crear gradientes
+            const gradientGreen = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientGreen.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
+            gradientGreen.addColorStop(1, 'rgba(34, 197, 94, 0.05)');
+
+            const gradientRed = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientRed.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+            gradientRed.addColorStop(1, 'rgba(239, 68, 68, 0.05)');
+
+            // Separar datos en segmentos positivos y negativos
+            const positiveData = chartData.values.map(value => value >= 0 ? value : null);
+            const negativeData = chartData.values.map(value => value < 0 ? value : null);
+
+            capitalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Capital Positivo',
+                            data: positiveData,
+                            borderColor: '#22c55e',
+                            backgroundColor: gradientGreen,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0, // Sin puntos
+                            pointHoverRadius: 0,
+                            spanGaps: false // No conectar gaps
+                        },
+                        {
+                            label: 'Capital Negativo',
+                            data: negativeData,
+                            borderColor: '#ef4444',
+                            backgroundColor: gradientRed,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0, // Sin puntos
+                            pointHoverRadius: 0,
+                            spanGaps: false // No conectar gaps
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderWidth: 1,
+                            filter: function (tooltipItem) {
+                                // Solo mostrar tooltip para el dataset que tiene datos en ese punto
+                                return tooltipItem.parsed.y !== null;
+                            },
+                            callbacks: {
+                                label: function (context) {
+                                    const value = context.parsed.y;
+                                    if (value === null) return '';
+                                    const color = value >= 0 ? '#22c55e' : '#ef4444';
+                                    return `Capital: ${value >= 0 ? '+' : ''}$${value.toFixed(2)}`;
+                                },
+                                labelColor: function (context) {
+                                    const value = context.parsed.y;
+                                    if (value === null) return { borderColor: 'transparent', backgroundColor: 'transparent' };
+                                    return {
+                                        borderColor: value >= 0 ? '#22c55e' : '#ef4444',
+                                        backgroundColor: value >= 0 ? '#22c55e' : '#ef4444'
+                                    };
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 8,
+                                color: '#666'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                color: '#666',
+                                callback: function (value) {
+                                    return (value >= 0 ? '+' : '') + '$' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            radius: 0 // Asegurar que no hay puntos globalmente
+                        }
+                    }
+                }
+            });
+        }
+
+    function createCapitalChart (trades) {
+        const ctx = document.getElementById('capitalChart').getContext('2d');
+
+        // Destruir gráfico anterior si existe
+        if (capitalChart) {
+            capitalChart.destroy();
+        }
+
+        // Procesar datos para crear la curva de evolución del capital
+        console.log('Trades: ', trades);
+        const chartData = processCapitalEvolution(trades);
+        console.log('Datos del gráfico: ', chartData);
+
+        // Encontrar valores mínimo y máximo para crear gradientes dinámicos
+        const minValue = Math.min(...chartData.values);
+        const maxValue = Math.max(...chartData.values);
+        const hasNegativeValues = minValue < 0;
+        const hasPositiveValues = maxValue > 0;
+
+        // Crear gradiente dinámico basado en el rango de valores
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+
+        if (hasNegativeValues && hasPositiveValues) {
+            // Si hay valores positivos y negativos, crear gradiente que cambie en el cero
+            const zeroPosition = Math.abs(minValue) / (maxValue - minValue);
+
+            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)'); // Verde arriba (positivo)
+            gradient.addColorStop(Math.max(zeroPosition - 0.05, 0), 'rgba(34, 197, 94, 0.1)');
+            gradient.addColorStop(zeroPosition, 'rgba(128, 128, 128, 0.1)'); // Gris en el cero
+            gradient.addColorStop(Math.min(zeroPosition + 0.05, 1), 'rgba(239, 68, 68, 0.1)');
+            gradient.addColorStop(1, 'rgba(239, 68, 68, 0.4)'); // Rojo abajo (negativo)
+        } else if (hasPositiveValues) {
+            // Solo valores positivos
+            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)');
+            gradient.addColorStop(1, 'rgba(34, 197, 94, 0.05)');
+        } else {
+            // Solo valores negativos
+            gradient.addColorStop(0, 'rgba(239, 68, 68, 0.05)');
+            gradient.addColorStop(1, 'rgba(239, 68, 68, 0.4)');
+        }
+
+        // Crear dataset principal con todos los datos
+        const mainDataset = {
+            label: 'Evolución del Capital',
+            data: chartData.values,
+            borderColor: function (ctx) {
+                const value = ctx.parsed?.y ?? chartData.values[ctx.dataIndex];
+                if (value > 0) return '#22c55e';
+                if (value < 0) return '#ef4444';
+                return '#6b7280'; // Gris para cero
+            },
+            backgroundColor: function (context) {
+                const chart = context.chart;
+                const { ctx, chartArea, scales } = chart;
+
+                if (!chartArea) {
+                    // Aún no está listo el layout del gráfico (primer render)
+                    return 'rgba(0, 0, 0, 0)';
+                }
+
+                const top = chartArea.top;
+                const bottom = chartArea.bottom;
+                const yAxis = scales.y;
+                const zeroY = yAxis.getPixelForValue(0);
+
+                const gradient = ctx.createLinearGradient(0, top, 0, bottom);
+
+                if (yAxis.min < 0 && yAxis.max > 0) {
+                    const zeroPos = bottom - top != 0 ? (zeroY - top) / (bottom - top) : 0;
+
+                    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)');
+                    gradient.addColorStop(Math.max(zeroPos - 0.02, 0), 'rgba(34, 197, 94, 0.05)');
+                    gradient.addColorStop(zeroPos, 'rgba(128, 128, 128, 0.1)');
+                    gradient.addColorStop(Math.min(zeroPos + 0.02, 1), 'rgba(239, 68, 68, 0.05)');
+                    gradient.addColorStop(1, 'rgba(239, 68, 68, 0.4)');
+                } else if (yAxis.max <= 0) {
+                    gradient.addColorStop(0, 'rgba(239, 68, 68, 0.05)');
+                    gradient.addColorStop(1, 'rgba(239, 68, 68, 0.4)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)');
+                    gradient.addColorStop(1, 'rgba(34, 197, 94, 0.05)');
+                }
+
+                return gradient;
+            },
+            borderWidth: 3,
+            fill: 'origin', // Llenar hasta el eje y (línea cero)
+            tension: 0.4,
+            pointRadius: function (ctx) {
+                const value = ctx.parsed?.y ?? chartData.values[ctx.dataIndex];
+                return value === 0 ? 4 : 0; // Mostrar puntos solo en valores cero
+            },
+            pointBackgroundColor: function (ctx) {
+                const value = ctx.parsed?.y ?? chartData.values[ctx.dataIndex];
+                if (value > 0) return '#22c55e';
+                if (value < 0) return '#ef4444';
+                return '#6b7280';
+            },
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 6,
+            spanGaps: true, // Conectar todos los puntos
+            segment: {
+                borderColor: function (ctx) {
+                    const currentValue = ctx.p1.parsed.y;
+                    const previousValue = ctx.p0.parsed.y;
+
+                    // Color del segmento basado en el valor actual
+                    if (currentValue > 0) return '#22c55e';
+                    if (currentValue < 0) return '#ef4444';
+                    return '#6b7280';
+                }
+            }
+        };
+
+        capitalChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [mainDataset]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.parsed.y;
+                                let color = '#6b7280';
+                                let prefix = '';
+
+                                if (value > 0) {
+                                    color = '#22c55e';
+                                    prefix = '+';
+                                } else if (value < 0) {
+                                    color = '#ef4444';
+                                    prefix = '';
+                                }
+
+                                return `Capital: ${prefix}$${value.toFixed(2)}`;
+                            },
+                            labelColor: function (context) {
+                                const value = context.parsed.y;
+                                let color = '#6b7280';
+
+                                if (value > 0) color = '#22c55e';
+                                else if (value < 0) color = '#ef4444';
+
+                                return {
+                                    borderColor: color,
+                                    backgroundColor: color
+                                };
+                            }
+                        }
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 8,
+                            color: '#666'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: function (ctx) {
+                                // Línea más marcada en el cero
+                                return ctx.tick.value === 0 ? 'rgba(107, 114, 128, 0.5)' : 'rgba(0,0,0,0.1)';
+                            },
+                            lineWidth: function (ctx) {
+                                return ctx.tick.value === 0 ? 2 : 1;
+                            }
+                        },
+                        ticks: {
+                            color: function (ctx) {
+                                // Color diferente para el tick del cero
+                                return ctx.tick.value === 0 ? '#374151' : '#666';
+                            },
+                            callback: function (value) {
+                                const prefix = value > 0 ? '+' : '';
+                                return `${prefix}$${value.toFixed(0)}`;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                elements: {
+                    point: {
+                        radius: 0 // Por defecto sin puntos, se controla individualmente
+                    }
+                }
+            }
+        });
+    }
+
+        function processCapitalEvolution (trades) {
+            const allBalancePoints = [];
+
+            // Recopilar todos los puntos de balance de todos los trades
+            trades.forEach(trade => {
+                if (trade.equity && Array.isArray(trade.equity)) {
+                    trade.equity.forEach(point => {
+                        allBalancePoints.push({
+                            ...point,
+                            datetime: new Date(point.datetime),
+                            tradeId: trade.id // Añadir ID del trade para referencia
+                        });
+                    });
+                }
+            });
+
+            console.log('All points: ', allBalancePoints);
+
+            if (allBalancePoints.length === 0) {
+                return { labels: ['Sin datos'], values: [0] };
+            }
+
+            // Ordenar todos los puntos por tiempo
+            allBalancePoints.sort((a, b) => a.datetime - b.datetime);
+
+            // Crear una línea temporal continua
+            const labels = ['Inicio'];
+            const values = [0];
+
+            // Mantener el balance acumulado total
+            let totalAccumulatedCapital = 0;
+
+            // Mantener el último balance conocido de cada trade
+            const lastBalancePerTrade = new Map();
+
+            // Procesar cada punto en orden cronológico
+            allBalancePoints.forEach(point => {
+                // Actualizar el último balance conocido para este trade
+                lastBalancePerTrade.set(point.tradeId, point.balance);
+
+                // Calcular el balance total sumando los últimos balances de todos los trades activos
+                let currentTotalBalance = 0;
+                for (const balance of lastBalancePerTrade.values()) {
+                    currentTotalBalance += balance;
+                }
+
+                labels.push(point.time);
+                values.push(currentTotalBalance);
+            });
+
+            // Alternativa más simple si cada trade es independiente y secuencial:
+            // En este caso, simplemente acumulas el PnL final de cada trade
+            /*
+            const simpleLabels = ['Inicio'];
+            const simpleValues = [0];
+            let cumulativePnL = 0;
+            
+            trades.forEach((trade, index) => {
+                if (trade.equity && trade.equity.length > 0) {
+                    // Tomar el último punto del trade (PnL final del trade)
+                    const finalPoint = trade.equity[trade.equity.length - 1];
+                    cumulativePnL += finalPoint.total_pnl || 0;
+                    
+                    simpleLabels.push(`Trade ${index + 1}`);
+                    simpleValues.push(cumulativePnL);
+                }
+            });
+            
+            return { labels: simpleLabels, values: simpleValues };
+            */
+
+            // Limitar el número de puntos para mejor visualización
+            if (labels.length > 100) {
+                const step = Math.ceil(labels.length / 100);
+                const filteredLabels = labels.filter((_, index) => index % step === 0);
+                const filteredValues = values.filter((_, index) => index % step === 0);
+
+                // Asegurar que incluimos el último punto
+                if (filteredLabels[filteredLabels.length - 1] !== labels[labels.length - 1]) {
+                    filteredLabels.push(labels[labels.length - 1]);
+                    filteredValues.push(values[values.length - 1]);
+                }
+
+                return { labels: filteredLabels, values: filteredValues };
+            }
+
+            return { labels, values };
+        }
+
         function showTradesModal(date, trades) {
             const modal = document.getElementById('tradesModal');
             const modalTitle = document.getElementById('modalTitle');
@@ -190,6 +726,9 @@
             const tradesList = document.getElementById('tradesList');
 
             modalTitle.textContent = `Trades del ${date.getDate()} de ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+
+            // Crear el gráfico de evolución del capital
+            createCapitalChart(trades);
 
             // Generate summary
             const totalPnL = trades.reduce((sum, trade) => sum + trade.pnl, 0);
@@ -245,6 +784,12 @@
 
         function closeModal() {
             document.getElementById('tradesModal').style.display = 'none';
+
+            // Limpiar el gráfico al cerrar
+            if (capitalChart) {
+                capitalChart.destroy();
+                capitalChart = null;
+            }
         }
 
         function goToTradeDetails(tradeId) {

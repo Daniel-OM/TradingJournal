@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 
 from ..models import db, Watchlist, WatchlistEntry, WatchlistCondition, Candle
 from ..src.yahoofinance import YahooTicker
+from .utils import download_candles
 
 watchlist_bp = Blueprint(name='watchlist_endpoints', import_name=__name__)
 
@@ -135,54 +136,9 @@ def add_watchlist_entry():
 
     if request.method == 'POST':
 
-        symbol = request.form['symbol']
-        today = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
-        one_year_ago = today - timedelta(days=365)
-
-        # Descargar velas con Yahoo Finance y sobreescribir las existentes
-        try:
-            yf = YahooTicker(symbol)
-            candles = yf.getPrice(start=one_year_ago, end=today, timeframe='1d', df=True)
-            # Eliminar todas las velas existentes para ese símbolo y rango de fechas
-            db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= one_year_ago, Candle.date <= today, Candle.timeframe == '1d').delete(synchronize_session=False)
-            db.session.commit()
-            candle_objs = []
-            if hasattr(candles, 'iterrows'):
-                candle_objs = [
-                    Candle(
-                        symbol=symbol,
-                        date=row['date'] if 'date' in row else idx,
-                        open=row['open'],
-                        high=row['high'],
-                        low=row['low'],
-                        close=row['close'],
-                        volume=row.get('volume', None),
-                        timeframe='1d'
-                    ) for idx, row in candles.iterrows()
-                ]
-            elif isinstance(candles, list):
-                candle_objs = [
-                    Candle(
-                        symbol=symbol,
-                        date=row['date'],
-                        open=row['open'],
-                        high=row['high'],
-                        low=row['low'],
-                        close=row['close'],
-                        volume=row.get('volume', None),
-                        timeframe='1d'
-                    ) for row in candles
-                ]
-                
-            if candle_objs:
-                db.session.bulk_save_objects(candle_objs)
-                db.session.commit()
-        except Exception as e:
-            print(f"Error descargando velas para {symbol}: {e}")
-
         entry = WatchlistEntry(
             date=datetime.strptime(request.form['date'], '%Y-%m-%d').date(),
-            symbol=symbol,
+            symbol=request.form['symbol'],
             company_name=request.form['company_name'],
             atr=float(request.form['atr']) if request.form['atr'] else None,
             volume=float(request.form['volume']) if request.form['volume'] else None,
@@ -212,6 +168,14 @@ def add_watchlist_entry():
             if condition_ids[i] != '':
                 entry.add_condition(condition_id=condition_ids[i], value=condition_values[i])
 
+        one_year_ago = entry.date - timedelta(days=365)
+        # Descargar velas con Yahoo Finance y sobreescribir las existentes
+        download_candles(db=db,
+                        symbol=entry.symbol,
+                        config=[
+                            {'timeframe': '1d', 'start':one_year_ago, 'end':entry.date},
+                        ])
+        
         db.session.commit()
         flash('Activo añadido a la watchlist exitosamente!', 'success')
         return redirect(url_for('watchlist_endpoints.watchlist_detail', id=entry.watchlist_id))
@@ -272,6 +236,11 @@ def delete_watchlist_entry(id):
         
         # Agregar fecha de salida
         entry.date_exit = date.today()
+        download_candles(db=db,
+                        symbol=entry.symbol,
+                        config=[
+                            {'timeframe': '1d', 'start': entry.date, 'end':entry.date_exit},
+                        ])
         
         db.session.commit()
         
@@ -343,6 +312,7 @@ def edit_watchlist_entry(id):
             abort(403)
 
         # Actualizar campos del formulario
+        entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
         entry.symbol = request.form.get('symbol', '').upper()
         entry.company_name = request.form.get('company_name', '')
         entry.score = float(request.form.get('score', 0.0))
@@ -375,6 +345,14 @@ def edit_watchlist_entry(id):
             if condition_ids[i] != '':
                 entry.add_condition(condition_id=condition_ids[i], value=condition_values[i])
 
+        one_year_ago = entry.date - timedelta(days=365)
+        # Descargar velas con Yahoo Finance y sobreescribir las existentes
+        download_candles(db=db,
+                        symbol=entry.symbol,
+                        config=[
+                            {'timeframe': '1d', 'start':one_year_ago, 'end':entry.date},
+                        ])
+        
         db.session.commit()
         
         flash(f'Registro de {entry.symbol} actualizado exitosamente', 'success')

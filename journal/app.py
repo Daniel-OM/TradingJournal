@@ -20,6 +20,7 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config_class.SQLALCHEMY_TRACK_MODIFICATIONS
     # app.config['APPLICATION_ROOT'] = config_class.APPLICATION_ROOT
     app.config['STATIC_URL_PATH'] = config_class.STATIC_URL_PATH
+    print('URI: ', app.config['SQLALCHEMY_DATABASE_URI'])
 
     app.jinja_env.auto_reload = True
                 

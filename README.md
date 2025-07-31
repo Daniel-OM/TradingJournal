@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ## Run application
 ```shell
-FLASK_APP=app:app flask run --reload
+FLASK_APP=journal.app:app flask run --reload
 ```
 
 # Application execution in production
@@ -119,7 +119,7 @@ sudo systemctl restart nginx
 
 ## Give permissions
 
-Make sure to give the needed permissions to the corretc user.
+Make sure to give the needed permissions to the correct user.
 ```shell
 sudo chown -R www-data:www-data /var/www/TradingJournal
 ```

@@ -1,0 +1,1 @@
+FLASK_APP=journal.app:app flask run --reload

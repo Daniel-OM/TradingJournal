@@ -13,8 +13,7 @@ from werkzeug.wrappers.response import Response
 
 from ..config import UPLOAD_FOLDER
 from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
-from ..src.yahoofinance import YahooTicker
-from .utils import save_uploaded_files, calculate_max_drawdown
+from .utils import save_uploaded_files, calculate_max_drawdown, download_candles, localToUtc
 
 journal_bp = Blueprint(name='journal_endpoints', import_name=__name__)
 
@@ -45,7 +44,7 @@ def month_trades(date) -> Response:
     start = datetime(date.year, date.month, 1).date()
     end = datetime(date.year, date.month+1, 1).date()
     trades: list = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
-    return jsonify([t.to_dict() for t in trades])
+    return jsonify([t.to_dict(equity=True) for t in trades])
 
 @journal_bp.route(rule='/trade/<int:id>')
 @login_required
@@ -85,10 +84,10 @@ def get_trade(id) -> str:
     one_year_ago = trade.entry_date - timedelta(days=365)
     week_ago = trade.entry_date - timedelta(days=5)
     symbol = trade.symbol
-
+    
     daily = Candle.query.filter(Candle.symbol == trade.symbol, 
-                                Candle.date >= one_year_ago, 
-                                Candle.date <= today, 
+                                Candle.date >= datetime.combine(one_year_ago, time(0, 0, 0)), 
+                                Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                 Candle.timeframe == '1d').all()
     intraday = Candle.query.filter(Candle.symbol == symbol, 
                                    Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), 
@@ -155,7 +154,7 @@ def get_trade(id) -> str:
 def add_trade() -> Response | str:
 
     if request.method == 'POST':
-
+        #TODO: Candles and transactions must be in UTC for correct manipulation.
         symbol = request.form['symbol']
 
         # try:
@@ -180,14 +179,17 @@ def add_trade() -> Response | str:
 
         transaction_date: list[str] = request.form.getlist('transaction_date')
         transaction_time: list[str] = request.form.getlist('transaction_time')
+        transaction_timezone: list[str] = request.form.getlist('transaction_timezone')
         transaction_price: list[str] = request.form.getlist('transaction_price')
         transaction_type: list[str] = request.form.getlist('transaction_type')
         transaction_quantity: list[str] = request.form.getlist('transaction_quantity')
         transaction_commission: list[str] = request.form.getlist('transaction_commission')
         for i in range(len(transaction_date)):
-            trade.add_transaction(date=datetime.strptime(transaction_date[i], '%Y-%m-%d').date(), price=float(transaction_price[i]), 
-                                    time=transaction_time[i], quantity=float(transaction_quantity[i]), 
-                                    commission=float(transaction_commission[i]), type=transaction_type[i])
+            trade.add_transaction(date=datetime.strptime(transaction_date[i], '%Y-%m-%d').date(), 
+                                  price=float(transaction_price[i]), 
+                                time=localToUtc(date=transaction_date[i], time=transaction_time[i], tz=transaction_timezone[i] if len(transaction_timezone) > 0 else 'Europe/Madrid', mode='time') if len(transaction_timezone) > 0 else transaction_time[i], 
+                                quantity=float(transaction_quantity[i]), 
+                                commission=float(transaction_commission[i]), type=transaction_type[i])
 
         error_id: list[str] = request.form.getlist('error_id')
         error_descriptions: list[str] = request.form.getlist('error_description')
@@ -222,58 +224,17 @@ def add_trade() -> Response | str:
             trade.add_condition(condition_id=condition_id[i], value=condition_value[i])
     
         # TODO: Test the candles download
-        
-        today = trade.exit_date
+        today = date.today()
         one_year_ago = today - timedelta(days=365)
         week_ago = today - timedelta(days=5)
-
         # Descargar velas con Yahoo Finance
-        try:
-            yf = YahooTicker(symbol)
-            yearly_candles = yf.getPrice(start=one_year_ago, end=today, timeframe='1d', df=True)
-            intraday_candles = yf.getPrice(start=datetime.combine(week_ago, time(0, 0, 0)), 
-                                           end=datetime.combine(today, time(23, 59, 59)), 
-                                           timeframe='1m', df=True)
-            # Eliminar todas las velas existentes para ese símbolo y rango de fechas
-            db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= one_year_ago, Candle.date <= today, Candle.timeframe == '1d').delete(synchronize_session=False)
-            db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), Candle.date <= datetime.combine(today, time(23, 59, 59)), Candle.timeframe == '1m').delete(synchronize_session=False)
-            db.session.commit()
-            candle_objs = []
-            for tf, candles in [['1d', yearly_candles], ['1m', intraday_candles]]:
-                if hasattr(candles, 'iterrows'):
-                    candle_objs += [
-                        Candle(
-                            symbol=symbol,
-                            date=row['date'] if 'date' in row else idx,
-                            open=row['open'],
-                            high=row['high'],
-                            low=row['low'],
-                            close=row['close'],
-                            volume=row.get('volume', None),
-                            timeframe=tf
-                        ) for idx, row in candles.iterrows()
-                    ]
-                elif isinstance(candles, list):
-                    candle_objs += [
-                        Candle(
-                            symbol=symbol,
-                            date=row['date'],
-                            open=row['open'],
-                            high=row['high'],
-                            low=row['low'],
-                            close=row['close'],
-                            volume=row.get('volume', None),
-                            timeframe=tf
-                        ) for row in candles
-                    ]
-
-            if candle_objs:
-                db.session.bulk_save_objects(candle_objs)
-                db.session.commit()
-
-        except Exception as e:
-            print(f"Error descargando velas para {symbol}: {e}")
-
+        download_candles(db=db,
+                         symbol=symbol,
+                         config=[
+                             {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                             {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                         ])
+        
         db.session.commit()
         flash('Trade registrado exitosamente!', 'success')
         return redirect(url_for('journal_endpoints.journal'))
@@ -363,51 +324,12 @@ def edit_trade(trade_id):
             one_year_ago = trade.entry_date - timedelta(days=365)
             week_ago = trade.entry_date - timedelta(days=5)
             symbol = trade.symbol
-            try:
-                yf = YahooTicker(symbol)
-                yearly_candles = yf.getPrice(start=one_year_ago, end=today, timeframe='1d', df=True)
-                intraday_candles = yf.getPrice(start=datetime.combine(week_ago, time(0, 0, 0)), 
-                                            end=datetime.combine(today, time(23, 59, 59)), 
-                                            timeframe='1m', df=True)
-                # Eliminar todas las velas existentes para ese símbolo y rango de fechas
-                db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= one_year_ago, Candle.date <= today, Candle.timeframe == '1d').delete(synchronize_session=False)
-                db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), Candle.date <= datetime.combine(today, time(23, 59, 59)), Candle.timeframe == '1m').delete(synchronize_session=False)
-                db.session.commit()
-                candle_objs = []
-                for tf, candles in [['1d', yearly_candles], ['1m', intraday_candles]]:
-                    if hasattr(candles, 'iterrows'):
-                        candle_objs += [
-                            Candle(
-                                symbol=symbol,
-                                date=row['date'] if 'date' in row else idx,
-                                open=row['open'],
-                                high=row['high'],
-                                low=row['low'],
-                                close=row['close'],
-                                volume=row.get('volume', None),
-                                timeframe=tf
-                            ) for idx, row in candles.iterrows()
-                        ]
-                    elif isinstance(candles, list):
-                        candle_objs += [
-                            Candle(
-                                symbol=symbol,
-                                date=row['date'],
-                                open=row['open'],
-                                high=row['high'],
-                                low=row['low'],
-                                close=row['close'],
-                                volume=row.get('volume', None),
-                                timeframe=tf
-                            ) for row in candles
-                        ]
-
-                if candle_objs:
-                    db.session.bulk_save_objects(candle_objs)
-                    db.session.commit()
-
-            except Exception as e:
-                print(f"Error descargando velas para {symbol}: {e}")
+            download_candles(db=db,
+                            symbol=symbol,
+                            config=[
+                                {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                            ])
 
             db.session.commit()
             flash('Trade actualizado correctamente', 'success')
