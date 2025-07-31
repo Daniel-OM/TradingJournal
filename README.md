@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ## Run application
 ```shell
-FLASK_APP=app:app flask run --reload
+FLASK_APP=journal.app:app flask run --reload
 ```
 
 # Application execution in production

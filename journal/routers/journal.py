@@ -85,10 +85,10 @@ def get_trade(id) -> str:
     one_year_ago = trade.entry_date - timedelta(days=365)
     week_ago = trade.entry_date - timedelta(days=5)
     symbol = trade.symbol
-
+    
     daily = Candle.query.filter(Candle.symbol == trade.symbol, 
-                                Candle.date >= one_year_ago, 
-                                Candle.date <= today, 
+                                Candle.date >= datetime.combine(one_year_ago, time(0, 0, 0)), 
+                                Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                 Candle.timeframe == '1d').all()
     intraday = Candle.query.filter(Candle.symbol == symbol, 
                                    Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), 
