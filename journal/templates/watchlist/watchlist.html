@@ -27,12 +27,11 @@
             margin-bottom: 30px;
         }
 
-        .btn {
+        .btn-orange {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             color: white;
             padding: 12px 24px;
             border: none;
-            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             text-decoration: none;
@@ -43,7 +42,7 @@
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
         }
 
-        .btn:hover {
+        .btn-orange:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
         }
@@ -180,7 +179,7 @@
             color: black;
             padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.3s ease;
@@ -188,6 +187,7 @@
 
         .view-btn:hover {
             background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .empty-state {
@@ -238,13 +238,13 @@
 {% endblock %}
 
 {% block content%}
-    <div class="header">
+    <div class="card header">
         <h1>📈 Mis Watchlists</h1>
         <p>Gestiona y analiza tus listas de seguimiento de acciones</p>
     </div>
 
     <div class="actions">
-        <a href="#" class="btn" onclick="createNewWatchlist()">
+        <a href="#" class="btn btn-orange" onclick="createNewWatchlist()">
             ➕ Nueva Watchlist
         </a>
         <div class="search-box">
@@ -274,8 +274,8 @@
             </div>
 
             <div class="card-footer border-0 m-0">
-                <div class="last-updated">{{ watchlist.entries|length }} assets</div>
-                <button class="view-btn">Details →</button>
+                <div class="last-updated">{{ watchlist.entries|selectattr("date_exit", "none")|list|length }} assets</div>
+                <button class="btn view-btn">Details →</button>
             </div>
         </div>
         {% endfor %}

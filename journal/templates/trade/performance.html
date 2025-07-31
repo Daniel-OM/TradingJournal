@@ -276,7 +276,7 @@
                                                 {% if strategy.total_pnl > 0 and strategy.win_rate > 50 %}
                                                     <span class="badge bg-success">Rentable</span>
                                                 {% elif strategy.total_pnl > 0 %}
-                                                    <span class="badge bg-warning">Promisoria</span>
+                                                    <span class="badge bg-warning">Prometedora</span>
                                                 {% else %}
                                                     <span class="badge bg-danger">Revisar</span>
                                                 {% endif %}
@@ -469,16 +469,18 @@
                 </div>
                 <div class="card-body">
                     {% for trade in stats.best_trades %}
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8f9fa;">
-                        <div>
-                            <strong>{{ trade.symbol }}</strong> - {{ trade.strategy.name if trade.strategy }}
-                            <br><small class="text-muted">{{ trade.entry_date.strftime('%d/%m/%Y') }}</small>
+                    <a class="text-decoration-none text-reset" href="{{ url_for('journal_endpoints.get_trade', id=trade.id) }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8f9fa;">
+                            <div>
+                                <strong>{{ trade.symbol }}</strong> - {{ trade.strategy.name if trade.strategy }}
+                                <br><small class="text-muted">{{ trade.entry_date.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">${{ "%.2f"|format(trade.profit_loss) }}</strong>
+                                <br><small class="text-muted">{{ "%.1f"|format((trade.profit_loss / trade.entry_price * trade.quantity * 100)|abs) }}%</small>
+                            </div>
                         </div>
-                        <div class="text-end">
-                            <strong class="text-success">${{ "%.2f"|format(trade.profit_loss) }}</strong>
-                            <br><small class="text-muted">{{ "%.1f"|format((trade.profit_loss / trade.entry_price * trade.quantity * 100)|abs) }}%</small>
-                        </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
             </div>
@@ -491,16 +493,18 @@
                 </div>
                 <div class="card-body">
                     {% for trade in stats.worst_trades %}
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8f9fa;">
-                        <div>
-                            <strong>{{ trade.symbol }}</strong> - {{ trade.strategy.name if trade.strategy }}
-                            <br><small class="text-muted">{{ trade.entry_date.strftime('%d/%m/%Y') }}</small>
+                    <a class="text-decoration-none text-reset" href="{{ url_for('journal_endpoints.get_trade', id=trade.id) }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8f9fa;">
+                            <div>
+                                <strong>{{ trade.symbol }}</strong> - {{ trade.strategy.name if trade.strategy }}
+                                <br><small class="text-muted">{{ trade.entry_date.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-danger">${{ "%.2f"|format(trade.profit_loss) }}</strong>
+                                <br><small class="text-muted">{{ "%.1f"|format((trade.profit_loss / trade.entry_price * trade.quantity * 100)|abs) }}%</small>
+                            </div>
                         </div>
-                        <div class="text-end">
-                            <strong class="text-danger">${{ "%.2f"|format(trade.profit_loss) }}</strong>
-                            <br><small class="text-muted">{{ "%.1f"|format((trade.profit_loss / trade.entry_price * trade.quantity * 100)|abs) }}%</small>
-                        </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
             </div>

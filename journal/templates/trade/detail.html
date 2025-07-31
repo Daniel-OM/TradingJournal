@@ -375,7 +375,7 @@
                         <div class="info-value" id="entryDate"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Hora de Entrada</div>
+                        <div class="info-label">Hora de Entrada (UTC)</div>
                         <div class="info-value" id="entryTime"></div>
                     </div>
                     <div class="info-item">
@@ -387,7 +387,7 @@
                         <div class="info-value" id="exitDate"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Hora de Salida</div>
+                        <div class="info-label">Hora de Salida (UTC)</div>
                         <div class="info-value" id="exitTime"></div>
                     </div>
                     <div class="info-item">
@@ -548,9 +548,6 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="time-display" id="currentTime">
-                            2024-01-15 09:30:00
-                        </div>
                         <div class="speed-slider">
                             <label class="form-label">Velocidad: <span id="speedValue">1x</span></label>
                             <input type="range" class="form-range" id="speedSlider" min="1" max="10" value="1">
@@ -560,8 +557,7 @@
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Fecha de inicio del replay:</label>
-                        <input type="datetime-local" class="form-control" id="startTime" 
-                                value="2024-01-15T09:30">
+                        <input type="datetime-local" class="form-control" id="startTime">
                     </div>
                     <div class="col-md-6">
                         <button id="resetBtn" class="btn btn-custom mt-4">
@@ -572,36 +568,8 @@
             </div>
 
             <!-- Gráfico Diario -->
-            <div class="chart-container">
-                <h4 class="chart-title">Gráfico Diario</h4>
-                <div class="zoom-controls">
-                    <button class="zoom-btn" onclick="zoomChart('daily', 1.2)">
-                        <i class="fas fa-search-plus"></i>
-                    </button>
-                    <button class="zoom-btn" onclick="zoomChart('daily', 0.8)">
-                        <i class="fas fa-search-minus"></i>
-                    </button>
-                </div>
-                <canvas id="dailyChart" width="800" height="300"></canvas>
-                <div class="loading-spinner" id="dailySpinner">
-                    <div class="spinner-border" role="status"></div>
-                </div>
-            </div>
-
-            <!-- Gráfico Intradía -->
-            <div class="chart-container">
-                <h4 class="chart-title">Gráfico Intradía (1 minuto)</h4>
-                <div class="zoom-controls">
-                    <button class="zoom-btn" onclick="zoomChart('intraday', 1.2)">
-                        <i class="fas fa-search-plus"></i>
-                    </button>
-                    <button class="zoom-btn" onclick="zoomChart('intraday', 0.8)">
-                        <i class="fas fa-search-minus"></i>
-                    </button>
-                </div>
-                <canvas id="intradayChart" width="800" height="300"></canvas>
-                <div class="loading-spinner" id="intradaySpinner">
-                    <div class="spinner-border" role="status"></div>
+            <div class="card">
+                <div class="card-body charts">
                 </div>
             </div>
 
@@ -626,6 +594,7 @@
     <script>
         // Sample trade data - replace with real data from your backend
         const tradeData = JSON.parse('{{ trade_data|tojson }}');
+        window.tradeData = tradeData;
         window.candleData = tradeData['candles'];
         window.transactionData = tradeData['transactions'];
 
@@ -908,23 +877,12 @@
     </script>
 
     <script>
-        // Función global para zoom
-        function zoomChart(chartType, factor) {
-            if (chartType === 'daily') {
-                chart.dailyZoom *= factor;
-                chart.dailyZoom = Math.max(0.5, Math.min(5, chart.dailyZoom));
-            } else {
-                chart.intradayZoom *= factor;
-                chart.intradayZoom = Math.max(0.5, Math.min(5, chart.intradayZoom));
-            }
-            chart.drawCharts();
-        }
-
         // Inicializar la aplicación
         let chart;
         
         // Función para inicializar con datos externos
         function initializeChart(candleData = null, globalTransactionData = null) {
+            console.log(globalTransactionData);
             if (chart) {
                 // Si ya existe un chart, actualizarlo con nuevos datos
                 if (candleData) {
@@ -936,192 +894,16 @@
                 chart.drawCharts();
             } else {
                 // Crear nuevo chart
-                chart = new TradingChart(candleData, globalTransactionData);
+                chart = new TradingChart(document.querySelector('div.charts'), candleData, globalTransactionData, {startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time});
             }
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Verificar si hay datos disponibles en el contexto global
-            const globalCandleData = window.candleData || null;
-            const globalTransactionData = window.transactionData || null;
-            initializeChart(globalCandleData, globalTransactionData);
-            
-            // Configurar responsive
-            window.addEventListener('resize', function() {
-                chart.setupCanvas();
-                chart.drawCharts();
-            });
-
-            // Agregar controles de teclado
-            document.addEventListener('keydown', function(e) {
-                switch(e.code) {
-                    case 'Space':
-                        e.preventDefault();
-                        if (chart.isPlaying) {
-                            chart.pause();
-                        } else {
-                            chart.play();
-                        }
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        chart.nextStep();
-                        break;
-                    case 'Escape':
-                        e.preventDefault();
-                        chart.stop();
-                        break;
-                    case 'KeyR':
-                        if (e.ctrlKey) {
-                            e.preventDefault();
-                            chart.reset();
-                        }
-                        break;
-                }
-            });
-
-            // Agregar interactividad con el mouse para los gráficos
-            [chart.dailyCanvas, chart.intradayCanvas].forEach(canvas => {
-                let isDragging = false;
-                let lastX = 0;
-
-                canvas.addEventListener('mousedown', function(e) {
-                    isDragging = true;
-                    lastX = e.clientX;
-                    canvas.style.cursor = 'grabbing';
-                });
-
-                canvas.addEventListener('mousemove', function(e) {
-                    if (!isDragging) return;
-                    
-                    const deltaX = e.clientX - lastX;
-                    lastX = e.clientX;
-                    
-                    // Simular scroll horizontal (aquí podrías implementar lógica de pan)
-                    console.log('Panning:', deltaX);
-                });
-
-                canvas.addEventListener('mouseup', function() {
-                    isDragging = false;
-                    canvas.style.cursor = 'default';
-                });
-
-                canvas.addEventListener('mouseleave', function() {
-                    isDragging = false;
-                    canvas.style.cursor = 'default';
-                });
-
-                // Zoom con rueda del ratón
-                canvas.addEventListener('wheel', function(e) {
-                    e.preventDefault();
-                    const factor = e.deltaY > 0 ? 0.9 : 1.1;
-                    const chartType = canvas === chart.dailyCanvas ? 'daily' : 'intraday';
-                    zoomChart(chartType, factor);
-                });
-            });
-
-            // Mostrar tooltip informativo
-            showWelcomeTooltip();
+            initializeChart(window.candleData || null, window.transactionData || null);
         });
-
-        function showWelcomeTooltip() {
-            // Crear modal de bienvenida
-            const modal = document.createElement('div');
-            modal.className = 'modal fade';
-            modal.innerHTML = `
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <div class="modal-header border-0">
-                            <h5 class="modal-title">
-                                <i class="fas fa-rocket me-2"></i>¡Bienvenido a Trading Analytics Pro!
-                            </h5>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6><i class="fas fa-keyboard me-2"></i>Atajos de Teclado:</h6>
-                                    <ul class="list-unstyled">
-                                        <li><kbd>Espacio</kbd> - Play/Pause</li>
-                                        <li><kbd>→</kbd> - Siguiente paso</li>
-                                        <li><kbd>Esc</kbd> - Detener</li>
-                                        <li><kbd>Ctrl+R</kbd> - Reiniciar</li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6><i class="fas fa-mouse me-2"></i>Interacciones:</h6>
-                                    <ul class="list-unstyled">
-                                        <li>🖱️ Rueda - Zoom in/out</li>
-                                        <li>🖱️ Arrastrar - Pan (próximamente)</li>
-                                        <li>🔍 Botones - Zoom manual</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="alert alert-light mt-3" role="alert">
-                                <i class="fas fa-lightbulb me-2"></i>
-                                <strong>Tip:</strong> Ajusta la velocidad del replay y observa cómo se actualizan 
-                                las velas y aparecen las transacciones en tiempo real.
-                            </div>
-                        </div>
-                        <div class="modal-footer border-0">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                                <i class="fas fa-play me-2"></i>¡Comenzar Trading!
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
-            
-            // Limpiar modal después de cerrar
-            modal.addEventListener('hidden.bs.modal', function() {
-                document.body.removeChild(modal);
-            });
-        }
-
-        // Funciones de utilidad adicionales
-        function formatPrice(price) {
-            return new Intl.NumberFormat('es-ES', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 2
-            }).format(price);
-        }
-
-        function formatVolume(volume) {
-            if (volume >= 1000000) {
-                return (volume / 1000000).toFixed(1) + 'M';
-            } else if (volume >= 1000) {
-                return (volume / 1000).toFixed(1) + 'K';
-            }
-            return volume.toString();
-        }
-
-        // Funciones para notificaciones
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            notification.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remove después de 5 segundos
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 5000);
-        }
 
         // Exportar funciones para uso global si es necesario
         window.TradingChart = TradingChart;
-        window.zoomChart = zoomChart;
         window.initializeChart = initializeChart;
     </script>
 {% endblock %}

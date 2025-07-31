@@ -55,6 +55,7 @@ class WatchlistEntry(Model):
             'profit_target': self.profit_target,
             'other_notes': self.other_notes,
             'date_exit': self.date_exit,
+            'performance': self.performance.to_dict(),
             'watchlist': {} if 'watchlist' in exclude else self.watchlist.to_dict(exclude=['entries']+exclude),
             'levels': [] if 'levels' in exclude else [l.to_dict(exclude=['entries']+exclude) for l in self.levels],
             'conditions': [] if 'conditions' in exclude else [l.to_dict(exclude=['entries', 'watchlist']+exclude) for l in self.conditions],

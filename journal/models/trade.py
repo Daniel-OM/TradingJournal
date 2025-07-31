@@ -1,11 +1,13 @@
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import pandas as pd
 from sqlalchemy import and_
 
 from .base import Model, db
 from .error import Error, trade_errors
 from .transaction import Transaction
 from .strategy_condition import StrategyCondition
+from .candle import Candle
 
 # Tabla de asociación para la relación muchos a muchos entre Watchlist y Level
 trade_scoring = db.Table('trade_scoring',
@@ -60,7 +62,7 @@ class Trade(Model):
         
         super().__init__(**kwargs)
         
-    def to_dict(self, exclude:list=[]):
+    def to_dict(self, exclude:list=[], equity:bool=False):
         return {
             'id': self.id,
             'entry_date': self.entry_date.isoformat() if self.entry_date else None,
@@ -68,9 +70,9 @@ class Trade(Model):
             'symbol': self.symbol,
             'company_name': self.company_name,
             'entry_price': self.entry_price,
-            'entry_time': self.entry_time,
+            'entry_time': self.entry_time + '+00:00',
             'exit_price': self.exit_price,
-            'exit_time': self.exit_time,
+            'exit_time': self.exit_time + '+00:00',
             'stop_loss': self.stop_loss,
             'take_profit': self.take_profit,
             'quantity': self.quantity,
@@ -88,7 +90,8 @@ class Trade(Model):
             'errors': [] if 'errors' in exclude else [e.to_dict(exclude=['trades']+exclude) for e in self.errors],
             'conditions': [] if 'conditions' in exclude else [c.to_dict(exclude=['trades', 'strategy']+exclude) for c in self.conditions],
             'transactions': [] if 'transactions' in exclude else [c.to_dict(exclude=['trade']+exclude) for c in self.transactions],
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'equity': self.equity_curve() if equity else [],
         }
     
     def add_transaction(self, date, price:float, time, quantity:float, commission:float, type:str):
@@ -228,3 +231,216 @@ class Trade(Model):
     def error_descriptions(self):
         """Lista de descripciones de errores para este trade"""
         return [error.description for error in self.errors]
+        
+    def equity_curve(self, initial_balance: float = 0):
+        if not self.transactions:
+            return []
+
+        # Crear datetime completo para cada transacción
+        def get_transaction_datetime(tx):
+            # Combinar fecha (date) con hora UTC (time)
+            time_str = tx.time or '00:00:00'
+            # Asegurar que tenga formato HH:MM:SS
+            if len(time_str.split(':')) == 2:
+                time_str += ':00'
+            
+            naive_dt = datetime.combine(tx.date, datetime.strptime(time_str, '%H:%M:%S').time())
+            # Convertir a UTC ya que las horas están en UTC
+            return naive_dt.replace(tzinfo=timezone.utc)
+
+        sorted_transactions = sorted(self.transactions, key=get_transaction_datetime)
+
+        # Obtener el rango de tiempo
+        start_datetime = get_transaction_datetime(sorted_transactions[0]) - timedelta(minutes=1)
+        end_datetime = get_transaction_datetime(sorted_transactions[-1]) + timedelta(minutes=1)
+
+        # Buscar candles en el rango (date ya es datetime con UTC)
+        candles = Candle.query.filter(
+            Candle.symbol == self.symbol,
+            Candle.date >= start_datetime,
+            Candle.date <= end_datetime,
+            Candle.timeframe == '1m'
+        ).all()
+
+        if not candles:
+            print(f'No candles data between {start_datetime} and {end_datetime}')
+            return []
+
+        # Preparar DataFrame de candles
+        df_candles = pd.DataFrame([c.to_dict() for c in candles])
+        # date ya es datetime UTC, solo necesitamos asegurar que es datetime
+        df_candles['datetime'] = pd.to_datetime(df_candles['date'], utc=True)
+        df_candles.set_index('datetime', inplace=True)
+        df_candles.sort_index(inplace=True)
+
+        # Crear lista de transacciones con datetime completo
+        transactions_with_dt = []
+        for tx in sorted_transactions:
+            tx_dt = get_transaction_datetime(tx)
+            transactions_with_dt.append({
+                'datetime': tx_dt,
+                'transaction': tx
+            })
+
+        equity_points = []
+        cash_balance = initial_balance  # Dinero en efectivo disponible
+        position = 0  # Cantidad de acciones/contratos
+        avg_price = 0  # Precio promedio de entrada
+        commission_total = 0
+        tx_index = 0
+        
+        # Inicializar current_time
+        current_time = start_datetime # + timedelta(minutes=1)
+
+        while current_time <= end_datetime:
+            # Ejecutar transacciones hasta este momento
+            while tx_index < len(transactions_with_dt):
+                tx_data = transactions_with_dt[tx_index]
+                tx_time = tx_data['datetime']
+                tx = tx_data['transaction']
+                
+                if tx_time > current_time:
+                    break
+
+                commission = tx.commission or 0
+                commission_total += commission
+                cash_balance -= commission  # Las comisiones siempre reducen el cash
+
+                if tx.type == self.trade_type:  # Transacción de entrada (compra para LONG, venta para SHORT)
+                    if self.trade_type == 'LONG':
+                        # COMPRA: gastamos dinero, aumentamos posición
+                        cost = tx.price * tx.quantity
+                        cash_balance -= cost
+                        
+                        if position > 0:
+                            # Recalcular precio promedio ponderado
+                            total_cost = avg_price * position + tx.price * tx.quantity
+                            position += tx.quantity
+                            avg_price = total_cost / position
+                        else:
+                            position = tx.quantity
+                            avg_price = tx.price
+                            
+                    else:  # SHORT
+                        # VENTA EN CORTO: recibimos dinero, aumentamos posición corta
+                        proceeds = tx.price * tx.quantity
+                        cash_balance += proceeds
+                        
+                        if position > 0:
+                            # Recalcular precio promedio ponderado para posición corta
+                            total_proceeds = avg_price * position + tx.price * tx.quantity
+                            position += tx.quantity
+                            avg_price = total_proceeds / position
+                        else:
+                            position = tx.quantity
+                            avg_price = tx.price
+                            
+                else:  # Transacción de salida (venta para LONG, compra para SHORT)
+                    if self.trade_type == 'LONG':
+                        # VENTA: recibimos dinero, reducimos posición
+                        proceeds = tx.price * tx.quantity
+                        cash_balance += proceeds
+                        position -= tx.quantity
+                        
+                    else:  # SHORT
+                        # COMPRA PARA CERRAR CORTO: gastamos dinero, reducimos posición corta
+                        cost = tx.price * tx.quantity
+                        cash_balance -= cost
+                        position -= tx.quantity
+                    
+                    if position <= 0:
+                        position = 0
+                        avg_price = 0
+
+                tx_index += 1
+
+            # Obtener precio actual de las candles
+            current_price = self._get_price_at_time(df_candles, current_time)
+            if current_price is None and avg_price > 0:
+                current_price = avg_price
+
+            # Calcular valor de la posición actual
+            position_value = 0
+            if position > 0 and current_price is not None:
+                if self.trade_type == 'LONG':
+                    # Para LONG: valor = precio_actual * cantidad
+                    position_value = current_price * position
+                else:  # SHORT
+                    # Para SHORT: valor = (precio_entrada - precio_actual) * cantidad + precio_entrada * cantidad
+                    # Simplificado: valor = (2 * precio_entrada - precio_actual) * cantidad
+                    position_value = (2 * avg_price - current_price) * position
+
+            # El balance total es el cash más el valor de la posición
+            total_balance = cash_balance + position_value
+            
+            # PnL realizado es la diferencia entre cash actual e inicial (menos comisiones)
+            realized_pnl = cash_balance - initial_balance
+            
+            # PnL no realizado es el valor de la posición menos lo que costó/se recibió originalmente
+            unrealized_pnl = 0
+            if position > 0 and current_price is not None:
+                if self.trade_type == 'LONG':
+                    unrealized_pnl = (current_price - avg_price) * position
+                else:  # SHORT
+                    unrealized_pnl = (avg_price - current_price) * position
+
+            # Guardar punto de la curva
+            equity_points.append({
+                'datetime': current_time.isoformat(),
+                'date': current_time.date().isoformat(),
+                'time': current_time.time().strftime('%H:%M:%S'),
+                'balance': total_balance,
+                'cash_balance': cash_balance,
+                'position_value': position_value,
+                'realized_pnl': realized_pnl,
+                'unrealized_pnl': unrealized_pnl,
+                'total_pnl': total_balance - initial_balance,
+                'commission': commission_total,
+                'position_size': position,
+                'avg_price': avg_price,
+                'current_price': current_price,
+                'symbol': self.symbol
+            })
+
+            current_time += timedelta(minutes=1)
+
+        return equity_points
+
+    def _get_price_at_time(self, df_candles, target_time):
+        """
+        Obtiene el precio más cercano al tiempo objetivo.
+        
+        Args:
+            df_candles (DataFrame): DataFrame con velas indexado por datetime UTC
+            target_time (datetime): Tiempo objetivo en UTC
+            
+        Returns:
+            float: Precio de cierre más cercano
+        """
+        if df_candles.empty:
+            return None
+        
+        # Asegurar que target_time tiene timezone UTC
+        if target_time.tzinfo is None:
+            target_time = target_time.replace(tzinfo=timezone.utc)
+        
+        try:
+            # Buscar el precio exacto
+            if target_time in df_candles.index:
+                return float(df_candles.loc[target_time, 'close'])
+            
+            # Buscar el precio más cercano (anterior)
+            before = df_candles[df_candles.index <= target_time]
+            if not before.empty:
+                return float(before.iloc[-1]['close'])
+            
+            # Si no hay precios anteriores, usar el siguiente
+            after = df_candles[df_candles.index > target_time]
+            if not after.empty:
+                return float(after.iloc[0]['close'])
+                
+        except Exception as e:
+            print(f"Error getting price at time {target_time}: {e}")
+            pass
+        
+        return None

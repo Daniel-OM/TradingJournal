@@ -526,7 +526,17 @@ class YahooTicker(YahooBase):
         return date.timestamp() if isinstance(date, dt.datetime) else dt.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').timestamp()
 
     def getPrice(self, start:dt.datetime, end:dt.datetime, timeframe:str='1m', df:bool=True) -> list | pd.DataFrame:
-        
+
+        if isinstance(start, dt.datetime):
+            start = start.timestamp()
+        elif isinstance(start, dt.date):
+            start = dt.datetime.combine(start, dt.time(0, 0, 0)).timestamp()
+            
+        if isinstance(end, dt.datetime):
+            end = end.timestamp()
+        elif isinstance(end, dt.date):
+            end = dt.datetime.combine(end, dt.time(23, 59, 59)).timestamp()
+            
         url: str = f'{self.base_url}/v8/finance/chart/{self.ticker}'
         params: dict = {
             'period1': str(int(start)),
@@ -563,7 +573,7 @@ class YahooTicker(YahooBase):
             prices = pd.DataFrame(data=data['chart']['result'][0]['indicators']['quote'][0], 
                                 index=data['chart']['result'][0]['timestamp'])
             prices.index = pd.to_datetime(prices.index, unit='s')
-            prices.index = prices.index.tz_localize(tz).tz_convert('UTC')
+            # prices.index = prices.index.tz_localize(tz).tz_convert('UTC')
             prices['session'] = np.where(prices.index.time < dt.datetime.fromtimestamp(sessions['regular']['start']).time(), 'PRE', 
                                 np.where(dt.datetime.fromtimestamp(sessions['regular']['end']).time() < prices.index.time, 'POST', 'REG'))
             if not df: prices.index = prices.index.strftime('%Y-%m-%d %H:%M:%S')
