@@ -1,0 +1,3559 @@
+{
+    "data": {
+        "52W_High_High_Pct": -21.98,
+        "52W_High_Low": 260.1,
+        "52W_Low_High_Pct": 19.92,
+        "52W_Low_Low": 169.21,
+        "52_week_high": 260.1,
+        "52_week_low": 169.2101,
+        "ATR_(14)": 4.16,
+        "Avg_Volume": 53530000.0,
+        "Beta": 1.1,
+        "Book/sh": 4.43,
+        "CIK": 320193,
+        "Cash/sh": 3.73,
+        "Change Pct": -0.21,
+        "Company": "Apple Inc",
+        "Country": "USA",
+        "Current Ratio": 0.87,
+        "Debt/Eq": 1.54,
+        "Description": "Apple, Inc. engages in the design, manufacture, and sale of smartphones, personal computers, tablets, wearables and accessories, and other varieties of related services. It operates through the following geographical segments: Americas, Europe, Greater China, Japan, and Rest of Asia Pacific. The Americas segment includes North and South America. The Europe segment consists of European countries, as well as India, the Middle East, and Africa. The Greater China segment comprises China, Hong Kong, and Taiwan. The Rest of Asia Pacific segment includes Australia and Asian countries. Its products and services include iPhone, Mac, iPad, AirPods, Apple TV, Apple Watch, Beats products, AppleCare, iCloud, digital content stores, streaming, and licensing services. The company was founded by Steven Paul Jobs, Ronald Gerald Wayne, and Stephen G. Wozniak in April 1976 and is headquartered in Cupertino, CA.",
+        "Dividend_Est._High_Pct": -0.51,
+        "Dividend_Est._Low": 1.03,
+        "Dividend_Ex-Date": "Aug 11, 2025",
+        "Dividend_Gr._3/5Y_High_Pct": 5.5,
+        "Dividend_Gr._3/5Y_Low_Pct": 4.86,
+        "Dividend_TTM_High_Pct": -0.5,
+        "Dividend_TTM_Low": 1.01,
+        "EPS_(ttm)": 6.58,
+        "EPS_Q/Q_Pct": 12.19,
+        "EPS_Y/Y_TTM_Pct": 0.15,
+        "EPS_next_5Y_Pct": 8.49,
+        "EPS_next_Q": 1.75,
+        "EPS_next_Y_Pct": 7.91,
+        "EPS_past_3/5Y_High_Pct": 15.41,
+        "EPS_past_3/5Y_Low_Pct": 2.71,
+        "EPS_this_Y_Pct": 8.95,
+        "EPS/Sales_Surpr._High_Pct": 4.99,
+        "EPS/Sales_Surpr._Low_Pct": 9.18,
+        "EV/EBITDA": 21.58,
+        "EV/Sales": 7.48,
+        "Earnings": "Jul 31 After Market Close",
+        "Employees": 164000,
+        "Enterprise_Value": 3057740000000.0,
+        "Exchange": "NASD",
+        "Forward_P/E": 25.57,
+        "Gross_Margin_Pct": 46.68,
+        "IPO": "Dec 12, 1980",
+        "Income": 99280000000.0,
+        "Index": [
+            "DJIA",
+            "NDX",
+            "S&P 500"
+        ],
+        "Industry": "Consumer Electronics",
+        "Insider_Own_Pct": 0.1,
+        "Insider_Trans_Pct": -1.27,
+        "Inst_Own_Pct": 64.33,
+        "Inst_Trans_Pct": -0.58,
+        "LT_Debt/Eq": 1.25,
+        "Market_Cap": 3011410000000.0,
+        "Oper._Margin_Pct": 31.87,
+        "Option": true,
+        "P/B": 45.8,
+        "P/C": 54.39,
+        "P/E": 30.85,
+        "P/FCF": 31.31,
+        "P/S": 7.37,
+        "PEG": 3.63,
+        "Payout_Pct": 16.11,
+        "Perf_10Y_Pct": 557.87,
+        "Perf_3Y_Pct": 24.87,
+        "Perf_5Y_Pct": 113.51,
+        "Perf_Half_Y_Pct": -11.0,
+        "Perf_Month_Pct": -3.35,
+        "Perf_Quarter_Pct": 2.03,
+        "Perf_Week_Pct": -3.95,
+        "Perf_YTD_Pct": -18.97,
+        "Perf_Year_Pct": -7.07,
+        "Prev_Close": 203.35,
+        "Price": 202.92,
+        "Profit_Margin_Pct": 24.3,
+        "Quick_Ratio": 0.83,
+        "ROA_Pct": 29.94,
+        "ROE_Pct": 149.81,
+        "ROIC_Pct": 66.96,
+        "RSI_(14)": 37.38,
+        "Recom": 1.86,
+        "Rel_Volume": 0.79,
+        "SMA20_Pct": -3.44,
+        "SMA200_Pct": -8.3,
+        "SMA50_Pct": -1.18,
+        "Sales": 408620000000.0,
+        "Sales_Q/Q_Pct": 9.63,
+        "Sales_Y/Y_TTM_Pct": 5.97,
+        "Sales_past_3/5Y_High_Pct": 8.51,
+        "Sales_past_3/5Y_Low_Pct": 2.25,
+        "Sector": "Technology",
+        "Short": true,
+        "Short_Float_Pct": 0.63,
+        "Short_Interest": 93950000.0,
+        "Short_Ratio": 1.75,
+        "Shs_Float": 14920000000.0,
+        "Shs_Outstand": 14940000000.0,
+        "Symbol": "AAPL",
+        "Target Price": 233.35,
+        "Trades": "",
+        "Volatility_High_Pct": 1.73,
+        "Volatility_Low_Pct": 2.84,
+        "Volume": 44155080,
+        "Web": "http://www.apple.com",
+        "address1": "One Apple Park Way",
+        "askPrice": 203.89,
+        "askSize": 1,
+        "askTime": 1754475058000,
+        "author": "Benzinga",
+        "averageVolume": 53775818,
+        "avgAnalystPriceTarget": 235.67733333333334,
+        "avgAnalystRating": 3,
+        "avg_volume": 53775818,
+        "bidPrice": 203.73,
+        "bidSize": 2,
+        "bidTime": 1754475210000,
+        "businessCountryId": "USA",
+        "bzExchange": "NASDAQ",
+        "canonical": "https://www.benzinga.com/quote/AAPL",
+        "cashAndCashEquivalents": 36269000000,
+        "change": 0,
+        "changePercent": 0.43,
+        "change_percent": -0.21,
+        "cik": "320193",
+        "city": "Cupertino",
+        "classificationStandard": "MS",
+        "closeDate": "2025-08-06T17:00:00.000-04:00",
+        "companyId": "0C00000ADA",
+        "companyStandardName": "Apple Inc",
+        "companyStatus": "U",
+        "company_name": "Apple",
+        "conversionRatio": 1,
+        "country": "USA",
+        "countryId": "USA",
+        "currency": "USD",
+        "currencyId": "USD",
+        "currentDebt": 19268000000,
+        "currentRatio": 0.867992,
+        "current_price": 203.8,
+        "dataId": "current_ratio",
+        "dataValue": 1.540126,
+        "dateCreated": "2019-01-01T01:01:01",
+        "dateUpdated": "2025-08-05T11:39:09.336-04:00",
+        "day_range_high": 0,
+        "day_range_low": 0,
+        "description": "Apple, Inc. engages in the design, manufacture, and sale of smartphones, personal computers, tablets, wearables and accessories, and other varieties of related services. It operates through the following geographical segments: Americas, Europe, Greater China, Japan, and Rest of Asia Pacific. The Americas segment includes North and South America. The Europe segment consists of European countries, as well as India, the Middle East, and Africa. The Greater China segment comprises China, Hong Kong, and Taiwan. The Rest of Asia Pacific segment includes Australia and Asian countries. Its products and services include iPhone, Mac, iPad, AirPods, Apple TV, Apple Watch, Beats products, AppleCare, iCloud, digital content stores, streaming, and licensing services. The company was founded by Steven Paul Jobs, Ronald Gerald Wayne, and Stephen G. Wozniak in April 1976 and is headquartered in Cupertino, CA.",
+        "dilutedEpsGrowth1Y": -0.008157,
+        "dividend": 1.04,
+        "dividendYield": 0.51,
+        "dividend_yield": 0,
+        "dxSymbol": "AAPL",
+        "ebitdaMargin": 0.344371,
+        "eps": 6.58,
+        "epsGrowth1Y": -0.008157,
+        "ethPrice": 203.8,
+        "ethTime": 1754475058694,
+        "ethVolume": 61101,
+        "evToEbitda": 21.5796,
+        "exchange": "NASDAQ",
+        "exchangeId": "NAS",
+        "exchangeSubMarketGlobalId": "EX$$$$XNGS",
+        "fax": "+1 408 974-2483",
+        "fiftyDayAveragePrice": 205.33,
+        "fiftyTwoWeekHigh": 260.1,
+        "fiftyTwoWeekLow": 169.2101,
+        "fiscalYearEnd": "9",
+        "forwardDividendYield": 1.04,
+        "forwardPE": 26.0417,
+        "forwardPeRatio": 26.0417,
+        "grossMargin": 0.462063,
+        "groupCode": 31120030,
+        "groupName": "INDUSTRY",
+        "homepage": "https://www.apple.com",
+        "hrefLangs": [
+            {
+                "href": "https://www.benzinga.com/quote/AAPL",
+                "hrefLang": "x-default"
+            },
+            {
+                "href": "https://www.benzinga.com/quote/AAPL",
+                "hrefLang": "en"
+            },
+            {
+                "href": "https://es.benzinga.com/quote/AAPL",
+                "hrefLang": "es"
+            },
+            {
+                "href": "https://it.benzinga.com/quote/AAPL",
+                "hrefLang": "it"
+            },
+            {
+                "href": "https://kr.benzinga.com/quote/AAPL",
+                "hrefLang": "ko"
+            },
+            {
+                "href": "https://jp.benzinga.com/quote/AAPL",
+                "hrefLang": "ja"
+            }
+        ],
+        "hundredDayAveragePrice": 206.05,
+        "image": "https://image-util.benzinga.com/api/v2/logos/file/image/US0378331005/mark_composite_light__9a1c42ab08e0d56eee289ee360e8c1c0.png?height=60&max_width=&width=60&x-bz-cred=sb~ZaDlEQGzi6OWNpvMv49O_fl9PJeSybrKqzCQW4cuXXHs_ijSg2_yYPkYxPauT6zvYtD5WjaM3X3u_bZ-G2yai2Lls0e0JltlbIHIC2vfQ8wtfIEDWiuSUvW5pNevht9L1_Swfr_9bbdZdFRnC4bU_RVZCf4Y&x-bz-exp=1754562511&x-bz-security-isin=US0378331005&x-bz-security-symbol=AAPL&x-bz-signature=95d5f0a2727b30c348693cde44b059fec8a1005d932321fb85ac135527aa578c",
+        "industry": "Consumer Electronics",
+        "industryTemplateCode": "N",
+        "insiders": [
+            {
+                "#Shares": 4486,
+                "#Shares Total": 15533.0,
+                "Cost": 208.19,
+                "Date": "Mon, 12 May 2025 00:00:00 GMT",
+                "Insider Trading": "KONDO CHRIS",
+                "Relationship": "Principal Accounting Officer",
+                "SEC Form 4": "Wed, 14 May 2025 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019325000059/xslF345X05/wk-form4_1747261821.xml",
+                "Transaction": "Sale",
+                "Value ($)": 933955.0
+            },
+            {
+                "#Shares": 4570,
+                "#Shares Total": 4569.0,
+                "Cost": 206.0,
+                "Date": "Wed, 23 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "Parekh Kevan",
+                "Relationship": "Senior Vice President, CFO",
+                "SEC Form 4": "Fri, 25 Apr 2025 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019325000051/xslF345X05/wk-form4_1745620207.xml",
+                "Transaction": "Sale",
+                "Value ($)": 941420.0
+            },
+            {
+                "#Shares": 4570,
+                "#Shares Total": null,
+                "Cost": 199.74,
+                "Date": "Wed, 23 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "KEVAN PAREKH",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 23 Apr 2025 16:22:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000195004725002536/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 912812.0
+            },
+            {
+                "#Shares": 35493,
+                "#Shares Total": 390059.0,
+                "Cost": 224.01,
+                "Date": "Wed, 02 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "WILLIAMS JEFFREY E",
+                "Relationship": "COO",
+                "SEC Form 4": "Thu, 03 Apr 2025 18:33:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019325000045/xslF345X05/wk-form4_1743719610.xml",
+                "Transaction": "Sale",
+                "Value ($)": 7950691.0
+            },
+            {
+                "#Shares": 108136,
+                "#Shares Total": 3280295.0,
+                "Cost": 223.65,
+                "Date": "Wed, 02 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "COOK TIMOTHY D",
+                "Relationship": "Chief Executive Officer",
+                "SEC Form 4": "Thu, 03 Apr 2025 18:32:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019325000043/xslF345X05/wk-form4_1743719531.xml",
+                "Transaction": "Sale",
+                "Value ($)": 24184658.0
+            },
+            {
+                "#Shares": 38822,
+                "#Shares Total": 179158.0,
+                "Cost": 223.67,
+                "Date": "Wed, 02 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "Adams Katherine L.",
+                "Relationship": "SVP, GC and Secretary",
+                "SEC Form 4": "Thu, 03 Apr 2025 18:31:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019325000042/xslF345X05/wk-form4_1743719480.xml",
+                "Transaction": "Sale",
+                "Value ($)": 8683252.0
+            },
+            {
+                "#Shares": 38822,
+                "#Shares Total": null,
+                "Cost": 223.19,
+                "Date": "Wed, 02 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "KATHERINE L ADAMS",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Apr 2025 16:26:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000195004725002338/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 8664682.0
+            },
+            {
+                "#Shares": 35493,
+                "#Shares Total": null,
+                "Cost": 224.01,
+                "Date": "Wed, 02 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "WILLIAMS JEFFREY E",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Apr 2025 16:14:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000196922325000218/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 7950684.0
+            },
+            {
+                "#Shares": 108136,
+                "#Shares Total": null,
+                "Cost": 223.65,
+                "Date": "Wed, 02 Apr 2025 00:00:00 GMT",
+                "Insider Trading": "COOK TIMOTHY D",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Apr 2025 16:12:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000195917325002460/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 24184498.0
+            },
+            {
+                "#Shares": 1516,
+                "#Shares Total": 4159576.0,
+                "Cost": 226.35,
+                "Date": "Mon, 03 Feb 2025 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Tue, 04 Feb 2025 18:33:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019325000019/xslF345X05/wk-form4_1738711997.xml",
+                "Transaction": "Sale",
+                "Value ($)": 343147.0
+            },
+            {
+                "#Shares": 1516,
+                "#Shares Total": null,
+                "Cost": 226.35,
+                "Date": "Mon, 03 Feb 2025 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Mon, 03 Feb 2025 16:18:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000192109425000087/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 343147.0
+            },
+            {
+                "#Shares": 100000,
+                "#Shares Total": 389944.0,
+                "Cost": 249.97,
+                "Date": "Mon, 16 Dec 2024 00:00:00 GMT",
+                "Insider Trading": "WILLIAMS JEFFREY E",
+                "Relationship": "COO",
+                "SEC Form 4": "Wed, 18 Dec 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000132/xslF345X05/wk-form4_1734564614.xml",
+                "Transaction": "Sale",
+                "Value ($)": 24997395.0
+            },
+            {
+                "#Shares": 100000,
+                "#Shares Total": null,
+                "Cost": 249.97,
+                "Date": "Mon, 16 Dec 2024 00:00:00 GMT",
+                "Insider Trading": "WILLIAMS JEFFREY E",
+                "Relationship": "Officer",
+                "SEC Form 4": "Mon, 16 Dec 2024 16:15:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000197314124000617/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 24997440.0
+            },
+            {
+                "#Shares": 75000,
+                "#Shares Total": 4209576.0,
+                "Cost": 228.66,
+                "Date": "Mon, 18 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Tue, 19 Nov 2024 18:31:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000130/xslF345X05/wk-form4_1732059096.xml",
+                "Transaction": "Sale",
+                "Value ($)": 17149500.0
+            },
+            {
+                "#Shares": 75000,
+                "#Shares Total": 4284576.0,
+                "Cost": 224.68,
+                "Date": "Fri, 15 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Tue, 19 Nov 2024 18:31:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000130/xslF345X05/wk-form4_1732059096.xml",
+                "Transaction": "Sale",
+                "Value ($)": 16851000.0
+            },
+            {
+                "#Shares": 50000,
+                "#Shares Total": 4159576.0,
+                "Cost": 229.28,
+                "Date": "Tue, 19 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Tue, 19 Nov 2024 18:31:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000130/xslF345X05/wk-form4_1732059096.xml",
+                "Transaction": "Sale",
+                "Value ($)": 11464000.0
+            },
+            {
+                "#Shares": 4130,
+                "#Shares Total": 15419.0,
+                "Cost": 228.87,
+                "Date": "Mon, 18 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "KONDO CHRIS",
+                "Relationship": "Principal Accounting Officer",
+                "SEC Form 4": "Tue, 19 Nov 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000129/xslF345X05/wk-form4_1732059042.xml",
+                "Transaction": "Sale",
+                "Value ($)": 945233.0
+            },
+            {
+                "#Shares": 50000,
+                "#Shares Total": null,
+                "Cost": 229.28,
+                "Date": "Tue, 19 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Tue, 19 Nov 2024 17:04:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000192109424001434/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 11464127.0
+            },
+            {
+                "#Shares": 75000,
+                "#Shares Total": null,
+                "Cost": 228.66,
+                "Date": "Mon, 18 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Mon, 18 Nov 2024 16:03:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000192109424001420/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 17149334.0
+            },
+            {
+                "#Shares": 75000,
+                "#Shares Total": null,
+                "Cost": 224.68,
+                "Date": "Fri, 15 Nov 2024 00:00:00 GMT",
+                "Insider Trading": "LEVINSON ARTHUR D",
+                "Relationship": "Director",
+                "SEC Form 4": "Fri, 15 Nov 2024 16:31:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000192109424001407/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 16850931.0
+            },
+            {
+                "#Shares": 59305,
+                "#Shares Total": 107788.0,
+                "Cost": 226.52,
+                "Date": "Fri, 04 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "Maestri Luca",
+                "Relationship": "Senior Vice President, CFO",
+                "SEC Form 4": "Tue, 08 Oct 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000114/xslF345X05/wk-form4_1728426607.xml",
+                "Transaction": "Sale",
+                "Value ($)": 13433769.0
+            },
+            {
+                "#Shares": 59305,
+                "#Shares Total": null,
+                "Cost": 225.67,
+                "Date": "Fri, 04 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "Luca Maestri",
+                "Relationship": "Officer",
+                "SEC Form 4": "Fri, 04 Oct 2024 17:04:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000195824424005135/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 13383359.0
+            },
+            {
+                "#Shares": 59730,
+                "#Shares Total": 489944.0,
+                "Cost": 226.86,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "WILLIAMS JEFFREY E",
+                "Relationship": "COO",
+                "SEC Form 4": "Thu, 03 Oct 2024 18:31:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000112/xslF345X05/wk-form4_1727994654.xml",
+                "Transaction": "Sale",
+                "Value ($)": 13550148.0
+            },
+            {
+                "#Shares": 61019,
+                "#Shares Total": 187043.0,
+                "Cost": 226.2,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "Adams Katherine L.",
+                "Relationship": "SVP, GC and Secretary",
+                "SEC Form 4": "Thu, 03 Oct 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000110/xslF345X05/wk-form4_1727994634.xml",
+                "Transaction": "Sale",
+                "Value ($)": 13802297.0
+            },
+            {
+                "#Shares": 223986,
+                "#Shares Total": 3280180.0,
+                "Cost": 224.46,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "COOK TIMOTHY D",
+                "Relationship": "Chief Executive Officer",
+                "SEC Form 4": "Thu, 03 Oct 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000109/xslF345X05/wk-form4_1727994624.xml",
+                "Transaction": "Sale",
+                "Value ($)": 50276355.0
+            },
+            {
+                "#Shares": 61019,
+                "#Shares Total": 136572.0,
+                "Cost": 226.87,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "O'BRIEN DEIRDRE",
+                "Relationship": "Senior Vice President",
+                "SEC Form 4": "Thu, 03 Oct 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000108/xslF345X05/wk-form4_1727994612.xml",
+                "Transaction": "Sale",
+                "Value ($)": 13843382.0
+            },
+            {
+                "#Shares": 61019,
+                "#Shares Total": null,
+                "Cost": 226.21,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "KATHERINE L ADAMS",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Oct 2024 16:20:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000195004724007542/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 13803108.0
+            },
+            {
+                "#Shares": 59730,
+                "#Shares Total": null,
+                "Cost": 225.89,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "WILLIAMS JEFFREY E",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Oct 2024 16:17:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000197314124000479/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 13492410.0
+            },
+            {
+                "#Shares": 223986,
+                "#Shares Total": null,
+                "Cost": 224.46,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "COOK TIMOTHY D",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Oct 2024 16:05:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000195917324006827/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 50276077.0
+            },
+            {
+                "#Shares": 61019,
+                "#Shares Total": null,
+                "Cost": 225.89,
+                "Date": "Wed, 02 Oct 2024 00:00:00 GMT",
+                "Insider Trading": "O'BRIEN DEIRDRE",
+                "Relationship": "Officer",
+                "SEC Form 4": "Wed, 02 Oct 2024 16:05:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000197314124000478/xsl144X01/primary_doc.xml",
+                "Transaction": "Proposed Sale",
+                "Value ($)": 13783581.0
+            },
+            {
+                "#Shares": 8706,
+                "#Shares Total": 15419.0,
+                "Cost": 225.0,
+                "Date": "Thu, 15 Aug 2024 00:00:00 GMT",
+                "Insider Trading": "KONDO CHRIS",
+                "Relationship": "Principal Accounting Officer",
+                "SEC Form 4": "Mon, 19 Aug 2024 18:30:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000088/xslF345X05/wk-form4_1724106610.xml",
+                "Transaction": "Sale",
+                "Value ($)": 1958850.0
+            },
+            {
+                "#Shares": 5178,
+                "#Shares Total": 24125.0,
+                "Cost": 216.5,
+                "Date": "Fri, 09 Aug 2024 00:00:00 GMT",
+                "Insider Trading": "KONDO CHRIS",
+                "Relationship": "Principal Accounting Officer",
+                "SEC Form 4": "Tue, 13 Aug 2024 19:02:00 GMT",
+                "SEC URL": "http://www.sec.gov/Archives/edgar/data/320193/000032019324000086/xslF345X05/wk-form4_1723590126.xml",
+                "Transaction": "Sale",
+                "Value ($)": 1121037.0
+            }
+        ],
+        "investmentId": "E0USA002US",
+        "investmentPrimaryIssuer": true,
+        "ipoDate": "1980-12-12",
+        "ipoOfferPrice": 28.75,
+        "isDepositaryReceipt": false,
+        "isDirectInvest": false,
+        "isDividendReinvest": false,
+        "isLimitedLiabilityCompany": false,
+        "isLimitedPartnership": false,
+        "isPrimaryShare": true,
+        "isPrimaryShare1031": true,
+        "isReit": false,
+        "isin": "CA03785Y1007",
+        "isoExchange": "XNAS",
+        "issuerName": "Apple Inc",
+        "issuerShortName": "Apple",
+        "language": "en",
+        "lastTradePrice": 203.8,
+        "lastTradeTime": 1754475058694,
+        "last_trade_time": 1754475058694,
+        "last_updated": "2025-08-06T12:30:24.550471",
+        "legalName": "Apple Inc",
+        "longDescription": "Apple is among the largest companies in the world, with a broad portfolio of hardware and software products targeted at consumers and businesses. Apple's iPhone makes up a majority of the firm sales, and Apple's other products like Mac, iPad, and Watch are designed around the iPhone as the focal point of an expansive software ecosystem. Apple has progressively worked to add new applications, like streaming video, subscription bundles, and augmented reality. The firm designs its own software and semiconductors while working with subcontractors like Foxconn and TSMC to build its products and chips. Slightly less than half of Apple's sales come directly through its flagship stores, with a majority of sales coming indirectly through partnerships and distribution.",
+        "longTermDebt": 82430000000,
+        "marketCap": 3061498477400,
+        "marketDataId": "126.1.AAPL",
+        "market_cap": 3061498477400,
+        "mean": 5.31,
+        "median": 1.5,
+        "mic": "XNAS",
+        "msGroupCode": 31120,
+        "msGroupName": "Hardware",
+        "msIndustryCode": 31120030,
+        "msIndustryName": "Consumer Electronics",
+        "msSectorCode": 311,
+        "msSectorName": "Technology",
+        "msSuperSectorCode": 3,
+        "msSuperSectorName": "Sensitive",
+        "naics": "334220",
+        "naicsName": "Radio & Television Broadcasting & Wireless Equip.",
+        "name": "Apple",
+        "news": [
+            {
+                "Date": "2025-08-06 05:30:00",
+                "Header": "With Apple Starting to See iPhone Sales Momentum, Is Now the Time to Buy the Stock?",
+                "Source": "(Motley Fool)",
+                "URL": "/news/129388/with-apple-starting-to-see-iphone-sales-momentum-is-now-the-time-to-buy-the-stock"
+            },
+            {
+                "Date": "2025-08-06 04:59:00",
+                "Header": "In-Vehicle Apps Market Growth Trends and Competitive Strategies Report 2025-2033 | Apple, Google, Microsoft, Toyota, and Others Prioritize Innovation and Interoperability in Auto Tech Advancements",
+                "Source": "(GlobeNewswire)",
+                "URL": "https://finance.yahoo.com/news/vehicle-apps-market-growth-trends-085900559.html"
+            },
+            {
+                "Date": "2025-08-06 04:56:00",
+                "Header": "Disneys ESPN to Buy NFL Network, Other Assets in Stock Swap",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/disney-espn-buy-nfl-network-001024438.html"
+            },
+            {
+                "Date": "2025-08-06 03:00:00",
+                "Header": "Trump Says Japan to Import Fords Huge F-150 Pickup Trucks",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/trump-says-japan-import-ford-070039056.html"
+            },
+            {
+                "Date": "2025-08-05 22:29:00",
+                "Header": "OpenAI in Talks for Share Sale at $500 Billion Valuation",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/openai-talks-share-sale-500-022951794.html"
+            },
+            {
+                "Date": "2025-08-05 20:00:00",
+                "Header": "Down 19% This Year, Has Apple Stock Become a Bargain Buy?",
+                "Source": "(Motley Fool)",
+                "URL": "/news/129139/down-19-this-year-has-apple-stock-become-a-bargain-buy"
+            },
+            {
+                "Date": "2025-08-05 17:07:00",
+                "Header": "Apple supplier Skyworks forecasts upbeat quarterly results on strong chip demand",
+                "Source": "(Reuters)",
+                "URL": "https://finance.yahoo.com/news/apple-supplier-skyworks-forecasts-upbeat-210749444.html"
+            },
+            {
+                "Date": "2025-08-05 16:26:00",
+                "Header": "Meta vs. Alphabet Stock: The Case for Buying One, Not the Other",
+                "Source": "(Barrons.com)",
+                "URL": "https://www.barrons.com/articles/facebook-google-meta-alphabet-stock-e5288ddc?mod=bar_FV"
+            },
+            {
+                "Date": "2025-08-05 16:19:00",
+                "Header": "Companies Are Sounding Ebullient on Trump's Tax Law. Tariffs Could Be a Killer.",
+                "Source": "(Barrons.com)",
+                "URL": "https://www.barrons.com/articles/companies-trump-tax-law-tariffs-8eed2fd9?mod=bar_FV"
+            },
+            {
+                "Date": "2025-08-05 15:34:00",
+                "Header": "Tariffs are denting profits, and maybe soon your portfolio",
+                "Source": "(Yahoo Finance)",
+                "URL": "https://finance.yahoo.com/news/tariffs-are-denting-profits-and-maybe-soon-your-portfolio-193421778.html"
+            },
+            {
+                "Date": "2025-08-05 15:34:00",
+                "Header": "Commentary: Tariffs are denting profits, and maybe soon your portfolio",
+                "Source": "(Yahoo Finance)",
+                "URL": "https://finance.yahoo.com/news/commentary-tariffs-are-denting-profits-and-maybe-soon-your-portfolio-193421241.html"
+            },
+            {
+                "Date": "2025-08-05 14:22:00",
+                "Header": "Final Trades: Apple, PG&E, MercadoLibre and XLI",
+                "Source": "(CNBC TV)",
+                "URL": "https://www.youtube.com/watch?v=t2dOzWR2fQo"
+            },
+            {
+                "Date": "2025-08-05 14:20:00",
+                "Header": "Apple (AAPL) May Take a $10B Hit From Google Ruling, Yet Analyst Sees Upside",
+                "Source": "(Insider Monkey)",
+                "URL": "/news/128683/apple-aapl-may-take-a-10b-hit-from-google-ruling-yet-analyst-sees-upside"
+            },
+            {
+                "Date": "2025-08-05 13:39:00",
+                "Header": "Foxconn to sell former car factory in Ohio for $375m",
+                "Source": "(Just Auto)",
+                "URL": "https://finance.yahoo.com/m/1841ed23-5fdc-3eaf-b9dc-c8641e7d7feb/foxconn-to-sell-former-car.html"
+            },
+            {
+                "Date": "2025-08-05 12:39:00",
+                "Header": "TSMC Stock Slips On Suspected Trade Secrets Theft",
+                "Source": "(Investor's Business Daily)",
+                "URL": "https://finance.yahoo.com/m/a44ac374-3428-3346-a651-ffb809e035aa/tsmc-stock-slips-on-suspected.html"
+            },
+            {
+                "Date": "2025-08-05 11:45:00",
+                "Header": "Jim Cramer on Apple: \"Own it, Don't Trade It\"",
+                "Source": "(Insider Monkey)",
+                "URL": "/news/128431/jim-cramer-on-apple-own-it-dont-trade-it"
+            },
+            {
+                "Date": "2025-08-05 11:17:00",
+                "Header": "Figmas CEO is now worth $5 billion after IPO. Like Mark Zuckerberg, he dropped out of college to build a tech empire instead of sitting in class",
+                "Source": "(Fortune)",
+                "URL": "https://finance.yahoo.com/news/figma-ceo-now-worth-5-151742597.html"
+            },
+            {
+                "Date": "2025-08-05 11:00:00",
+                "Header": "ULTRALOQ Makes First Apple Home Key-Compatible Smart Lock",
+                "Source": "(PR Newswire)",
+                "URL": "https://finance.yahoo.com/news/ultraloq-makes-first-apple-home-150000150.html"
+            },
+            {
+                "Date": "2025-08-05 10:02:00",
+                "Header": "Australia regulator says YouTube, others 'turning a blind eye' to child abuse material",
+                "Source": "(Reuters)",
+                "URL": "https://finance.yahoo.com/m/8ac863ce-a10e-37ad-8be7-a4b16ab09300/australia-regulator-says.html"
+            },
+            {
+                "Date": "2025-08-05 09:45:00",
+                "Header": "Are You a Growth Investor? This 1 Stock Could Be the Perfect Pick",
+                "Source": "(Zacks)",
+                "URL": "/news/128330/are-you-a-growth-investor-this-1-stock-could-be-the-perfect-pick"
+            },
+            {
+                "Date": "2025-08-05 09:26:00",
+                "Header": "Why Apple Might Be the Most Overlooked AI Play in the Market",
+                "Source": "(Barchart)",
+                "URL": "https://finance.yahoo.com/m/18e8ef4f-f592-3cb4-94a8-e994e09453a3/why-apple-might-be-the-most.html"
+            },
+            {
+                "Date": "2025-08-05 09:15:00",
+                "Header": "3 Stocks to Hold for 20 Years",
+                "Source": "(Motley Fool)",
+                "URL": "/news/128079/3-stocks-to-hold-for-20-years"
+            },
+            {
+                "Date": "2025-08-05 09:00:00",
+                "Header": "Is Trending Stock Apple Inc. (AAPL) a Buy Now?",
+                "Source": "(Zacks)",
+                "URL": "/news/128138/is-trending-stock-apple-inc-aapl-a-buy-now"
+            },
+            {
+                "Date": "2025-08-05 08:30:00",
+                "Header": "IBN Initiates Coverage of Wearable Devices Ltd. (NASDAQ: WLDS)",
+                "Source": "(GlobeNewswire)",
+                "URL": "https://finance.yahoo.com/news/ibn-initiates-coverage-wearable-devices-123000448.html"
+            },
+            {
+                "Date": "2025-08-05 07:50:00",
+                "Header": "Any of these 8 tech stocks could become a $5 trillion company before Nvidia does",
+                "Source": "(MarketWatch)",
+                "URL": "https://www.marketwatch.com/story/any-of-these-8-tech-stocks-could-become-a-5-trillion-company-before-nvidia-does-1c3d00c3?mod=mw_FV"
+            },
+            {
+                "Date": "2025-08-05 07:22:00",
+                "Header": "Do You Believe in Apple's (AAPL) Long-Term Compelling Value Proposition?",
+                "Source": "(Insider Monkey)",
+                "URL": "/news/127713/do-you-believe-in-apples-aapl-long-term-compelling-value-proposition"
+            },
+            {
+                "Date": "2025-08-05 07:10:00",
+                "Header": "A Major Shake-Up Is Coming to Berkshire Hathaway This Year. Here's Why I'm Still All In on the Stock",
+                "Source": "(Motley Fool)",
+                "URL": "/news/127722/a-major-shake-up-is-coming-to-berkshire-hathaway-this-year-heres-why-im-still-all-in-on-the-stock"
+            },
+            {
+                "Date": "2025-08-05 06:46:00",
+                "Header": "Steve Jobs Once Said Making Something Great Doesn't Require 'More Energy' Or 'More Money,' But Does Require This One Skill In Abundance",
+                "Source": "(Benzinga)",
+                "URL": "https://finance.yahoo.com/news/steve-jobs-once-said-making-104604281.html"
+            },
+            {
+                "Date": "2025-08-05 06:22:00",
+                "Header": "These Were the 5 Biggest Companies in 1999, and Here Are the 5 Biggest Companies Now",
+                "Source": "(Motley Fool)",
+                "URL": "/news/127593/these-were-the-5-biggest-companies-in-1999-and-here-are-the-5-biggest-companies-now"
+            },
+            {
+                "Date": "2025-08-05 06:20:00",
+                "Header": "Taiwan Arrests Six in Probe of TSMC Chip Technology Leak",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/tsmc-discovers-potential-leak-advanced-055322622.html"
+            },
+            {
+                "Date": "2025-08-05 05:55:00",
+                "Header": "Apple (AAPL) Reiterated as Hold by Jefferies Amid iPhone 17 Price Hike Expectations",
+                "Source": "(Insider Monkey)",
+                "URL": "/news/127536/apple-aapl-reiterated-as-hold-by-jefferies-amid-iphone-17-price-hike-expectations"
+            },
+            {
+                "Date": "2025-08-05 04:00:00",
+                "Header": "Bull of the Day: Netflix, Inc. (NFLX)",
+                "Source": "(Zacks)",
+                "URL": "/news/127514/bull-of-the-day-netflix-inc-nflx"
+            },
+            {
+                "Date": "2025-08-05 03:47:00",
+                "Header": "Nvidia Partner Hon Hais July Sales Growth Weakened by Tariffs",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/nvidia-partner-hon-hai-july-074732604.html"
+            },
+            {
+                "Date": "2025-08-05 00:34:00",
+                "Header": "1 S&P 500 Stock to Target This Week and 2 We Find Risky",
+                "Source": "(StockStory)",
+                "URL": "/news/127484/1-sp-500-stock-to-target-this-week-and-2-we-find-risky"
+            },
+            {
+                "Date": "2025-08-04 20:19:00",
+                "Header": "The Mag 7 stocks can't be beat, the numbers speak for themselves, says Jim Cramer",
+                "Source": "(CNBC TV)",
+                "URL": "https://www.youtube.com/watch?v=T8jjmNrRKeU"
+            },
+            {
+                "Date": "2025-08-04 19:31:00",
+                "Header": "Warren Buffett's Advice: 'If You Aren't Willing To Own A Stock For Ten Years, Don't Even Think About Owning It For Ten Minutes'",
+                "Source": "(Benzinga)",
+                "URL": "https://finance.yahoo.com/news/warren-buffetts-advice-arent-willing-233102952.html"
+            },
+            {
+                "Date": "2025-08-04 19:30:00",
+                "Header": "Trump Vows to Ramp Up India Tariffs in\u00a0Escalation of Russia Spat",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/trump-vows-ramp-india-tariffs-233019083.html"
+            },
+            {
+                "Date": "2025-08-04 18:25:00",
+                "Header": "Apple Forms In-House AI Chatbot Team to Rival ChatGPT",
+                "Source": "(GuruFocus.com)",
+                "URL": "https://finance.yahoo.com/news/apple-forms-house-ai-chatbot-222518877.html"
+            },
+            {
+                "Date": "2025-08-04 17:39:00",
+                "Header": "Why Apple Stock Lagged the Market on Monday",
+                "Source": "(Motley Fool)",
+                "URL": "/news/127091/why-apple-stock-lagged-the-market-on-monday"
+            },
+            {
+                "Date": "2025-08-04 16:55:00",
+                "Header": "Apple Posts Strongest Growth Since 2021 on iPhone Sales",
+                "Source": "(GuruFocus.com)",
+                "URL": "https://finance.yahoo.com/news/apple-posts-strongest-growth-since-205530294.html"
+            },
+            {
+                "Date": "2025-08-04 16:19:00",
+                "Header": "Apple CEO Tim Cook to staff: AI is 'ours to grab'",
+                "Source": "(CNBC TV)",
+                "URL": "https://www.youtube.com/watch?v=f8mCYlpXtRQ"
+            },
+            {
+                "Date": "2025-08-04 16:16:00",
+                "Header": "LINK Rebounds 4% as Chainlink Roll Outs Data Streams for U.S. Equities and ETFs",
+                "Source": "(CoinDesk)",
+                "URL": "https://finance.yahoo.com/m/efdb932a-ed26-33d4-baf3-338222328490/link-rebounds-4%25-as-chainlink.html"
+            },
+            {
+                "Date": "2025-08-04 15:58:00",
+                "Header": "Apple Stock: Time To Buy Or Sell? What Investors Need To Know.",
+                "Source": "(Investor's Business Daily)",
+                "URL": "https://finance.yahoo.com/m/041cba70-56dc-32af-8e9b-0e08f8c42cde/apple-stock%3A-time-to-buy-or.html"
+            },
+            {
+                "Date": "2025-08-04 14:38:00",
+                "Header": "Apple CEO Tells Staff AI 'Ours to Grab'",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/video/apple-ceo-tells-staff-ai-183820852.html"
+            },
+            {
+                "Date": "2025-08-04 14:28:00",
+                "Header": "Palantirs Ultra-Expensive Valuation Sparks Worry Into Results",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/palantir-ultra-expensive-valuation-sparks-103000777.html"
+            },
+            {
+                "Date": "2025-08-04 13:19:00",
+                "Header": "Apple's AI Acquisition Targets",
+                "Source": "(CNBC TV)",
+                "URL": "https://www.youtube.com/watch?v=-Sq6kx8HIjE"
+            },
+            {
+                "Date": "2025-08-04 12:33:00",
+                "Header": "DET-IX Enhances Infrastructure with Arista 7060X5 Series Switches",
+                "Source": "(PR Newswire)",
+                "URL": "https://finance.yahoo.com/news/det-ix-enhances-infrastructure-arista-163300599.html"
+            },
+            {
+                "Date": "2025-08-04 12:02:00",
+                "Header": "Dan Morehead assembled his Princeton mafia to pile into Bitcoin at $65 in 2013, leaving his Wall Street career behind to build a $5 billion crypto fund",
+                "Source": "(Fortune)",
+                "URL": "https://finance.yahoo.com/news/dan-morehead-assembled-princeton-mafia-160217888.html"
+            },
+            {
+                "Date": "2025-08-04 10:49:00",
+                "Header": "Disney Stock Before Q3 Earnings: Buy Now or Wait for Results?",
+                "Source": "(Zacks)",
+                "URL": "/news/126618/disney-stock-before-q3-earnings-buy-now-or-wait-for-results"
+            },
+            {
+                "Date": "2025-08-04 10:30:00",
+                "Header": "BC-Most Active Stocks",
+                "Source": "(Associated Press Finance)",
+                "URL": "https://finance.yahoo.com/news/bc-most-active-stocks-143019054.html"
+            },
+            {
+                "Date": "2025-08-04 09:57:00",
+                "Header": "Trump to Name New Fed Governor, BLS Head in Coming Days",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/trump-name-fed-governor-jobs-011610801.html"
+            },
+            {
+                "Date": "2025-08-04 09:45:00",
+                "Header": "Berkshire Earnings Key Takeaways: Strong Profit, No Buybacks, and a Falling Stock",
+                "Source": "(Barrons.com)",
+                "URL": "https://www.barrons.com/articles/berkshire-buffett-stock-price-earnings-key-takeaways-db5178e2?mod=bar_FV"
+            },
+            {
+                "Date": "2025-08-04 09:26:00",
+                "Header": "Why the Opendoor Stock Surge is a Red Flag for Investors: Meme Stocks and Market Euphoria",
+                "Source": "(Barchart)",
+                "URL": "https://finance.yahoo.com/m/2cf2a2f4-6c57-3484-a40f-44342a0f0b6d/why-the-opendoor-stock-surge.html"
+            },
+            {
+                "Date": "2025-08-04 09:15:00",
+                "Header": "Apple (AAPL) International Revenue in Focus: Trends and Expectations",
+                "Source": "(Zacks)",
+                "URL": "/news/126401/apple-aapl-international-revenue-in-focus-trends-and-expectations"
+            },
+            {
+                "Date": "2025-08-04 09:00:00",
+                "Header": "SquareX Researchers Reaffirms their Browser Security Thought Leadership with Multiple Vulnerability Disclosures in Key Black Hat and DEF CON 33 Talks",
+                "Source": "(PR Newswire)",
+                "URL": "https://finance.yahoo.com/news/squarex-researchers-reaffirms-browser-security-130000136.html"
+            },
+            {
+                "Date": "2025-08-04 08:50:00",
+                "Header": "Is AAPL Stock a Buy Now as Tim Cook Vows to Win in the AI Race?",
+                "Source": "(Barchart)",
+                "URL": "https://finance.yahoo.com/m/37423667-e6a5-3158-acba-810edb4790e7/is-aapl-stock-a-buy-now-as.html"
+            },
+            {
+                "Date": "2025-08-04 08:09:00",
+                "Header": "Invest with Confidence: Intrinsic Value Unveiled of Apple Inc",
+                "Source": "(GuruFocus.com)",
+                "URL": "https://finance.yahoo.com/news/invest-confidence-intrinsic-value-unveiled-120956069.html"
+            },
+            {
+                "Date": "2025-08-04 08:00:00",
+                "Header": "Synchron Debuts First Thought-Controlled iPad Experience Using Apples New BCI Human Interface Device Protocol",
+                "Source": "(Business Wire Videos)",
+                "URL": "https://finance.yahoo.com/video/synchron-debuts-first-thought-controlled-120000661.html"
+            },
+            {
+                "Date": "2025-08-04 08:00:00",
+                "Header": "Chainlink Launches Data Streams for U.S. Equities and ETFs To Power Secure Tokenized RWA Markets Onchain",
+                "Source": "(PR Newswire)",
+                "URL": "https://finance.yahoo.com/news/chainlink-launches-data-streams-u-120000020.html"
+            },
+            {
+                "Date": "2025-08-04 07:45:00",
+                "Header": "Palantir is Now a Top-21 Company by Market Cap. What Would It Take for PLTR Stock to Be Number 1?",
+                "Source": "(Barchart)",
+                "URL": "https://finance.yahoo.com/m/387c6d58-3e95-33a5-9ef1-cd2fe3159315/palantir-is-now-a-top-21.html"
+            },
+            {
+                "Date": "2025-08-04 06:00:00",
+                "Header": "These 3 stocks are 'great buying opportunities,' CIO says",
+                "Source": "(Yahoo Finance Video)",
+                "URL": "https://finance.yahoo.com/video/3-stocks-great-buying-opportunities-100050807.html"
+            },
+            {
+                "Date": "2025-08-04 04:45:00",
+                "Header": "Foxconn sells Lordstown car factory for $375 million",
+                "Source": "(Reuters)",
+                "URL": "https://finance.yahoo.com/news/foxconn-sells-lordstown-facility-88-084529228.html"
+            },
+            {
+                "Date": "2025-08-04 04:02:00",
+                "Header": "Green Electronics Manufacturing Market Report 2025: Green Electronics Market to Hit $46.53 Billion by 2029",
+                "Source": "(GlobeNewswire)",
+                "URL": "https://finance.yahoo.com/news/green-electronics-manufacturing-market-report-080200870.html"
+            },
+            {
+                "Date": "2025-08-04 04:00:00",
+                "Header": "He tried building smartphones in the US over a decade ago. He has advice for companies trying it today",
+                "Source": "(CNN Business)",
+                "URL": "https://finance.yahoo.com/m/2dd6cc14-e0da-3ff1-b84f-b36a86349d87/he-tried-building-smartphones.html"
+            },
+            {
+                "Date": "2025-08-03 22:29:00",
+                "Header": "Tariff-driven pull-ins boost Apple, but momentum may fade in 2H25",
+                "Source": "(DigiTimes)",
+                "URL": "https://www.digitimes.com/news/a20250804PD200/apple-2025-sales-iphone-performance.html"
+            },
+            {
+                "Date": "2025-08-03 17:49:00",
+                "Header": "Apple might be building its own AI answer engine",
+                "Source": "(TechCrunch)",
+                "URL": "https://finance.yahoo.com/news/apple-might-building-own-ai-214900610.html"
+            },
+            {
+                "Date": "2025-08-03 17:03:00",
+                "Header": "Apple CEO drops bombshell about its future",
+                "Source": "(TheStreet)",
+                "URL": "https://finance.yahoo.com/m/2d3fa77d-c900-37b2-964d-126fd49921cd/apple-ceo-drops-bombshell.html"
+            },
+            {
+                "Date": "2025-08-03 15:13:00",
+                "Header": "Warren Buffett's Advice: 'If You Aren't Willing To Own A Stock For Ten Years, Don't Even Think About Owning It For Ten Minutes'",
+                "Source": "(Benzinga)",
+                "URL": "https://finance.yahoo.com/news/warren-buffetts-advice-arent-willing-191310791.html"
+            },
+            {
+                "Date": "2025-08-03 13:57:00",
+                "Header": "Berkshire Earnings Key Takeaways: Strong Profit, No Buybacks, High Cash Levels",
+                "Source": "(Barrons.com)",
+                "URL": "https://www.barrons.com/articles/berkshire-buffett-earnings-key-takeaways-db5178e2?mod=bar_FV"
+            },
+            {
+                "Date": "2025-08-03 13:35:00",
+                "Header": "Xiaomi's entry into the Smartglasses market clearly challenges Meta's current glasses and puts pressure on Apple's 2026 entry",
+                "Source": "(Patently Apple)",
+                "URL": "https://www.patentlyapple.com/2025/08/xiaomis-entry-into-the-smartglasses-market-clearly-challenges-metas-current-glasses-and-puts-pressure-on-apples-2026.html"
+            },
+            {
+                "Date": "2025-08-03 12:13:00",
+                "Header": "Gurman: Apple's New 'Answers' Team Eyes ChatGPT-Like Product in AI Push",
+                "Source": "(Patently Apple)",
+                "URL": "https://www.patentlyapple.com/2025/08/gurman-apples-new-answers-team-eyes-chatgpt-like-product-in-ai-push.html"
+            },
+            {
+                "Date": "2025-08-03 11:55:00",
+                "Header": "Steve Jobs Dreamed it. Elon Musk Is Making it Fruitful.",
+                "Source": "(InvestorPlace)",
+                "URL": "https://investorplace.com/hypergrowthinvesting/2025/08/steve-jobs-elon-musk-and-the-most-lucrative-invention-of-the-century/"
+            },
+            {
+                "Date": "2025-08-03 11:00:00",
+                "Header": "The Fate of a Little-Known Company Behind Goldman's Apple Card Is in Limbo",
+                "Source": "(The Wall Street Journal)",
+                "URL": "https://www.wsj.com/finance/apple-card-corecard-leland-strange-ff5ac7da?mod=wsj_FV"
+            },
+            {
+                "Date": "2025-08-03 10:00:00",
+                "Header": "Mag 7 Plans to 'FOMO' Into $650B Tech Investment Despite Trump's U.S. Manufacturing Push",
+                "Source": "(CoinDesk)",
+                "URL": "https://finance.yahoo.com/m/b4ddd246-c65c-37cb-a6f5-cc7550cbcec4/mag-7-plans-to-%27fomo%27-into.html"
+            },
+            {
+                "Date": "2025-08-03 09:00:00",
+                "Header": "'Tariffs are starting to bite': Latest inflation, jobs data sparks Wall Street concern over US economy",
+                "Source": "(Yahoo Finance)",
+                "URL": "https://finance.yahoo.com/news/tariffs-are-starting-to-bite-latest-inflation-jobs-data-sparks-wall-street-concern-over-us-economy-130011283.html"
+            },
+            {
+                "Date": "2025-08-03 07:20:00",
+                "Header": "Apple's Innovation Slows as Valuation Stays Rich",
+                "Source": "(GuruFocus.com)",
+                "URL": "https://finance.yahoo.com/news/apples-innovation-slows-valuation-stays-112036116.html"
+            },
+            {
+                "Date": "2025-08-03 07:05:00",
+                "Header": "JPMorgan breaks down how the DOJ-Google case could impact Apples bottom line",
+                "Source": "(Investing.com)",
+                "URL": "https://finance.yahoo.com/news/jpmorgan-breaks-down-doj-google-110501945.html"
+            },
+            {
+                "Date": "2025-08-03 06:45:00",
+                "Header": "My mom, 73, was scammed out of $8K by someone claiming to be a tech billionaire. How do I help her get through this?",
+                "Source": "(Moneywise)",
+                "URL": "https://finance.yahoo.com/m/1bd6d830-70fa-3ba6-b2d4-020ad8f589fb/my-mom%2C-73%2C-was-scammed-out.html"
+            },
+            {
+                "Date": "2025-08-03 05:30:00",
+                "Header": "Mark Zuckerberg Just Declared War on the iPhone",
+                "Source": "(The Wall Street Journal)",
+                "URL": "https://www.wsj.com/tech/ai/mark-zuckerberg-just-declared-war-on-the-iphone-30163885?mod=wsj_FV"
+            },
+            {
+                "Date": "2025-08-02 17:21:00",
+                "Header": "Tim Cook reportedly tells employees Apple must win in AI",
+                "Source": "(TechCrunch)",
+                "URL": "https://finance.yahoo.com/news/tim-cook-reportedly-tells-employees-212122224.html"
+            },
+            {
+                "Date": "2025-08-02 16:39:00",
+                "Header": "Meta Just Paid $250M To Lure This 24-year-old AI Whiz Kid: A Strategic Move Or A Power Play?",
+                "Source": "(Benzinga)",
+                "URL": "https://finance.yahoo.com/news/meta-just-paid-250m-lure-203943831.html"
+            },
+            {
+                "Date": "2025-08-02 11:30:00",
+                "Header": "'I Don't Do Anything Other Than Working,' Says Perplexity CEO Aravind Srinivas As His $14 Billion AI Startup Challenges Tech Giants",
+                "Source": "(Benzinga)",
+                "URL": "https://finance.yahoo.com/news/dont-anything-other-working-says-153027229.html"
+            },
+            {
+                "Date": "2025-08-02 09:15:00",
+                "Header": "Profits drop at Warren Buffett's Berkshire Hathaway as it writes down its Kraft Heinz investment",
+                "Source": "(Associated Press Finance)",
+                "URL": "https://finance.yahoo.com/news/profits-drop-warren-buffetts-berkshire-131517290.html"
+            },
+            {
+                "Date": "2025-08-02 09:00:00",
+                "Header": "Big Tech Earnings Strength Is Bright Light in Murky Stock Market",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/big-tech-earnings-strength-bright-130000398.html"
+            },
+            {
+                "Date": "2025-08-02 08:30:00",
+                "Header": "New tariffs, alarming job numbers and a high-profile firing: A wild week for the Trump economy",
+                "Source": "(NBC News)",
+                "URL": "https://finance.yahoo.com/m/4d19bd7c-0ec0-362e-aa34-acf1b191eae7/new-tariffs%2C-alarming-job.html"
+            },
+            {
+                "Date": "2025-08-02 08:20:00",
+                "Header": "Berkshire takes $3.8 billion Kraft Heinz writedown, operating profit falls",
+                "Source": "(Reuters)",
+                "URL": "https://finance.yahoo.com/news/berkshire-takes-kraft-heinz-writedown-122007987.html"
+            },
+            {
+                "Date": "2025-08-02 07:49:00",
+                "Header": "Apple (AAPL) Launches AppleCare One to Boost Services Revenue Growth",
+                "Source": "(Insider Monkey)",
+                "URL": "/news/125443/apple-aapl-launches-applecare-one-to-boost-services-revenue-growth"
+            },
+            {
+                "Date": "2025-08-02 07:00:00",
+                "Header": "MarketBeat Week in Review - 07/28 - 08/01",
+                "Source": "(MarketBeat)",
+                "URL": "/news/125406/marketbeat-week-in-review-0728-0801"
+            },
+            {
+                "Date": "2025-08-02 06:00:00",
+                "Header": "How Boeing is quietly betting on a brilliant 39-year old engineerand setting the stage for a turnaround",
+                "Source": "(Fortune)",
+                "URL": "https://finance.yahoo.com/news/boeing-quietly-betting-brilliant-39-100000961.html"
+            },
+            {
+                "Date": "2025-08-02 04:05:00",
+                "Header": "Undervalued and Profitable: 3 Artificial Intelligence (AI) Stocks for Buffett-Minded Investors",
+                "Source": "(Motley Fool)",
+                "URL": "/news/125368/undervalued-and-profitable-3-artificial-intelligence-ai-stocks-for-buffett-minded-investors"
+            },
+            {
+                "Date": "2025-08-01 21:53:00",
+                "Header": "Apple talent exodus reflects AI strategy transition dilemma",
+                "Source": "(DigiTimes)",
+                "URL": "https://www.digitimes.com/news/a20250801PD220/apple-iphone-talent-supply-chain-meta.html"
+            },
+            {
+                "Date": "2025-08-01 20:04:00",
+                "Header": "Apple (AAPL) Poised for Major Cash Windfall Thanks to Big Beautiful Bill",
+                "Source": "(Insider Monkey)",
+                "URL": "/news/125325/apple-aapl-poised-for-major-cash-windfall-thanks-to-big-beautiful-bill"
+            },
+            {
+                "Date": "2025-08-01 18:15:00",
+                "Header": "UnitedHealth, Apple, Palo Alto Networks: Stocks That Moved on the Weeks News",
+                "Source": "(The Wall Street Journal)",
+                "URL": "https://finance.yahoo.com/m/3eb78b43-cdce-35cf-b07b-d50e868c138a/unitedhealth%2C-apple%2C-palo.html"
+            },
+            {
+                "Date": "2025-08-01 17:55:00",
+                "Header": "Top takeaways from Big Tech earning calls",
+                "Source": "(Yahoo Finance Video)",
+                "URL": "https://finance.yahoo.com/video/top-takeaways-tech-earning-calls-215503474.html"
+            },
+            {
+                "Date": "2025-08-01 17:23:00",
+                "Header": "Stocks to Watch Recap: Amazon, Coinbase, Reddit, Apple",
+                "Source": "(The Wall Street Journal)",
+                "URL": "https://finance.yahoo.com/m/5a223330-1847-3d0d-a95b-e2cec8dfa6cc/stocks-to-watch-recap%3A.html"
+            },
+            {
+                "Date": "2025-08-01 17:08:00",
+                "Header": "Stocks Sink as Bonds Jump on Deepening Jobs Cracks: Markets Wrap",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/asian-stocks-decline-tariffs-dollar-015758217.html"
+            },
+            {
+                "Date": "2025-08-01 17:04:00",
+                "Header": "Earnings live: Amazon stock slides, with results from Palantir, McDonald's, Disney, and Uber up ahead",
+                "Source": "(Yahoo Finance)",
+                "URL": "https://finance.yahoo.com/news/live/earnings-live-amazon-stock-slides-with-results-from-palantir-mcdonalds-disney-and-uber-up-ahead-210426336.html"
+            },
+            {
+                "Date": "2025-08-01 17:04:00",
+                "Header": "The Score: Meta Platforms, Whirlpool, Novo Nordisk and More Stocks That Defined the Week",
+                "Source": "(The Wall Street Journal)",
+                "URL": "https://www.wsj.com/finance/stocks/the-score-meta-platforms-whirlpool-novo-nordisk-and-more-stocks-that-defined-the-week-6c7b8089?mod=wsj_FV"
+            },
+            {
+                "Date": "2025-08-01 17:00:00",
+                "Header": "Tech, Media & Telecom Roundup: Market Talk",
+                "Source": "(The Wall Street Journal)",
+                "URL": "https://finance.yahoo.com/m/9250a87d-0f6c-32f0-9e02-e5141711d1f9/tech%2C-media-%26-telecom.html"
+            },
+            {
+                "Date": "2025-08-01 16:53:00",
+                "Header": "Apple CEO Tells Staff AI Is Ours to Grab in Hourlong Pep Talk",
+                "Source": "(Bloomberg)",
+                "URL": "https://finance.yahoo.com/news/apple-ceo-tells-staff-ai-205354502.html"
+            }
+        ],
+        "operationRatiosAsOf1Y": "2024-09-30",
+        "otcMarket": "",
+        "otcTier": "",
+        "pageType": "ticker",
+        "parValue": 1e-05,
+        "payoutRatio": 15.33,
+        "pcfRatio": 28.222652,
+        "pe": 30.792109,
+        "peRatio": 30.792109,
+        "pe_ratio": 30.85,
+        "percentile": 51,
+        "phone": "+1 408 996-1010",
+        "postalCode": "95014",
+        "previousCloseDate": "2025-08-05T17:00:00.000-04:00",
+        "previousClosePrice": 202.92,
+        "previous_close": 203.35,
+        "primary": true,
+        "primaryExchange": "NAS",
+        "primarySymbol": "AAPL",
+        "province": "CA",
+        "psRatio": 7.498298,
+        "revenueGrowth": 0.096285,
+        "revenueGrowth1Y": 0.02022,
+        "sector": "Technology",
+        "securityType": "ST00000001",
+        "shareClassId": "0P000000GY",
+        "shareClassStatus": "A",
+        "shareFloat": 15013611198,
+        "sharesFloat": 15013611198,
+        "sharesOutstanding": 15022073000,
+        "sharesShort": 93946599,
+        "sharesShortPercentOfFloat": 0.63,
+        "shares_float": 15013611198,
+        "shares_outstanding": 15022073000,
+        "shortDescription": "Ordinary Shares",
+        "shortName": "Apple",
+        "sic": "3571",
+        "sicName": "Electronic Computers",
+        "size": 5118771,
+        "sources": {
+            "EDGAR": "https://www.sec.gov/edgar/browse/?CIK=320193",
+            "google": "https://www.google.com/finance/quote/AAPL:NASDAQ",
+            "marketwatch": "https://www.marketwatch.com/investing/stock/aapl",
+            "reuters": "https://www.reuters.com/companies/AAPL.OQ",
+            "yahoo": "https://finance.yahoo.com/quote/AAPL"
+        },
+        "standardName": "Apple Inc",
+        "structuredData": {
+            "keywords": [
+                "\"symbol: AAPL\"",
+                "\"section: profile\""
+            ]
+        },
+        "suspensionStatus": false,
+        "symbol": "AAPL",
+        "tangibleBookValuePerShare": 4.4359,
+        "title": "Apple Stock Price, Quotes and Forecasts | NASDAQ:AAPL | Benzinga",
+        "totalAssets": 331495000000,
+        "totalDebtEquityRatio": 1.544858,
+        "totalEmployees": 164000,
+        "twoHundredDayAveragePrice": 221.23,
+        "type": "STOCK",
+        "volume": 61101,
+        "website": "https://www.apple.com",
+        "yearofEstablishment": 1977,
+        "candles": [
+            {
+                "low": 201.07000732421875,
+                "volume": 69660500,
+                "open": 205.3000030517578,
+                "high": 209.99000549316406,
+                "close": 207.22999572753906,
+                "session": "REG",
+                "date": "2024-08-06 17:30:00"
+            },
+            {
+                "low": 206.38999938964844,
+                "volume": 63516400,
+                "open": 206.89999389648438,
+                "high": 213.63999938964844,
+                "close": 209.82000732421875,
+                "session": "REG",
+                "date": "2024-08-07 17:30:00"
+            },
+            {
+                "low": 208.8300018310547,
+                "volume": 47161100,
+                "open": 213.11000061035156,
+                "high": 214.1999969482422,
+                "close": 213.30999755859375,
+                "session": "REG",
+                "date": "2024-08-08 17:30:00"
+            },
+            {
+                "low": 211.97000122070312,
+                "volume": 42201600,
+                "open": 212.10000610351562,
+                "high": 216.77999877929688,
+                "close": 216.24000549316406,
+                "session": "REG",
+                "date": "2024-08-09 17:30:00"
+            },
+            {
+                "low": 215.60000610351562,
+                "volume": 38028100,
+                "open": 216.07000732421875,
+                "high": 219.50999450683594,
+                "close": 217.52999877929688,
+                "session": "REG",
+                "date": "2024-08-12 17:30:00"
+            },
+            {
+                "low": 219.00999450683594,
+                "volume": 44155300,
+                "open": 219.00999450683594,
+                "high": 221.88999938964844,
+                "close": 221.27000427246094,
+                "session": "REG",
+                "date": "2024-08-13 17:30:00"
+            },
+            {
+                "low": 219.6999969482422,
+                "volume": 41960600,
+                "open": 220.57000732421875,
+                "high": 223.02999877929688,
+                "close": 221.72000122070312,
+                "session": "REG",
+                "date": "2024-08-14 17:30:00"
+            },
+            {
+                "low": 222.75999450683594,
+                "volume": 46414000,
+                "open": 224.60000610351562,
+                "high": 225.35000610351562,
+                "close": 224.72000122070312,
+                "session": "REG",
+                "date": "2024-08-15 17:30:00"
+            },
+            {
+                "low": 223.64999389648438,
+                "volume": 44340200,
+                "open": 223.9199981689453,
+                "high": 226.8300018310547,
+                "close": 226.0500030517578,
+                "session": "REG",
+                "date": "2024-08-16 17:30:00"
+            },
+            {
+                "low": 223.0399932861328,
+                "volume": 40687800,
+                "open": 225.72000122070312,
+                "high": 225.99000549316406,
+                "close": 225.88999938964844,
+                "session": "REG",
+                "date": "2024-08-19 17:30:00"
+            },
+            {
+                "low": 225.4499969482422,
+                "volume": 30299000,
+                "open": 225.77000427246094,
+                "high": 227.1699981689453,
+                "close": 226.50999450683594,
+                "session": "REG",
+                "date": "2024-08-20 17:30:00"
+            },
+            {
+                "low": 225.0500030517578,
+                "volume": 34765500,
+                "open": 226.52000427246094,
+                "high": 227.97999572753906,
+                "close": 226.39999389648438,
+                "session": "REG",
+                "date": "2024-08-21 17:30:00"
+            },
+            {
+                "low": 223.89999389648438,
+                "volume": 43695300,
+                "open": 227.7899932861328,
+                "high": 228.33999633789062,
+                "close": 224.52999877929688,
+                "session": "REG",
+                "date": "2024-08-22 17:30:00"
+            },
+            {
+                "low": 224.3300018310547,
+                "volume": 38677300,
+                "open": 225.66000366210938,
+                "high": 228.22000122070312,
+                "close": 226.83999633789062,
+                "session": "REG",
+                "date": "2024-08-23 17:30:00"
+            },
+            {
+                "low": 223.88999938964844,
+                "volume": 30602200,
+                "open": 226.75999450683594,
+                "high": 227.27999877929688,
+                "close": 227.17999267578125,
+                "session": "REG",
+                "date": "2024-08-26 17:30:00"
+            },
+            {
+                "low": 224.88999938964844,
+                "volume": 35934600,
+                "open": 226.0,
+                "high": 228.85000610351562,
+                "close": 228.02999877929688,
+                "session": "REG",
+                "date": "2024-08-27 17:30:00"
+            },
+            {
+                "low": 225.67999267578125,
+                "volume": 38052200,
+                "open": 227.9199981689453,
+                "high": 229.86000061035156,
+                "close": 226.49000549316406,
+                "session": "REG",
+                "date": "2024-08-28 17:30:00"
+            },
+            {
+                "low": 228.8800048828125,
+                "volume": 51906300,
+                "open": 230.10000610351562,
+                "high": 232.9199981689453,
+                "close": 229.7899932861328,
+                "session": "REG",
+                "date": "2024-08-29 17:30:00"
+            },
+            {
+                "low": 227.47999572753906,
+                "volume": 52990800,
+                "open": 230.19000244140625,
+                "high": 230.39999389648438,
+                "close": 229.0,
+                "session": "REG",
+                "date": "2024-08-30 17:30:00"
+            },
+            {
+                "low": 221.1699981689453,
+                "volume": 50190600,
+                "open": 228.5500030517578,
+                "high": 229.0,
+                "close": 222.77000427246094,
+                "session": "REG",
+                "date": "2024-09-03 17:30:00"
+            },
+            {
+                "low": 217.47999572753906,
+                "volume": 43840200,
+                "open": 221.66000366210938,
+                "high": 221.77999877929688,
+                "close": 220.85000610351562,
+                "session": "REG",
+                "date": "2024-09-04 17:30:00"
+            },
+            {
+                "low": 221.52000427246094,
+                "volume": 36615400,
+                "open": 221.6300048828125,
+                "high": 225.47999572753906,
+                "close": 222.3800048828125,
+                "session": "REG",
+                "date": "2024-09-05 17:30:00"
+            },
+            {
+                "low": 219.77000427246094,
+                "volume": 48423000,
+                "open": 223.9499969482422,
+                "high": 225.24000549316406,
+                "close": 220.82000732421875,
+                "session": "REG",
+                "date": "2024-09-06 17:30:00"
+            },
+            {
+                "low": 216.7100067138672,
+                "volume": 67180000,
+                "open": 220.82000732421875,
+                "high": 221.27000427246094,
+                "close": 220.91000366210938,
+                "session": "REG",
+                "date": "2024-09-09 17:30:00"
+            },
+            {
+                "low": 216.72999572753906,
+                "volume": 51591000,
+                "open": 218.9199981689453,
+                "high": 221.47999572753906,
+                "close": 220.11000061035156,
+                "session": "REG",
+                "date": "2024-09-10 17:30:00"
+            },
+            {
+                "low": 217.88999938964844,
+                "volume": 44587100,
+                "open": 221.4600067138672,
+                "high": 223.08999633789062,
+                "close": 222.66000366210938,
+                "session": "REG",
+                "date": "2024-09-11 17:30:00"
+            },
+            {
+                "low": 219.82000732421875,
+                "volume": 37455600,
+                "open": 222.5,
+                "high": 223.5500030517578,
+                "close": 222.77000427246094,
+                "session": "REG",
+                "date": "2024-09-12 17:30:00"
+            },
+            {
+                "low": 221.91000366210938,
+                "volume": 36766600,
+                "open": 223.5800018310547,
+                "high": 224.0399932861328,
+                "close": 222.5,
+                "session": "REG",
+                "date": "2024-09-13 17:30:00"
+            },
+            {
+                "low": 213.9199981689453,
+                "volume": 59357400,
+                "open": 216.5399932861328,
+                "high": 217.22000122070312,
+                "close": 216.32000732421875,
+                "session": "REG",
+                "date": "2024-09-16 17:30:00"
+            },
+            {
+                "low": 214.5,
+                "volume": 45519300,
+                "open": 215.75,
+                "high": 216.89999389648438,
+                "close": 216.7899932861328,
+                "session": "REG",
+                "date": "2024-09-17 17:30:00"
+            },
+            {
+                "low": 217.5399932861328,
+                "volume": 59894900,
+                "open": 217.5500030517578,
+                "high": 222.7100067138672,
+                "close": 220.69000244140625,
+                "session": "REG",
+                "date": "2024-09-18 17:30:00"
+            },
+            {
+                "low": 224.6300048828125,
+                "volume": 66781300,
+                "open": 224.99000549316406,
+                "high": 229.82000732421875,
+                "close": 228.8699951171875,
+                "session": "REG",
+                "date": "2024-09-19 17:30:00"
+            },
+            {
+                "low": 227.6199951171875,
+                "volume": 318679900,
+                "open": 229.97000122070312,
+                "high": 233.08999633789062,
+                "close": 228.1999969482422,
+                "session": "REG",
+                "date": "2024-09-20 17:30:00"
+            },
+            {
+                "low": 225.80999755859375,
+                "volume": 54146000,
+                "open": 227.33999633789062,
+                "high": 229.4499969482422,
+                "close": 226.47000122070312,
+                "session": "REG",
+                "date": "2024-09-23 17:30:00"
+            },
+            {
+                "low": 225.72999572753906,
+                "volume": 43556100,
+                "open": 228.64999389648438,
+                "high": 229.35000610351562,
+                "close": 227.3699951171875,
+                "session": "REG",
+                "date": "2024-09-24 17:30:00"
+            },
+            {
+                "low": 224.02000427246094,
+                "volume": 42308700,
+                "open": 224.92999267578125,
+                "high": 227.2899932861328,
+                "close": 226.3699951171875,
+                "session": "REG",
+                "date": "2024-09-25 17:30:00"
+            },
+            {
+                "low": 225.41000366210938,
+                "volume": 36636700,
+                "open": 227.3000030517578,
+                "high": 228.5,
+                "close": 227.52000427246094,
+                "session": "REG",
+                "date": "2024-09-26 17:30:00"
+            },
+            {
+                "low": 227.3000030517578,
+                "volume": 34026000,
+                "open": 228.4600067138672,
+                "high": 229.52000427246094,
+                "close": 227.7899932861328,
+                "session": "REG",
+                "date": "2024-09-27 17:30:00"
+            },
+            {
+                "low": 229.64999389648438,
+                "volume": 54541900,
+                "open": 230.0399932861328,
+                "high": 233.0,
+                "close": 233.0,
+                "session": "REG",
+                "date": "2024-09-30 17:30:00"
+            },
+            {
+                "low": 223.74000549316406,
+                "volume": 63285000,
+                "open": 229.52000427246094,
+                "high": 229.64999389648438,
+                "close": 226.2100067138672,
+                "session": "REG",
+                "date": "2024-10-01 17:30:00"
+            },
+            {
+                "low": 223.02000427246094,
+                "volume": 32880600,
+                "open": 225.88999938964844,
+                "high": 227.3699951171875,
+                "close": 226.77999877929688,
+                "session": "REG",
+                "date": "2024-10-02 17:30:00"
+            },
+            {
+                "low": 223.32000732421875,
+                "volume": 34044200,
+                "open": 225.13999938964844,
+                "high": 226.80999755859375,
+                "close": 225.6699981689453,
+                "session": "REG",
+                "date": "2024-10-03 17:30:00"
+            },
+            {
+                "low": 224.1300048828125,
+                "volume": 37245100,
+                "open": 227.89999389648438,
+                "high": 228.0,
+                "close": 226.8000030517578,
+                "session": "REG",
+                "date": "2024-10-04 17:30:00"
+            },
+            {
+                "low": 221.3300018310547,
+                "volume": 39505400,
+                "open": 224.5,
+                "high": 225.69000244140625,
+                "close": 221.69000244140625,
+                "session": "REG",
+                "date": "2024-10-07 17:30:00"
+            },
+            {
+                "low": 223.25,
+                "volume": 31855700,
+                "open": 224.3000030517578,
+                "high": 225.97999572753906,
+                "close": 225.77000427246094,
+                "session": "REG",
+                "date": "2024-10-08 17:30:00"
+            },
+            {
+                "low": 224.8300018310547,
+                "volume": 33591100,
+                "open": 225.22999572753906,
+                "high": 229.75,
+                "close": 229.5399932861328,
+                "session": "REG",
+                "date": "2024-10-09 17:30:00"
+            },
+            {
+                "low": 227.1699981689453,
+                "volume": 28183500,
+                "open": 227.77999877929688,
+                "high": 229.5,
+                "close": 229.0399932861328,
+                "session": "REG",
+                "date": "2024-10-10 17:30:00"
+            },
+            {
+                "low": 227.33999633789062,
+                "volume": 31759200,
+                "open": 229.3000030517578,
+                "high": 229.41000366210938,
+                "close": 227.5500030517578,
+                "session": "REG",
+                "date": "2024-10-11 17:30:00"
+            },
+            {
+                "low": 228.60000610351562,
+                "volume": 39882100,
+                "open": 228.6999969482422,
+                "high": 231.72999572753906,
+                "close": 231.3000030517578,
+                "session": "REG",
+                "date": "2024-10-14 17:30:00"
+            },
+            {
+                "low": 232.3699951171875,
+                "volume": 64751400,
+                "open": 233.61000061035156,
+                "high": 237.49000549316406,
+                "close": 233.85000610351562,
+                "session": "REG",
+                "date": "2024-10-15 17:30:00"
+            },
+            {
+                "low": 229.83999633789062,
+                "volume": 34082200,
+                "open": 231.60000610351562,
+                "high": 232.1199951171875,
+                "close": 231.77999877929688,
+                "session": "REG",
+                "date": "2024-10-16 17:30:00"
+            },
+            {
+                "low": 230.52000427246094,
+                "volume": 32993800,
+                "open": 233.42999267578125,
+                "high": 233.85000610351562,
+                "close": 232.14999389648438,
+                "session": "REG",
+                "date": "2024-10-17 17:30:00"
+            },
+            {
+                "low": 234.00999450683594,
+                "volume": 46431500,
+                "open": 236.17999267578125,
+                "high": 236.17999267578125,
+                "close": 235.0,
+                "session": "REG",
+                "date": "2024-10-18 17:30:00"
+            },
+            {
+                "low": 234.4499969482422,
+                "volume": 36254500,
+                "open": 234.4499969482422,
+                "high": 236.85000610351562,
+                "close": 236.47999572753906,
+                "session": "REG",
+                "date": "2024-10-21 17:30:00"
+            },
+            {
+                "low": 232.60000610351562,
+                "volume": 38846600,
+                "open": 233.88999938964844,
+                "high": 236.22000122070312,
+                "close": 235.86000061035156,
+                "session": "REG",
+                "date": "2024-10-22 17:30:00"
+            },
+            {
+                "low": 227.75999450683594,
+                "volume": 52287000,
+                "open": 234.0800018310547,
+                "high": 235.13999938964844,
+                "close": 230.75999450683594,
+                "session": "REG",
+                "date": "2024-10-23 17:30:00"
+            },
+            {
+                "low": 228.41000366210938,
+                "volume": 31109500,
+                "open": 229.97999572753906,
+                "high": 230.82000732421875,
+                "close": 230.57000732421875,
+                "session": "REG",
+                "date": "2024-10-24 17:30:00"
+            },
+            {
+                "low": 229.57000732421875,
+                "volume": 38802300,
+                "open": 229.74000549316406,
+                "high": 233.22000122070312,
+                "close": 231.41000366210938,
+                "session": "REG",
+                "date": "2024-10-25 17:30:00"
+            },
+            {
+                "low": 232.5500030517578,
+                "volume": 36087100,
+                "open": 233.32000732421875,
+                "high": 234.72999572753906,
+                "close": 233.39999389648438,
+                "session": "REG",
+                "date": "2024-10-28 17:30:00"
+            },
+            {
+                "low": 232.32000732421875,
+                "volume": 35417200,
+                "open": 233.10000610351562,
+                "high": 234.3300018310547,
+                "close": 233.6699981689453,
+                "session": "REG",
+                "date": "2024-10-29 17:30:00"
+            },
+            {
+                "low": 229.5500030517578,
+                "volume": 47070900,
+                "open": 232.61000061035156,
+                "high": 233.47000122070312,
+                "close": 230.10000610351562,
+                "session": "REG",
+                "date": "2024-10-30 17:30:00"
+            },
+            {
+                "low": 225.3699951171875,
+                "volume": 64370100,
+                "open": 229.33999633789062,
+                "high": 229.8300018310547,
+                "close": 225.91000366210938,
+                "session": "REG",
+                "date": "2024-10-31 17:30:00"
+            },
+            {
+                "low": 220.27000427246094,
+                "volume": 65276700,
+                "open": 220.97000122070312,
+                "high": 225.35000610351562,
+                "close": 222.91000366210938,
+                "session": "REG",
+                "date": "2024-11-01 17:30:00"
+            },
+            {
+                "low": 219.7100067138672,
+                "volume": 44944500,
+                "open": 220.99000549316406,
+                "high": 222.7899932861328,
+                "close": 222.00999450683594,
+                "session": "REG",
+                "date": "2024-11-04 19:30:00"
+            },
+            {
+                "low": 221.13999938964844,
+                "volume": 28111300,
+                "open": 221.8000030517578,
+                "high": 223.9499969482422,
+                "close": 223.4499969482422,
+                "session": "REG",
+                "date": "2024-11-05 19:30:00"
+            },
+            {
+                "low": 221.19000244140625,
+                "volume": 54561100,
+                "open": 222.61000061035156,
+                "high": 226.07000732421875,
+                "close": 222.72000122070312,
+                "session": "REG",
+                "date": "2024-11-06 19:30:00"
+            },
+            {
+                "low": 224.57000732421875,
+                "volume": 42137700,
+                "open": 224.6300048828125,
+                "high": 227.8800048828125,
+                "close": 227.47999572753906,
+                "session": "REG",
+                "date": "2024-11-07 19:30:00"
+            },
+            {
+                "low": 226.41000366210938,
+                "volume": 38328800,
+                "open": 227.1699981689453,
+                "high": 228.66000366210938,
+                "close": 226.9600067138672,
+                "session": "REG",
+                "date": "2024-11-08 19:30:00"
+            },
+            {
+                "low": 221.5,
+                "volume": 42005600,
+                "open": 225.0,
+                "high": 225.6999969482422,
+                "close": 224.22999572753906,
+                "session": "REG",
+                "date": "2024-11-11 19:30:00"
+            },
+            {
+                "low": 223.36000061035156,
+                "volume": 40398300,
+                "open": 224.5500030517578,
+                "high": 225.58999633789062,
+                "close": 224.22999572753906,
+                "session": "REG",
+                "date": "2024-11-12 19:30:00"
+            },
+            {
+                "low": 222.75999450683594,
+                "volume": 48566200,
+                "open": 224.00999450683594,
+                "high": 226.64999389648438,
+                "close": 225.1199951171875,
+                "session": "REG",
+                "date": "2024-11-13 19:30:00"
+            },
+            {
+                "low": 225.0,
+                "volume": 44923900,
+                "open": 225.02000427246094,
+                "high": 228.8699951171875,
+                "close": 228.22000122070312,
+                "session": "REG",
+                "date": "2024-11-14 19:30:00"
+            },
+            {
+                "low": 224.27000427246094,
+                "volume": 47923700,
+                "open": 226.39999389648438,
+                "high": 226.9199981689453,
+                "close": 225.0,
+                "session": "REG",
+                "date": "2024-11-15 19:30:00"
+            },
+            {
+                "low": 225.1699981689453,
+                "volume": 44633700,
+                "open": 225.25,
+                "high": 229.74000549316406,
+                "close": 228.02000427246094,
+                "session": "REG",
+                "date": "2024-11-18 19:30:00"
+            },
+            {
+                "low": 226.66000366210938,
+                "volume": 36211800,
+                "open": 226.97999572753906,
+                "high": 230.16000366210938,
+                "close": 228.27999877929688,
+                "session": "REG",
+                "date": "2024-11-19 19:30:00"
+            },
+            {
+                "low": 225.88999938964844,
+                "volume": 35169600,
+                "open": 228.05999755859375,
+                "high": 229.92999267578125,
+                "close": 229.0,
+                "session": "REG",
+                "date": "2024-11-20 19:30:00"
+            },
+            {
+                "low": 225.7100067138672,
+                "volume": 42108300,
+                "open": 228.8800048828125,
+                "high": 230.16000366210938,
+                "close": 228.52000427246094,
+                "session": "REG",
+                "date": "2024-11-21 19:30:00"
+            },
+            {
+                "low": 228.05999755859375,
+                "volume": 38168300,
+                "open": 228.05999755859375,
+                "high": 230.72000122070312,
+                "close": 229.8699951171875,
+                "session": "REG",
+                "date": "2024-11-22 19:30:00"
+            },
+            {
+                "low": 229.74000549316406,
+                "volume": 90152800,
+                "open": 231.4600067138672,
+                "high": 233.25,
+                "close": 232.8699951171875,
+                "session": "REG",
+                "date": "2024-11-25 19:30:00"
+            },
+            {
+                "low": 233.3300018310547,
+                "volume": 45986200,
+                "open": 233.3300018310547,
+                "high": 235.57000732421875,
+                "close": 235.05999755859375,
+                "session": "REG",
+                "date": "2024-11-26 19:30:00"
+            },
+            {
+                "low": 233.80999755859375,
+                "volume": 33498400,
+                "open": 234.47000122070312,
+                "high": 235.69000244140625,
+                "close": 234.92999267578125,
+                "session": "REG",
+                "date": "2024-11-27 19:30:00"
+            },
+            {
+                "low": 233.97000122070312,
+                "volume": 28481400,
+                "open": 234.80999755859375,
+                "high": 237.80999755859375,
+                "close": 237.3300018310547,
+                "session": "REG",
+                "date": "2024-11-29 19:30:00"
+            },
+            {
+                "low": 237.16000366210938,
+                "volume": 48137100,
+                "open": 237.27000427246094,
+                "high": 240.7899932861328,
+                "close": 239.58999633789062,
+                "session": "REG",
+                "date": "2024-12-02 19:30:00"
+            },
+            {
+                "low": 238.89999389648438,
+                "volume": 38861000,
+                "open": 239.80999755859375,
+                "high": 242.75999450683594,
+                "close": 242.64999389648438,
+                "session": "REG",
+                "date": "2024-12-03 19:30:00"
+            },
+            {
+                "low": 241.25,
+                "volume": 44383900,
+                "open": 242.8699951171875,
+                "high": 244.11000061035156,
+                "close": 243.00999450683594,
+                "session": "REG",
+                "date": "2024-12-04 19:30:00"
+            },
+            {
+                "low": 242.1300048828125,
+                "volume": 40033900,
+                "open": 243.99000549316406,
+                "high": 244.5399932861328,
+                "close": 243.0399932861328,
+                "session": "REG",
+                "date": "2024-12-05 19:30:00"
+            },
+            {
+                "low": 242.0800018310547,
+                "volume": 36870600,
+                "open": 242.91000366210938,
+                "high": 244.6300048828125,
+                "close": 242.83999633789062,
+                "session": "REG",
+                "date": "2024-12-06 19:30:00"
+            },
+            {
+                "low": 241.75,
+                "volume": 44649200,
+                "open": 241.8300018310547,
+                "high": 247.24000549316406,
+                "close": 246.75,
+                "session": "REG",
+                "date": "2024-12-09 19:30:00"
+            },
+            {
+                "low": 245.33999633789062,
+                "volume": 36914800,
+                "open": 246.88999938964844,
+                "high": 248.2100067138672,
+                "close": 247.77000427246094,
+                "session": "REG",
+                "date": "2024-12-10 19:30:00"
+            },
+            {
+                "low": 246.25999450683594,
+                "volume": 45205800,
+                "open": 247.9600067138672,
+                "high": 250.8000030517578,
+                "close": 246.49000549316406,
+                "session": "REG",
+                "date": "2024-12-11 19:30:00"
+            },
+            {
+                "low": 245.67999267578125,
+                "volume": 32777500,
+                "open": 246.88999938964844,
+                "high": 248.74000549316406,
+                "close": 247.9600067138672,
+                "session": "REG",
+                "date": "2024-12-12 19:30:00"
+            },
+            {
+                "low": 246.24000549316406,
+                "volume": 33155300,
+                "open": 247.82000732421875,
+                "high": 249.2899932861328,
+                "close": 248.1300048828125,
+                "session": "REG",
+                "date": "2024-12-13 19:30:00"
+            },
+            {
+                "low": 247.64999389648438,
+                "volume": 51694800,
+                "open": 247.99000549316406,
+                "high": 251.3800048828125,
+                "close": 251.0399932861328,
+                "session": "REG",
+                "date": "2024-12-16 19:30:00"
+            },
+            {
+                "low": 249.77999877929688,
+                "volume": 51356400,
+                "open": 250.0800018310547,
+                "high": 253.8300018310547,
+                "close": 253.47999572753906,
+                "session": "REG",
+                "date": "2024-12-17 19:30:00"
+            },
+            {
+                "low": 247.74000549316406,
+                "volume": 56774100,
+                "open": 252.16000366210938,
+                "high": 254.27999877929688,
+                "close": 248.0500030517578,
+                "session": "REG",
+                "date": "2024-12-18 19:30:00"
+            },
+            {
+                "low": 247.08999633789062,
+                "volume": 60882300,
+                "open": 247.5,
+                "high": 252.0,
+                "close": 249.7899932861328,
+                "session": "REG",
+                "date": "2024-12-19 19:30:00"
+            },
+            {
+                "low": 245.69000244140625,
+                "volume": 147495300,
+                "open": 248.0399932861328,
+                "high": 255.0,
+                "close": 254.49000549316406,
+                "session": "REG",
+                "date": "2024-12-20 19:30:00"
+            },
+            {
+                "low": 253.4499969482422,
+                "volume": 40858800,
+                "open": 254.77000427246094,
+                "high": 255.64999389648438,
+                "close": 255.27000427246094,
+                "session": "REG",
+                "date": "2024-12-23 19:30:00"
+            },
+            {
+                "low": 255.2899932861328,
+                "volume": 23234700,
+                "open": 255.49000549316406,
+                "high": 258.2099914550781,
+                "close": 258.20001220703125,
+                "session": "REG",
+                "date": "2024-12-24 19:30:00"
+            },
+            {
+                "low": 257.6300048828125,
+                "volume": 27237100,
+                "open": 258.19000244140625,
+                "high": 260.1000061035156,
+                "close": 259.0199890136719,
+                "session": "REG",
+                "date": "2024-12-26 19:30:00"
+            },
+            {
+                "low": 253.05999755859375,
+                "volume": 42355300,
+                "open": 257.8299865722656,
+                "high": 258.70001220703125,
+                "close": 255.58999633789062,
+                "session": "REG",
+                "date": "2024-12-27 19:30:00"
+            },
+            {
+                "low": 250.75,
+                "volume": 35557500,
+                "open": 252.22999572753906,
+                "high": 253.5,
+                "close": 252.1999969482422,
+                "session": "REG",
+                "date": "2024-12-30 19:30:00"
+            },
+            {
+                "low": 249.42999267578125,
+                "volume": 39480700,
+                "open": 252.44000244140625,
+                "high": 253.27999877929688,
+                "close": 250.4199981689453,
+                "session": "REG",
+                "date": "2024-12-31 19:30:00"
+            },
+            {
+                "low": 241.82000732421875,
+                "volume": 55740700,
+                "open": 248.92999267578125,
+                "high": 249.10000610351562,
+                "close": 243.85000610351562,
+                "session": "REG",
+                "date": "2025-01-02 19:30:00"
+            },
+            {
+                "low": 241.88999938964844,
+                "volume": 40244100,
+                "open": 243.36000061035156,
+                "high": 244.17999267578125,
+                "close": 243.36000061035156,
+                "session": "REG",
+                "date": "2025-01-03 19:30:00"
+            },
+            {
+                "low": 243.1999969482422,
+                "volume": 45045600,
+                "open": 244.30999755859375,
+                "high": 247.3300018310547,
+                "close": 245.0,
+                "session": "REG",
+                "date": "2025-01-06 19:30:00"
+            },
+            {
+                "low": 241.35000610351562,
+                "volume": 40856000,
+                "open": 242.97999572753906,
+                "high": 245.5500030517578,
+                "close": 242.2100067138672,
+                "session": "REG",
+                "date": "2025-01-07 19:30:00"
+            },
+            {
+                "low": 240.0500030517578,
+                "volume": 37628900,
+                "open": 241.9199981689453,
+                "high": 243.7100067138672,
+                "close": 242.6999969482422,
+                "session": "REG",
+                "date": "2025-01-08 19:30:00"
+            },
+            {
+                "low": 233.0,
+                "volume": 61710900,
+                "open": 240.00999450683594,
+                "high": 240.16000366210938,
+                "close": 236.85000610351562,
+                "session": "REG",
+                "date": "2025-01-10 19:30:00"
+            },
+            {
+                "low": 229.72000122070312,
+                "volume": 49630700,
+                "open": 233.52999877929688,
+                "high": 234.6699981689453,
+                "close": 234.39999389648438,
+                "session": "REG",
+                "date": "2025-01-13 19:30:00"
+            },
+            {
+                "low": 232.47000122070312,
+                "volume": 39435300,
+                "open": 234.75,
+                "high": 236.1199951171875,
+                "close": 233.27999877929688,
+                "session": "REG",
+                "date": "2025-01-14 19:30:00"
+            },
+            {
+                "low": 234.42999267578125,
+                "volume": 39832000,
+                "open": 234.63999938964844,
+                "high": 238.9600067138672,
+                "close": 237.8699951171875,
+                "session": "REG",
+                "date": "2025-01-15 19:30:00"
+            },
+            {
+                "low": 228.02999877929688,
+                "volume": 71759100,
+                "open": 237.35000610351562,
+                "high": 238.00999450683594,
+                "close": 228.25999450683594,
+                "session": "REG",
+                "date": "2025-01-16 19:30:00"
+            },
+            {
+                "low": 228.47999572753906,
+                "volume": 68488300,
+                "open": 232.1199951171875,
+                "high": 232.2899932861328,
+                "close": 229.97999572753906,
+                "session": "REG",
+                "date": "2025-01-17 19:30:00"
+            },
+            {
+                "low": 219.3800048828125,
+                "volume": 98070400,
+                "open": 224.0,
+                "high": 224.4199981689453,
+                "close": 222.63999938964844,
+                "session": "REG",
+                "date": "2025-01-21 19:30:00"
+            },
+            {
+                "low": 219.7899932861328,
+                "volume": 64126500,
+                "open": 219.7899932861328,
+                "high": 224.1199951171875,
+                "close": 223.8300018310547,
+                "session": "REG",
+                "date": "2025-01-22 19:30:00"
+            },
+            {
+                "low": 222.3000030517578,
+                "volume": 60234800,
+                "open": 224.74000549316406,
+                "high": 227.02999877929688,
+                "close": 223.66000366210938,
+                "session": "REG",
+                "date": "2025-01-23 19:30:00"
+            },
+            {
+                "low": 221.41000366210938,
+                "volume": 54697900,
+                "open": 224.77999877929688,
+                "high": 225.6300048828125,
+                "close": 222.77999877929688,
+                "session": "REG",
+                "date": "2025-01-24 19:30:00"
+            },
+            {
+                "low": 223.97999572753906,
+                "volume": 94863400,
+                "open": 224.02000427246094,
+                "high": 232.14999389648438,
+                "close": 229.86000061035156,
+                "session": "REG",
+                "date": "2025-01-27 19:30:00"
+            },
+            {
+                "low": 230.80999755859375,
+                "volume": 75707600,
+                "open": 230.85000610351562,
+                "high": 240.19000244140625,
+                "close": 238.25999450683594,
+                "session": "REG",
+                "date": "2025-01-28 19:30:00"
+            },
+            {
+                "low": 234.00999450683594,
+                "volume": 45486100,
+                "open": 234.1199951171875,
+                "high": 239.86000061035156,
+                "close": 239.36000061035156,
+                "session": "REG",
+                "date": "2025-01-29 19:30:00"
+            },
+            {
+                "low": 237.2100067138672,
+                "volume": 55658300,
+                "open": 238.6699981689453,
+                "high": 240.7899932861328,
+                "close": 237.58999633789062,
+                "session": "REG",
+                "date": "2025-01-30 19:30:00"
+            },
+            {
+                "low": 233.44000244140625,
+                "volume": 100959800,
+                "open": 247.19000244140625,
+                "high": 247.19000244140625,
+                "close": 236.0,
+                "session": "REG",
+                "date": "2025-01-31 19:30:00"
+            },
+            {
+                "low": 225.6999969482422,
+                "volume": 73063300,
+                "open": 229.99000549316406,
+                "high": 231.8300018310547,
+                "close": 228.00999450683594,
+                "session": "REG",
+                "date": "2025-02-03 19:30:00"
+            },
+            {
+                "low": 226.64999389648438,
+                "volume": 45067300,
+                "open": 227.25,
+                "high": 233.1300048828125,
+                "close": 232.8000030517578,
+                "session": "REG",
+                "date": "2025-02-04 19:30:00"
+            },
+            {
+                "low": 228.27000427246094,
+                "volume": 39620300,
+                "open": 228.52999877929688,
+                "high": 232.6699981689453,
+                "close": 232.47000122070312,
+                "session": "REG",
+                "date": "2025-02-05 19:30:00"
+            },
+            {
+                "low": 230.42999267578125,
+                "volume": 29925300,
+                "open": 231.2899932861328,
+                "high": 233.8000030517578,
+                "close": 233.22000122070312,
+                "session": "REG",
+                "date": "2025-02-06 19:30:00"
+            },
+            {
+                "low": 227.25999450683594,
+                "volume": 39707200,
+                "open": 232.60000610351562,
+                "high": 234.0,
+                "close": 227.6300048828125,
+                "session": "REG",
+                "date": "2025-02-07 19:30:00"
+            },
+            {
+                "low": 227.1999969482422,
+                "volume": 33115600,
+                "open": 229.57000732421875,
+                "high": 230.58999633789062,
+                "close": 227.64999389648438,
+                "session": "REG",
+                "date": "2025-02-10 19:30:00"
+            },
+            {
+                "low": 228.1300048828125,
+                "volume": 53718400,
+                "open": 228.1999969482422,
+                "high": 235.22999572753906,
+                "close": 232.6199951171875,
+                "session": "REG",
+                "date": "2025-02-11 19:30:00"
+            },
+            {
+                "low": 230.67999267578125,
+                "volume": 45243300,
+                "open": 231.1999969482422,
+                "high": 236.9600067138672,
+                "close": 236.8699951171875,
+                "session": "REG",
+                "date": "2025-02-12 19:30:00"
+            },
+            {
+                "low": 235.57000732421875,
+                "volume": 53614100,
+                "open": 236.91000366210938,
+                "high": 242.33999633789062,
+                "close": 241.52999877929688,
+                "session": "REG",
+                "date": "2025-02-13 19:30:00"
+            },
+            {
+                "low": 240.99000549316406,
+                "volume": 40896200,
+                "open": 241.25,
+                "high": 245.5500030517578,
+                "close": 244.60000610351562,
+                "session": "REG",
+                "date": "2025-02-14 19:30:00"
+            },
+            {
+                "low": 241.83999633789062,
+                "volume": 48822500,
+                "open": 244.14999389648438,
+                "high": 245.17999267578125,
+                "close": 244.47000122070312,
+                "session": "REG",
+                "date": "2025-02-18 19:30:00"
+            },
+            {
+                "low": 243.16000366210938,
+                "volume": 32204200,
+                "open": 244.66000366210938,
+                "high": 246.00999450683594,
+                "close": 244.8699951171875,
+                "session": "REG",
+                "date": "2025-02-19 19:30:00"
+            },
+            {
+                "low": 244.2899932861328,
+                "volume": 32316900,
+                "open": 244.94000244140625,
+                "high": 246.77999877929688,
+                "close": 245.8300018310547,
+                "session": "REG",
+                "date": "2025-02-20 19:30:00"
+            },
+            {
+                "low": 245.22000122070312,
+                "volume": 53197400,
+                "open": 245.9499969482422,
+                "high": 248.69000244140625,
+                "close": 245.5500030517578,
+                "session": "REG",
+                "date": "2025-02-21 19:30:00"
+            },
+            {
+                "low": 244.4199981689453,
+                "volume": 51326400,
+                "open": 244.92999267578125,
+                "high": 248.86000061035156,
+                "close": 247.10000610351562,
+                "session": "REG",
+                "date": "2025-02-24 19:30:00"
+            },
+            {
+                "low": 244.91000366210938,
+                "volume": 48013300,
+                "open": 248.0,
+                "high": 250.0,
+                "close": 247.0399932861328,
+                "session": "REG",
+                "date": "2025-02-25 19:30:00"
+            },
+            {
+                "low": 239.1300048828125,
+                "volume": 44433600,
+                "open": 244.3300018310547,
+                "high": 244.97999572753906,
+                "close": 240.36000061035156,
+                "session": "REG",
+                "date": "2025-02-26 19:30:00"
+            },
+            {
+                "low": 237.05999755859375,
+                "volume": 41153600,
+                "open": 239.41000366210938,
+                "high": 242.4600067138672,
+                "close": 237.3000030517578,
+                "session": "REG",
+                "date": "2025-02-27 19:30:00"
+            },
+            {
+                "low": 230.1999969482422,
+                "volume": 56833400,
+                "open": 236.9499969482422,
+                "high": 242.08999633789062,
+                "close": 241.83999633789062,
+                "session": "REG",
+                "date": "2025-02-28 19:30:00"
+            },
+            {
+                "low": 236.11000061035156,
+                "volume": 47184000,
+                "open": 241.7899932861328,
+                "high": 244.02999877929688,
+                "close": 238.02999877929688,
+                "session": "REG",
+                "date": "2025-03-03 19:30:00"
+            },
+            {
+                "low": 234.67999267578125,
+                "volume": 53798100,
+                "open": 237.7100067138672,
+                "high": 240.07000732421875,
+                "close": 235.92999267578125,
+                "session": "REG",
+                "date": "2025-03-04 19:30:00"
+            },
+            {
+                "low": 229.22999572753906,
+                "volume": 47227600,
+                "open": 235.4199981689453,
+                "high": 236.5500030517578,
+                "close": 235.74000549316406,
+                "session": "REG",
+                "date": "2025-03-05 19:30:00"
+            },
+            {
+                "low": 233.16000366210938,
+                "volume": 45170400,
+                "open": 234.44000244140625,
+                "high": 237.86000061035156,
+                "close": 235.3300018310547,
+                "session": "REG",
+                "date": "2025-03-06 19:30:00"
+            },
+            {
+                "low": 234.75999450683594,
+                "volume": 46273600,
+                "open": 235.11000061035156,
+                "high": 241.3699951171875,
+                "close": 239.07000732421875,
+                "session": "REG",
+                "date": "2025-03-07 19:30:00"
+            },
+            {
+                "low": 224.22000122070312,
+                "volume": 72071200,
+                "open": 235.5399932861328,
+                "high": 236.16000366210938,
+                "close": 227.47999572753906,
+                "session": "REG",
+                "date": "2025-03-10 17:30:00"
+            },
+            {
+                "low": 217.4499969482422,
+                "volume": 76137400,
+                "open": 223.80999755859375,
+                "high": 225.83999633789062,
+                "close": 220.83999633789062,
+                "session": "REG",
+                "date": "2025-03-11 17:30:00"
+            },
+            {
+                "low": 214.91000366210938,
+                "volume": 62547500,
+                "open": 220.13999938964844,
+                "high": 221.75,
+                "close": 216.97999572753906,
+                "session": "REG",
+                "date": "2025-03-12 17:30:00"
+            },
+            {
+                "low": 208.4199981689453,
+                "volume": 61368300,
+                "open": 215.9499969482422,
+                "high": 216.83999633789062,
+                "close": 209.67999267578125,
+                "session": "REG",
+                "date": "2025-03-13 17:30:00"
+            },
+            {
+                "low": 209.5800018310547,
+                "volume": 60107600,
+                "open": 211.25,
+                "high": 213.9499969482422,
+                "close": 213.49000549316406,
+                "session": "REG",
+                "date": "2025-03-14 17:30:00"
+            },
+            {
+                "low": 209.97000122070312,
+                "volume": 48073400,
+                "open": 213.30999755859375,
+                "high": 215.22000122070312,
+                "close": 214.0,
+                "session": "REG",
+                "date": "2025-03-17 17:30:00"
+            },
+            {
+                "low": 211.49000549316406,
+                "volume": 42432400,
+                "open": 214.16000366210938,
+                "high": 215.14999389648438,
+                "close": 212.69000244140625,
+                "session": "REG",
+                "date": "2025-03-18 17:30:00"
+            },
+            {
+                "low": 213.75,
+                "volume": 54385400,
+                "open": 214.22000122070312,
+                "high": 218.75999450683594,
+                "close": 215.24000549316406,
+                "session": "REG",
+                "date": "2025-03-19 17:30:00"
+            },
+            {
+                "low": 212.22000122070312,
+                "volume": 48862900,
+                "open": 213.99000549316406,
+                "high": 217.49000549316406,
+                "close": 214.10000610351562,
+                "session": "REG",
+                "date": "2025-03-20 17:30:00"
+            },
+            {
+                "low": 211.27999877929688,
+                "volume": 94127800,
+                "open": 211.55999755859375,
+                "high": 218.83999633789062,
+                "close": 218.27000427246094,
+                "session": "REG",
+                "date": "2025-03-21 17:30:00"
+            },
+            {
+                "low": 218.5800018310547,
+                "volume": 44299500,
+                "open": 221.0,
+                "high": 221.47999572753906,
+                "close": 220.72999572753906,
+                "session": "REG",
+                "date": "2025-03-24 17:30:00"
+            },
+            {
+                "low": 220.0800018310547,
+                "volume": 34493600,
+                "open": 220.77000427246094,
+                "high": 224.10000610351562,
+                "close": 223.75,
+                "session": "REG",
+                "date": "2025-03-25 17:30:00"
+            },
+            {
+                "low": 220.47000122070312,
+                "volume": 34466100,
+                "open": 223.50999450683594,
+                "high": 225.02000427246094,
+                "close": 221.52999877929688,
+                "session": "REG",
+                "date": "2025-03-26 17:30:00"
+            },
+            {
+                "low": 220.55999755859375,
+                "volume": 37094800,
+                "open": 221.38999938964844,
+                "high": 224.99000549316406,
+                "close": 223.85000610351562,
+                "session": "REG",
+                "date": "2025-03-27 17:30:00"
+            },
+            {
+                "low": 217.67999267578125,
+                "volume": 39818600,
+                "open": 221.6699981689453,
+                "high": 223.80999755859375,
+                "close": 217.89999389648438,
+                "session": "REG",
+                "date": "2025-03-28 17:30:00"
+            },
+            {
+                "low": 216.22999572753906,
+                "volume": 65299300,
+                "open": 217.00999450683594,
+                "high": 225.6199951171875,
+                "close": 222.1300048828125,
+                "session": "REG",
+                "date": "2025-03-31 17:30:00"
+            },
+            {
+                "low": 218.89999389648438,
+                "volume": 36412700,
+                "open": 219.80999755859375,
+                "high": 223.67999267578125,
+                "close": 223.19000244140625,
+                "session": "REG",
+                "date": "2025-04-01 17:30:00"
+            },
+            {
+                "low": 221.02000427246094,
+                "volume": 35905900,
+                "open": 221.32000732421875,
+                "high": 225.19000244140625,
+                "close": 223.88999938964844,
+                "session": "REG",
+                "date": "2025-04-02 17:30:00"
+            },
+            {
+                "low": 201.25,
+                "volume": 103419000,
+                "open": 205.5399932861328,
+                "high": 207.49000549316406,
+                "close": 203.19000244140625,
+                "session": "REG",
+                "date": "2025-04-03 17:30:00"
+            },
+            {
+                "low": 187.33999633789062,
+                "volume": 125910900,
+                "open": 193.88999938964844,
+                "high": 199.8800048828125,
+                "close": 188.3800048828125,
+                "session": "REG",
+                "date": "2025-04-04 17:30:00"
+            },
+            {
+                "low": 174.6199951171875,
+                "volume": 160466300,
+                "open": 177.1999969482422,
+                "high": 194.14999389648438,
+                "close": 181.4600067138672,
+                "session": "REG",
+                "date": "2025-04-07 17:30:00"
+            },
+            {
+                "low": 169.2100067138672,
+                "volume": 120859500,
+                "open": 186.6999969482422,
+                "high": 190.33999633789062,
+                "close": 172.4199981689453,
+                "session": "REG",
+                "date": "2025-04-08 17:30:00"
+            },
+            {
+                "low": 171.88999938964844,
+                "volume": 184395900,
+                "open": 171.9499969482422,
+                "high": 200.61000061035156,
+                "close": 198.85000610351562,
+                "session": "REG",
+                "date": "2025-04-09 17:30:00"
+            },
+            {
+                "low": 183.0,
+                "volume": 121880000,
+                "open": 189.07000732421875,
+                "high": 194.77999877929688,
+                "close": 190.4199981689453,
+                "session": "REG",
+                "date": "2025-04-10 17:30:00"
+            },
+            {
+                "low": 186.05999755859375,
+                "volume": 87435900,
+                "open": 186.10000610351562,
+                "high": 199.5399932861328,
+                "close": 198.14999389648438,
+                "session": "REG",
+                "date": "2025-04-11 17:30:00"
+            },
+            {
+                "low": 201.16000366210938,
+                "volume": 101352900,
+                "open": 211.44000244140625,
+                "high": 212.94000244140625,
+                "close": 202.52000427246094,
+                "session": "REG",
+                "date": "2025-04-14 17:30:00"
+            },
+            {
+                "low": 199.8000030517578,
+                "volume": 51343900,
+                "open": 201.86000061035156,
+                "high": 203.50999450683594,
+                "close": 202.13999938964844,
+                "session": "REG",
+                "date": "2025-04-15 17:30:00"
+            },
+            {
+                "low": 192.3699951171875,
+                "volume": 59732400,
+                "open": 198.36000061035156,
+                "high": 200.6999969482422,
+                "close": 194.27000427246094,
+                "session": "REG",
+                "date": "2025-04-16 17:30:00"
+            },
+            {
+                "low": 194.4199981689453,
+                "volume": 52164700,
+                "open": 197.1999969482422,
+                "high": 198.8300018310547,
+                "close": 196.97999572753906,
+                "session": "REG",
+                "date": "2025-04-17 17:30:00"
+            },
+            {
+                "low": 189.80999755859375,
+                "volume": 46742500,
+                "open": 193.27000427246094,
+                "high": 193.8000030517578,
+                "close": 193.16000366210938,
+                "session": "REG",
+                "date": "2025-04-21 17:30:00"
+            },
+            {
+                "low": 195.97000122070312,
+                "volume": 52976400,
+                "open": 196.1199951171875,
+                "high": 201.58999633789062,
+                "close": 199.74000549316406,
+                "session": "REG",
+                "date": "2025-04-22 17:30:00"
+            },
+            {
+                "low": 202.8000030517578,
+                "volume": 52929200,
+                "open": 206.0,
+                "high": 208.0,
+                "close": 204.60000610351562,
+                "session": "REG",
+                "date": "2025-04-23 17:30:00"
+            },
+            {
+                "low": 202.94000244140625,
+                "volume": 47311000,
+                "open": 204.88999938964844,
+                "high": 208.8300018310547,
+                "close": 208.3699951171875,
+                "session": "REG",
+                "date": "2025-04-24 17:30:00"
+            },
+            {
+                "low": 206.1999969482422,
+                "volume": 38222300,
+                "open": 206.3699951171875,
+                "high": 209.75,
+                "close": 209.27999877929688,
+                "session": "REG",
+                "date": "2025-04-25 17:30:00"
+            },
+            {
+                "low": 207.4600067138672,
+                "volume": 38743100,
+                "open": 210.0,
+                "high": 211.5,
+                "close": 210.13999938964844,
+                "session": "REG",
+                "date": "2025-04-28 17:30:00"
+            },
+            {
+                "low": 208.3699951171875,
+                "volume": 36827600,
+                "open": 208.69000244140625,
+                "high": 212.24000549316406,
+                "close": 211.2100067138672,
+                "session": "REG",
+                "date": "2025-04-29 17:30:00"
+            },
+            {
+                "low": 206.6699981689453,
+                "volume": 52286500,
+                "open": 209.3000030517578,
+                "high": 213.5800018310547,
+                "close": 212.5,
+                "session": "REG",
+                "date": "2025-04-30 17:30:00"
+            },
+            {
+                "low": 208.89999389648438,
+                "volume": 57365700,
+                "open": 209.0800018310547,
+                "high": 214.55999755859375,
+                "close": 213.32000732421875,
+                "session": "REG",
+                "date": "2025-05-01 17:30:00"
+            },
+            {
+                "low": 202.16000366210938,
+                "volume": 101010600,
+                "open": 206.08999633789062,
+                "high": 206.99000549316406,
+                "close": 205.35000610351562,
+                "session": "REG",
+                "date": "2025-05-02 17:30:00"
+            },
+            {
+                "low": 198.2100067138672,
+                "volume": 69018500,
+                "open": 203.10000610351562,
+                "high": 204.10000610351562,
+                "close": 198.88999938964844,
+                "session": "REG",
+                "date": "2025-05-05 17:30:00"
+            },
+            {
+                "low": 197.02000427246094,
+                "volume": 51216500,
+                "open": 198.2100067138672,
+                "high": 200.64999389648438,
+                "close": 198.50999450683594,
+                "session": "REG",
+                "date": "2025-05-06 17:30:00"
+            },
+            {
+                "low": 193.25,
+                "volume": 68536700,
+                "open": 199.1699981689453,
+                "high": 199.44000244140625,
+                "close": 196.25,
+                "session": "REG",
+                "date": "2025-05-07 17:30:00"
+            },
+            {
+                "low": 194.67999267578125,
+                "volume": 50478900,
+                "open": 197.72000122070312,
+                "high": 200.0500030517578,
+                "close": 197.49000549316406,
+                "session": "REG",
+                "date": "2025-05-08 17:30:00"
+            },
+            {
+                "low": 197.5399932861328,
+                "volume": 36453900,
+                "open": 199.0,
+                "high": 200.5399932861328,
+                "close": 198.52999877929688,
+                "session": "REG",
+                "date": "2025-05-09 17:30:00"
+            },
+            {
+                "low": 206.75,
+                "volume": 63775800,
+                "open": 210.97000122070312,
+                "high": 211.27000427246094,
+                "close": 210.7899932861328,
+                "session": "REG",
+                "date": "2025-05-12 17:30:00"
+            },
+            {
+                "low": 209.0,
+                "volume": 51909300,
+                "open": 210.42999267578125,
+                "high": 213.39999389648438,
+                "close": 212.92999267578125,
+                "session": "REG",
+                "date": "2025-05-13 17:30:00"
+            },
+            {
+                "low": 210.5800018310547,
+                "volume": 49325800,
+                "open": 212.42999267578125,
+                "high": 213.94000244140625,
+                "close": 212.3300018310547,
+                "session": "REG",
+                "date": "2025-05-14 17:30:00"
+            },
+            {
+                "low": 209.5399932861328,
+                "volume": 45029500,
+                "open": 210.9499969482422,
+                "high": 212.9600067138672,
+                "close": 211.4499969482422,
+                "session": "REG",
+                "date": "2025-05-15 17:30:00"
+            },
+            {
+                "low": 209.77000427246094,
+                "volume": 54737900,
+                "open": 212.36000061035156,
+                "high": 212.57000732421875,
+                "close": 211.25999450683594,
+                "session": "REG",
+                "date": "2025-05-16 17:30:00"
+            },
+            {
+                "low": 204.25999450683594,
+                "volume": 46140500,
+                "open": 207.91000366210938,
+                "high": 209.47999572753906,
+                "close": 208.77999877929688,
+                "session": "REG",
+                "date": "2025-05-19 17:30:00"
+            },
+            {
+                "low": 205.02999877929688,
+                "volume": 42496600,
+                "open": 207.6699981689453,
+                "high": 208.47000122070312,
+                "close": 206.86000061035156,
+                "session": "REG",
+                "date": "2025-05-20 17:30:00"
+            },
+            {
+                "low": 200.7100067138672,
+                "volume": 59211800,
+                "open": 205.1699981689453,
+                "high": 207.0399932861328,
+                "close": 202.08999633789062,
+                "session": "REG",
+                "date": "2025-05-21 17:30:00"
+            },
+            {
+                "low": 199.6999969482422,
+                "volume": 46742400,
+                "open": 200.7100067138672,
+                "high": 202.75,
+                "close": 201.36000061035156,
+                "session": "REG",
+                "date": "2025-05-22 17:30:00"
+            },
+            {
+                "low": 193.4600067138672,
+                "volume": 78432900,
+                "open": 193.6699981689453,
+                "high": 197.6999969482422,
+                "close": 195.27000427246094,
+                "session": "REG",
+                "date": "2025-05-23 17:30:00"
+            },
+            {
+                "low": 197.42999267578125,
+                "volume": 56288500,
+                "open": 198.3000030517578,
+                "high": 200.74000549316406,
+                "close": 200.2100067138672,
+                "session": "REG",
+                "date": "2025-05-27 17:30:00"
+            },
+            {
+                "low": 199.89999389648438,
+                "volume": 45339700,
+                "open": 200.58999633789062,
+                "high": 202.72999572753906,
+                "close": 200.4199981689453,
+                "session": "REG",
+                "date": "2025-05-28 17:30:00"
+            },
+            {
+                "low": 198.50999450683594,
+                "volume": 51396800,
+                "open": 203.5800018310547,
+                "high": 203.80999755859375,
+                "close": 199.9499969482422,
+                "session": "REG",
+                "date": "2025-05-29 17:30:00"
+            },
+            {
+                "low": 196.77999877929688,
+                "volume": 70819900,
+                "open": 199.3699951171875,
+                "high": 201.9600067138672,
+                "close": 200.85000610351562,
+                "session": "REG",
+                "date": "2025-05-30 17:30:00"
+            },
+            {
+                "low": 200.1199951171875,
+                "volume": 35423300,
+                "open": 200.27999877929688,
+                "high": 202.1300048828125,
+                "close": 201.6999969482422,
+                "session": "REG",
+                "date": "2025-06-02 17:30:00"
+            },
+            {
+                "low": 200.9600067138672,
+                "volume": 46381600,
+                "open": 201.35000610351562,
+                "high": 203.77000427246094,
+                "close": 203.27000427246094,
+                "session": "REG",
+                "date": "2025-06-03 17:30:00"
+            },
+            {
+                "low": 202.10000610351562,
+                "volume": 43604000,
+                "open": 202.91000366210938,
+                "high": 206.24000549316406,
+                "close": 202.82000732421875,
+                "session": "REG",
+                "date": "2025-06-04 17:30:00"
+            },
+            {
+                "low": 200.14999389648438,
+                "volume": 55126100,
+                "open": 203.5,
+                "high": 204.75,
+                "close": 200.6300048828125,
+                "session": "REG",
+                "date": "2025-06-05 17:30:00"
+            },
+            {
+                "low": 202.0500030517578,
+                "volume": 46607700,
+                "open": 203.0,
+                "high": 205.6999969482422,
+                "close": 203.9199981689453,
+                "session": "REG",
+                "date": "2025-06-06 17:30:00"
+            },
+            {
+                "low": 200.02000427246094,
+                "volume": 72862600,
+                "open": 204.38999938964844,
+                "high": 206.0,
+                "close": 201.4499969482422,
+                "session": "REG",
+                "date": "2025-06-09 17:30:00"
+            },
+            {
+                "low": 200.57000732421875,
+                "volume": 54672600,
+                "open": 200.60000610351562,
+                "high": 204.35000610351562,
+                "close": 202.6699981689453,
+                "session": "REG",
+                "date": "2025-06-10 17:30:00"
+            },
+            {
+                "low": 198.41000366210938,
+                "volume": 60989900,
+                "open": 203.5,
+                "high": 204.5,
+                "close": 198.77999877929688,
+                "session": "REG",
+                "date": "2025-06-11 17:30:00"
+            },
+            {
+                "low": 197.36000061035156,
+                "volume": 43904600,
+                "open": 199.0800018310547,
+                "high": 199.67999267578125,
+                "close": 199.1999969482422,
+                "session": "REG",
+                "date": "2025-06-12 17:30:00"
+            },
+            {
+                "low": 195.6999969482422,
+                "volume": 51447300,
+                "open": 199.72999572753906,
+                "high": 200.3699951171875,
+                "close": 196.4499969482422,
+                "session": "REG",
+                "date": "2025-06-13 17:30:00"
+            },
+            {
+                "low": 196.55999755859375,
+                "volume": 43020700,
+                "open": 197.3000030517578,
+                "high": 198.69000244140625,
+                "close": 198.4199981689453,
+                "session": "REG",
+                "date": "2025-06-16 17:30:00"
+            },
+            {
+                "low": 195.2100067138672,
+                "volume": 38856200,
+                "open": 197.1999969482422,
+                "high": 198.38999938964844,
+                "close": 195.63999938964844,
+                "session": "REG",
+                "date": "2025-06-17 17:30:00"
+            },
+            {
+                "low": 195.07000732421875,
+                "volume": 45394700,
+                "open": 195.94000244140625,
+                "high": 197.57000732421875,
+                "close": 196.5800018310547,
+                "session": "REG",
+                "date": "2025-06-18 17:30:00"
+            },
+            {
+                "low": 196.86000061035156,
+                "volume": 96813500,
+                "open": 198.24000549316406,
+                "high": 201.6999969482422,
+                "close": 201.0,
+                "session": "REG",
+                "date": "2025-06-20 17:30:00"
+            },
+            {
+                "low": 198.9600067138672,
+                "volume": 55814300,
+                "open": 201.6300048828125,
+                "high": 202.3000030517578,
+                "close": 201.5,
+                "session": "REG",
+                "date": "2025-06-23 17:30:00"
+            },
+            {
+                "low": 200.1999969482422,
+                "volume": 54064000,
+                "open": 202.58999633789062,
+                "high": 203.44000244140625,
+                "close": 200.3000030517578,
+                "session": "REG",
+                "date": "2025-06-24 17:30:00"
+            },
+            {
+                "low": 200.6199951171875,
+                "volume": 39525700,
+                "open": 201.4499969482422,
+                "high": 203.6699981689453,
+                "close": 201.55999755859375,
+                "session": "REG",
+                "date": "2025-06-25 17:30:00"
+            },
+            {
+                "low": 199.4600067138672,
+                "volume": 50799100,
+                "open": 201.42999267578125,
+                "high": 202.63999938964844,
+                "close": 201.0,
+                "session": "REG",
+                "date": "2025-06-26 17:30:00"
+            },
+            {
+                "low": 200.0,
+                "volume": 73188600,
+                "open": 201.88999938964844,
+                "high": 203.22000122070312,
+                "close": 201.0800018310547,
+                "session": "REG",
+                "date": "2025-06-27 17:30:00"
+            },
+            {
+                "low": 199.25999450683594,
+                "volume": 91912800,
+                "open": 202.00999450683594,
+                "high": 207.38999938964844,
+                "close": 205.1699981689453,
+                "session": "REG",
+                "date": "2025-06-30 17:30:00"
+            },
+            {
+                "low": 206.13999938964844,
+                "volume": 78788900,
+                "open": 206.6699981689453,
+                "high": 210.19000244140625,
+                "close": 207.82000732421875,
+                "session": "REG",
+                "date": "2025-07-01 17:30:00"
+            },
+            {
+                "low": 208.13999938964844,
+                "volume": 67941800,
+                "open": 208.91000366210938,
+                "high": 213.33999633789062,
+                "close": 212.44000244140625,
+                "session": "REG",
+                "date": "2025-07-02 17:30:00"
+            },
+            {
+                "low": 211.80999755859375,
+                "volume": 34955800,
+                "open": 212.14999389648438,
+                "high": 214.64999389648438,
+                "close": 213.5500030517578,
+                "session": "REG",
+                "date": "2025-07-03 17:30:00"
+            },
+            {
+                "low": 208.8000030517578,
+                "volume": 50229000,
+                "open": 212.67999267578125,
+                "high": 216.22999572753906,
+                "close": 209.9499969482422,
+                "session": "REG",
+                "date": "2025-07-07 17:30:00"
+            },
+            {
+                "low": 208.4499969482422,
+                "volume": 42848900,
+                "open": 210.10000610351562,
+                "high": 211.42999267578125,
+                "close": 210.00999450683594,
+                "session": "REG",
+                "date": "2025-07-08 17:30:00"
+            },
+            {
+                "low": 207.22000122070312,
+                "volume": 48749400,
+                "open": 209.52999877929688,
+                "high": 211.3300018310547,
+                "close": 211.13999938964844,
+                "session": "REG",
+                "date": "2025-07-09 17:30:00"
+            },
+            {
+                "low": 210.02999877929688,
+                "volume": 44443600,
+                "open": 210.50999450683594,
+                "high": 213.47999572753906,
+                "close": 212.41000366210938,
+                "session": "REG",
+                "date": "2025-07-10 17:30:00"
+            },
+            {
+                "low": 209.86000061035156,
+                "volume": 39765800,
+                "open": 210.57000732421875,
+                "high": 212.1300048828125,
+                "close": 211.16000366210938,
+                "session": "REG",
+                "date": "2025-07-11 17:30:00"
+            },
+            {
+                "low": 207.5399932861328,
+                "volume": 38840100,
+                "open": 209.92999267578125,
+                "high": 210.91000366210938,
+                "close": 208.6199951171875,
+                "session": "REG",
+                "date": "2025-07-14 17:30:00"
+            },
+            {
+                "low": 208.9199981689453,
+                "volume": 42296300,
+                "open": 209.22000122070312,
+                "high": 211.88999938964844,
+                "close": 209.11000061035156,
+                "session": "REG",
+                "date": "2025-07-15 17:30:00"
+            },
+            {
+                "low": 208.63999938964844,
+                "volume": 47490500,
+                "open": 210.3000030517578,
+                "high": 212.39999389648438,
+                "close": 210.16000366210938,
+                "session": "REG",
+                "date": "2025-07-16 17:30:00"
+            },
+            {
+                "low": 209.58999633789062,
+                "volume": 48068100,
+                "open": 210.57000732421875,
+                "high": 211.8000030517578,
+                "close": 210.02000427246094,
+                "session": "REG",
+                "date": "2025-07-17 17:30:00"
+            },
+            {
+                "low": 209.6999969482422,
+                "volume": 48974600,
+                "open": 210.8699951171875,
+                "high": 211.7899932861328,
+                "close": 211.17999267578125,
+                "session": "REG",
+                "date": "2025-07-18 17:30:00"
+            },
+            {
+                "low": 211.6300048828125,
+                "volume": 51377400,
+                "open": 212.10000610351562,
+                "high": 215.77999877929688,
+                "close": 212.47999572753906,
+                "session": "REG",
+                "date": "2025-07-21 17:30:00"
+            },
+            {
+                "low": 212.22999572753906,
+                "volume": 46404100,
+                "open": 213.13999938964844,
+                "high": 214.9499969482422,
+                "close": 214.39999389648438,
+                "session": "REG",
+                "date": "2025-07-22 17:30:00"
+            },
+            {
+                "low": 212.41000366210938,
+                "volume": 46989300,
+                "open": 215.0,
+                "high": 215.14999389648438,
+                "close": 214.14999389648438,
+                "session": "REG",
+                "date": "2025-07-23 17:30:00"
+            },
+            {
+                "low": 213.52999877929688,
+                "volume": 46022600,
+                "open": 213.89999389648438,
+                "high": 215.69000244140625,
+                "close": 213.75999450683594,
+                "session": "REG",
+                "date": "2025-07-24 17:30:00"
+            },
+            {
+                "low": 213.39999389648438,
+                "volume": 40268800,
+                "open": 214.6999969482422,
+                "high": 215.24000549316406,
+                "close": 213.8800048828125,
+                "session": "REG",
+                "date": "2025-07-25 17:30:00"
+            },
+            {
+                "low": 213.05999755859375,
+                "volume": 37858000,
+                "open": 214.02999877929688,
+                "high": 214.85000610351562,
+                "close": 214.0500030517578,
+                "session": "REG",
+                "date": "2025-07-28 17:30:00"
+            },
+            {
+                "low": 210.82000732421875,
+                "volume": 51411700,
+                "open": 214.17999267578125,
+                "high": 214.80999755859375,
+                "close": 211.27000427246094,
+                "session": "REG",
+                "date": "2025-07-29 17:30:00"
+            },
+            {
+                "low": 207.72000122070312,
+                "volume": 45512500,
+                "open": 211.89999389648438,
+                "high": 212.38999938964844,
+                "close": 209.0500030517578,
+                "session": "REG",
+                "date": "2025-07-30 17:30:00"
+            },
+            {
+                "low": 207.16000366210938,
+                "volume": 80698400,
+                "open": 208.49000549316406,
+                "high": 209.83999633789062,
+                "close": 207.57000732421875,
+                "session": "REG",
+                "date": "2025-07-31 17:30:00"
+            },
+            {
+                "low": 201.5,
+                "volume": 104434500,
+                "open": 210.8699951171875,
+                "high": 213.5800018310547,
+                "close": 202.3800048828125,
+                "session": "REG",
+                "date": "2025-08-01 17:30:00"
+            },
+            {
+                "low": 201.67999267578125,
+                "volume": 75109300,
+                "open": 204.50999450683594,
+                "high": 207.8800048828125,
+                "close": 203.35000610351562,
+                "session": "REG",
+                "date": "2025-08-04 17:30:00"
+            },
+            {
+                "low": 202.16000366210938,
+                "volume": 44106200,
+                "open": 203.39999389648438,
+                "high": 205.33999633789062,
+                "close": 202.9199981689453,
+                "session": "REG",
+                "date": "2025-08-05 17:30:00"
+            }
+        ]
+    },
+    "error": null,
+    "success": true
+}
