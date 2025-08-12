@@ -11,8 +11,11 @@ from flask import Blueprint, Response, render_template, request, flash, redirect
 from flask_login import login_required, current_user
 from werkzeug.wrappers.response import Response
 
+from ..models.watchlist_entry import WatchlistEntry
+
 from ..config import UPLOAD_FOLDER
 from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
+from ..src.performance import PerformanceMetrics
 from .utils import save_uploaded_files, calculate_max_drawdown, download_candles, localToUtc
 
 journal_bp = Blueprint(name='journal_endpoints', import_name=__name__)
@@ -369,24 +372,46 @@ def delete_trade(trade_id):
 
     return redirect(url_for('journal_endpoints.journal'))
 
-@journal_bp.route('/performance')
+@journal_bp.route('/complete-performance')
 @login_required
-def performance():
+def globalPerformance():
     # Obtener filtros
-    period_days = request.args.get('period', type=int)
+    start = request.args.get('start', type=str)
+    end = request.args.get('end', type=str)
     strategy_id = request.args.get('strategy', type=int)
+    asset_symbol = request.args.get('symbol', type=str)
+    watchlist_id = request.args.get('watchlist', type=int)
+    limit = request.args.get('limit', type=int)
     
     # Construir query base
     base_query = Trade.query.filter(Trade.user_id==current_user.id)
     
-    # Aplicar filtros de fecha
-    if period_days:
-        cutoff_date = date.today() - timedelta(days=period_days)
-        base_query = base_query.filter(Trade.entry_date >= cutoff_date)
-    
-    # Aplicar filtro de estrategia
+    if watchlist_id:
+        base_query = base_query.join(
+            WatchlistEntry,
+            and_(
+                Trade.symbol == WatchlistEntry.symbol,  # Asumiendo que el campo se llama 'ticker'
+                Trade.entry_date >= WatchlistEntry.date,
+                Trade.entry_date <= WatchlistEntry.date_exit
+            )
+        ).filter(WatchlistEntry.watchlist_id == watchlist_id).distinct().all()
+        
     if strategy_id:
         base_query = base_query.filter(Trade.strategy_id == strategy_id)
+        
+    if asset_symbol:
+        base_query = base_query.filter(Trade.symbol == asset_symbol)
+        
+    if limit:
+        base_query = base_query.limit(limit=limit)
+    
+    # Aplicar filtros de fecha
+    if start:
+        start_date = datetime.strptime(start, '%Y-%m-%d').date()
+        base_query = base_query.filter(Trade.entry_date >= start_date)
+    if end:
+        end_date = datetime.strptime(end, '%Y-%m-%d').date()
+        base_query = base_query.filter(Trade.entry_date <= end_date)
     
     # ===== ESTADÍSTICAS GENERALES =====
     total_trades = base_query.count()
@@ -633,4 +658,188 @@ def performance():
         'balances': balance_data
     }
     
+    return render_template('trade/performance-global.html', stats=stats, strategies=strategies)
+
+
+@journal_bp.route('/performance')
+@login_required
+def performance_old():
+    # Obtener filtros
+    start = request.args.get('start', type=str)
+    end = request.args.get('end', type=str)
+    strategy_id = request.args.get('strategy', type=int)
+    asset_symbol = request.args.get('symbol', type=str)
+    watchlist_id = request.args.get('watchlist', type=int)
+    limit = request.args.get('limit', type=int)
+    
+    # Construir query base
+    base_query = Trade.query.filter(Trade.user_id==current_user.id)
+    
+    if watchlist_id:
+        base_query = base_query.join(
+            WatchlistEntry,
+            and_(
+                Trade.symbol == WatchlistEntry.symbol,  # Asumiendo que el campo se llama 'ticker'
+                Trade.entry_date >= WatchlistEntry.date,
+                Trade.entry_date <= WatchlistEntry.date_exit
+            )
+        ).filter(WatchlistEntry.watchlist_id == watchlist_id).distinct().all()
+        
+    if strategy_id:
+        base_query = base_query.filter(Trade.strategy_id == strategy_id)
+        
+    if asset_symbol:
+        base_query = base_query.filter(Trade.symbol == asset_symbol)
+        
+    if limit:
+        base_query = base_query.limit(limit=limit)
+    
+    # Aplicar filtros de fecha
+    if start:
+        start_date = datetime.strptime(start, '%Y-%m-%d').date()
+        base_query = base_query.filter(Trade.entry_date >= start_date)
+    if end:
+        end_date = datetime.strptime(end, '%Y-%m-%d').date()
+        base_query = base_query.filter(Trade.entry_date <= end_date)
+    
+    # ===== ESTADÍSTICAS GENERALES =====
+    total_trades = base_query.count()
+    winning_trades = base_query.filter(Trade.profit_loss > 0).count()
+    losing_trades = base_query.filter(Trade.profit_loss < 0).count()
+    
+    win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+    
+    # P&L y métricas básicas
+    total_pnl = base_query.with_entities(func.sum(Trade.profit_loss)).scalar() or 0
+    avg_win = base_query.filter(Trade.profit_loss > 0).with_entities(func.avg(Trade.profit_loss)).scalar() or 0
+    avg_loss = base_query.filter(Trade.profit_loss < 0).with_entities(func.avg(Trade.profit_loss)).scalar() or 0
+    avg_trade = total_pnl / total_trades if total_trades > 0 else 0
+    risk_reward = avg_win / abs(avg_loss)
+    
+    # Profit factor
+    total_wins = base_query.filter(Trade.profit_loss > 0).with_entities(func.sum(Trade.profit_loss)).scalar() or 0
+    total_losses = abs(base_query.filter(Trade.profit_loss < 0).with_entities(func.sum(Trade.profit_loss)).scalar() or 0)
+    profit_factor = total_wins / total_losses if total_losses > 0 else 0
+    
+    # Trades del mes actual
+    current_month = date.today().replace(day=1)
+    trades_this_month = Trade.query.filter(Trade.entry_date >= current_month, Trade.user_id==current_user.id).count()
+    
+    # Cambio P&L vs mes anterior
+    last_month = (current_month - timedelta(days=1)).replace(day=1)
+    pnl_last_month = Trade.query.filter(
+        Trade.exit_date >= last_month, Trade.exit_date < current_month, Trade.user_id==current_user.id
+    ).with_entities(func.sum(Trade.profit_loss)).scalar() or 0
+    
+    pnl_change = ((total_pnl - pnl_last_month) / abs(pnl_last_month) * 100) if pnl_last_month != 0 else 0
+    
+    # ===== CÁLCULOS AVANZADOS =====
+    
+    # Obtener todos los trades para cálculos complejos
+    all_trades = base_query.order_by(Trade.entry_date).all()
+    
+    # Calcular Sharpe Ratio
+    if len(all_trades) > 1:
+        returns = [trade.profit_loss for trade in all_trades]
+        avg_return = np.mean(returns)
+        std_return = np.std(returns)
+        sharpe_ratio = (avg_return / std_return) if std_return != 0 else 0
+    else:
+        sharpe_ratio = 0
+    
+    # Calcular Maximum Drawdown
+    max_drawdown = calculate_max_drawdown(all_trades)
+    
+    # ===== DATOS PARA GRÁFICOS =====
+    # Balance histórico
+    balances = AccountBalance.query.filter(AccountBalance.user_id==current_user.id).order_by(AccountBalance.date).all()
+    balance_data = [{'date': b.date.strftime('%Y-%m-%d'), 'balance': float(b.balance)} for b in balances]
+    
+    # ===== OBTENER ESTRATEGIAS PARA FILTROS =====
+    strategies = Strategy.query.filter(Strategy.user_id==current_user.id).all()
+    
+    # ===== COMPILAR ESTADÍSTICAS =====
+    stats = {
+        'total_trades': total_trades,
+        'winning_trades': winning_trades,
+        'losing_trades': losing_trades,
+        'win_rate': round(win_rate, 2),
+        'total_pnl': round(total_pnl, 2),
+        'avg_win': round(avg_win, 2),
+        'avg_loss': round(avg_loss, 2),
+        'avg_trade': round(avg_trade, 2),
+        'risk_reward': round(risk_reward, 2),
+        'profit_factor': round(profit_factor, 2),
+        'sharpe_ratio': round(sharpe_ratio, 2),
+        'max_drawdown': round(max_drawdown, 2),
+        'trades_this_month': trades_this_month,
+        'pnl_change': round(pnl_change, 2),
+        'balances': balance_data
+    }
+    
     return render_template('trade/performance.html', stats=stats, strategies=strategies)
+
+@journal_bp.route('/performance')
+@login_required
+def performance():
+    # ===== OBTENER FILTROS =====
+    start = request.args.get('start', type=str)
+    end = request.args.get('end', type=str)
+    strategy_id = request.args.get('strategy', type=int)
+    asset_symbol = request.args.get('symbol', type=str)
+    watchlist_id = request.args.get('watchlist', type=int)
+    limit = request.args.get('limit', type=int)
+    side = request.args.get('side', type=str)  # LONG or SHORT
+    
+    # ===== CONSTRUIR QUERY BASE =====
+    base_query = Trade.query.filter(Trade.user_id == current_user.id)
+    
+    # Filtro por watchlist
+    if watchlist_id:
+        base_query = base_query.join(
+            WatchlistEntry,
+            and_(
+                Trade.symbol == WatchlistEntry.symbol,
+                Trade.entry_date >= WatchlistEntry.date,
+                Trade.entry_date <= WatchlistEntry.date_exit
+            )
+        ).filter(WatchlistEntry.watchlist_id == watchlist_id)
+    
+    # Filtros adicionales
+    if strategy_id:
+        base_query = base_query.filter(Trade.strategy_id == strategy_id)
+    if asset_symbol:
+        base_query = base_query.filter(Trade.symbol == asset_symbol)
+    if side:
+        base_query = base_query.filter(Trade.trade_type == side.upper())
+    
+    # Filtros de fecha
+    if start:
+        start_date = datetime.strptime(start, '%Y-%m-%d').date()
+        base_query = base_query.filter(Trade.entry_date >= start_date)
+    if end:
+        end_date = datetime.strptime(end, '%Y-%m-%d').date()
+        base_query = base_query.filter(Trade.entry_date <= end_date)
+    
+    # Aplicar límite
+    if limit:
+        base_query = base_query.limit(limit)
+    
+    # ===== OBTENER DATOS =====
+    all_trades = base_query.order_by(Trade.entry_date).distinct().all()
+    total_trades = len(all_trades)
+    
+    # ===== CALCULAR ESTADÍSTICAS =====
+    stats = PerformanceMetrics(trades=all_trades).getComplete()
+    
+    stats['balances'] = get_balance_data()
+    
+    # ===== OBTENER DATOS ADICIONALES =====
+    strategies = Strategy.query.filter(Strategy.user_id == current_user.id).all()
+    
+    return render_template('trade/performance.html', stats=stats, strategies=strategies)
+
+def get_balance_data():
+    """Obtener datos de balance histórico"""
+    balances = AccountBalance.query.filter(AccountBalance.user_id == current_user.id).order_by(AccountBalance.date).all()
+    return [{'date': b.date.strftime('%Y-%m-%d'), 'balance': float(b.balance)} for b in balances]

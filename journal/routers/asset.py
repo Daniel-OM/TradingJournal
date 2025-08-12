@@ -120,7 +120,7 @@ def api_asset(symbol:str) -> str:
     }
     
     # Limpiar datos
-    overview_data = clean_data({k.replace(' ', '_'): v for k, v in overview_data})
+    overview_data = clean_data({k.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '_per_').replace('-', '_').replace('.', ''): v for k, v in overview_data.items()})
     #print(overview_data)
     return jsonify({
         'success': True,

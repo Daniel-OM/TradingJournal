@@ -112,6 +112,7 @@ def errors():
     min_count = request.args.get('min_count', 1, type=int)
     severity = request.args.get('severity', 'all')
     page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
     
     # Convertir período a días
     period_days = None
@@ -131,10 +132,9 @@ def errors():
         errors_list.sort(key=lambda x: x.description.lower())
     
     # Paginación
-    per_page = 10
     total_items = len(errors_list)
-    start_idx = (page - 1) * per_page
-    end_idx = start_idx + per_page
+    start_idx = max(0, (page - 1) * per_page)
+    end_idx = min(total_items, start_idx + per_page)
     paginated_errors = errors_list[start_idx:end_idx]
     
     # Crear objeto de paginación simple
@@ -152,7 +152,7 @@ def errors():
             "frequency": error.occurrence_count / stats["total_occurrences"],
             "last_occurrence": error.last_occurrence.strftime('%Y-%m-%d'),
             "days_ago": error.days_since_last_occurrence or 0,
-            "trades": [e.to_dict() for e in error.recent_examples],
+            "trades": [e.to_dict() for e in error.trades],
             "average_impact": error.average_impact
         })
     

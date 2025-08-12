@@ -528,9 +528,13 @@
                         <label class="form-label">Fecha de Entrada</label>
                         <input type="date" name="transaction_date" class="form-control" value="${date}">
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label class="form-label">Hora de Entrada</label>
                         <input type="time" name="transaction_time" class="form-control" value="${time}" step="1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Hora de Entrada</label>
+                        <input type="text" name="transaction_timezone" class="form-control" value="${Intl.DateTimeFormat().resolvedOptions().timeZone}">
                     </div>
                 </div>
                 <div class="row">

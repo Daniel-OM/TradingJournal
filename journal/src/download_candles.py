@@ -46,20 +46,19 @@ def getTradesCandles():
         session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), Candle.date <= datetime.combine(today, time(23, 59, 59)), Candle.timeframe == '1m').delete(synchronize_session=False)
         session.commit()
 
-        sessions = {'PRE': 'PM', 'REG': 'RH', 'POST': 'AH'}
         candle_objs = []
         for tf, candles in [['1d', yearly_candles], ['1m', intraday_candles]]:
             if hasattr(candles, 'iterrows'):
                 candle_objs += [
                     Candle(
                         symbol=symbol,
-                        date=row['date'] if 'date' in row else idx,
+                        date=row['date'].strftime('%Y-%m-%d %H:%M:%S%z') if 'date' in row else idx,
                         open=row['open'],
                         high=row['high'],
                         low=row['low'],
                         close=row['close'],
                         volume=row.get('volume', None),
-                        session=sessions[row.get('session', 'REG')],
+                        session=row.get('session', 'REG'),
                         timeframe=tf
                     ) for idx, row in candles.iterrows()
                 ]
@@ -67,13 +66,13 @@ def getTradesCandles():
                 candle_objs += [
                     Candle(
                         symbol=symbol,
-                        date=row['date'],
+                        date=row['date'].strftime('%Y-%m-%d %H:%M:%S%z'),
                         open=row['open'],
                         high=row['high'],
                         low=row['low'],
                         close=row['close'],
                         volume=row.get('volume', None),
-                        session=sessions[row.get('session', 'REG')],
+                        session=row.get('session', 'REG'),
                         timeframe=tf
                     ) for row in candles
                 ]
@@ -127,6 +126,7 @@ def changeTransactionTimezones():
 
     trades: List[Trade] = session.query(Trade).all()
     for trade in trades:
+        
         trade.entry_time = localToUtc(date=trade.entry_date, time=trade.entry_time, tz='Europe/Madrid', mode='time')
         trade.exit_time = localToUtc(date=trade.exit_date, time=trade.exit_time, tz='Europe/Madrid', mode='time')
         for trans in trade.transactions:
@@ -158,21 +158,20 @@ if __name__ == '__main__':
             session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= one_year_ago, Candle.date <= today, Candle.timeframe == '1d').delete(synchronize_session=False)
             session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), Candle.date <= datetime.combine(today, time(23, 59, 59)), Candle.timeframe == '1m').delete(synchronize_session=False)
             session.commit()
-
-            sessions = {'PRE': 'PM', 'REG': 'RH', 'POST': 'AH'}
+            
             candle_objs = []
             for tf, candles in [['1d', yearly_candles], ['1m', intraday_candles]]:
                 if hasattr(candles, 'iterrows'):
                     candle_objs += [
                         Candle(
                             symbol=symbol,
-                            date=row['date'] if 'date' in row else idx,
+                            date=row['date'].strftime('%Y-%m-%d %H:%M:%S%z') if 'date' in row else idx,
                             open=row['open'],
                             high=row['high'],
                             low=row['low'],
                             close=row['close'],
                             volume=row.get('volume', None),
-                            session=sessions[row.get('session', 'REG')],
+                            session=row.get('session', 'REG'),
                             timeframe=tf
                         ) for idx, row in candles.iterrows()
                     ]
@@ -180,13 +179,13 @@ if __name__ == '__main__':
                     candle_objs += [
                         Candle(
                             symbol=symbol,
-                            date=row['date'],
+                            date=row['date'].strftime('%Y-%m-%d %H:%M:%S%z'),
                             open=row['open'],
                             high=row['high'],
                             low=row['low'],
                             close=row['close'],
                             volume=row.get('volume', None),
-                            session=sessions[row.get('session', 'REG')],
+                            session=row.get('session', 'REG'),
                             timeframe=tf
                         ) for row in candles
                     ]

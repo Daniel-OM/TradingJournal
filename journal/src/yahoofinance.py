@@ -525,6 +525,35 @@ class YahooTicker(YahooBase):
     def dateToTimestamp(self, date:str|dt.datetime) -> float:
         return date.timestamp() if isinstance(date, dt.datetime) else dt.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').timestamp()
 
+    
+    def _parseSessions(self, prices_df, trading_periods):
+        # Construimos una lista con todos los periodos (pre, regular, post)
+        session_data = []
+
+        for session_type, daily_sessions in trading_periods.items():
+            for day in daily_sessions:
+                for period in day:
+                    session_data.append({
+                        'session': session_type.upper(),  # 'PRE', 'REGULAR', 'POST' → 'PRE', 'REG', 'POST'
+                        'start': dt.datetime.utcfromtimestamp(period['start']),
+                        'end': dt.datetime.utcfromtimestamp(period['end']),
+                    })
+
+        # Convertimos a DataFrame
+        session_df = pd.DataFrame(session_data)
+        session_df['start'] = pd.to_datetime(session_df['start'], utc=True)
+        session_df['end'] = pd.to_datetime(session_df['end'], utc=True)
+
+        # Creamos la columna 'session' en el DataFrame original
+        prices_df['session'] = None
+
+        # Asignamos la sesión comparando el índice (datetime UTC) con cada rango
+        for _, row in session_df.iterrows():
+            mask = (prices_df.index >= row['start']) & (prices_df.index < row['end'])
+            prices_df.loc[mask, 'session'] = row['session']
+
+        return prices_df
+
     def getPrice(self, start:dt.datetime, end:dt.datetime, timeframe:str='1m', df:bool=True) -> list | pd.DataFrame:
 
         if isinstance(start, dt.datetime):
@@ -570,12 +599,17 @@ class YahooTicker(YahooBase):
         if data['chart']['result'] and 'timestamp' in data['chart']['result'][0]:
             tz = data['chart']['result'][0]['meta']['exchangeTimezoneName']
             sessions = data['chart']['result'][0]['meta']['currentTradingPeriod']
+            
             prices = pd.DataFrame(data=data['chart']['result'][0]['indicators']['quote'][0], 
-                                index=data['chart']['result'][0]['timestamp'])
-            prices.index = pd.to_datetime(prices.index, unit='s')
+                                  index=pd.to_datetime(data['chart']['result'][0]['timestamp'], unit='s', utc=True))
+            
             # prices.index = prices.index.tz_localize(tz).tz_convert('UTC')
-            prices['session'] = np.where(prices.index.time < dt.datetime.fromtimestamp(sessions['regular']['start']).time(), 'PRE', 
-                                np.where(dt.datetime.fromtimestamp(sessions['regular']['end']).time() < prices.index.time, 'POST', 'REG'))
+            if 'tradingPeriods' in data['chart']['result'][0]['meta']:
+                prices = self._parseSessions(prices_df=prices, trading_periods=data['chart']['result'][0]['meta']['tradingPeriods'])
+            else:
+                prices['session'] = np.where(prices.index.time < dt.datetime.fromtimestamp(sessions['regular']['start']+sessions['regular']['gmtoffset']).time(), 'PRE', 
+                                np.where(dt.datetime.fromtimestamp(sessions['regular']['end']+sessions['regular']['gmtoffset']).time() < prices.index.time, 'POST', 'REG'))
+            
             if not df: prices.index = prices.index.strftime('%Y-%m-%d %H:%M:%S')
             prices['date'] = prices.index
             prices.dropna(axis=0, inplace=True)

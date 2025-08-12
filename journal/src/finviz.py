@@ -130,6 +130,8 @@ class FinvizBase:
         string: str = string.replace(',','')
         if '(' in string and ')' in string:
             string = '-'+string.replace('(','').replace(')', '')
+        if '-' == string:
+            return 0
 
         float_cond: bool = '.' in string or string == 'nan'
         number: (int | float)
