@@ -810,7 +810,7 @@ class Benzinga():
             **self.data['profile']['tickerDetails']['financialStats'],
             **self.data['profile']['tickerDetails']['keyStatistics'],
         }
-        if len(self.data['profile']['tickerDetails']['percentiles'][0]) > 0:
+        if len(self.data['profile']['tickerDetails']['percentiles']) > 0:
             info: dict = {**info, **self.data['profile']['tickerDetails']['percentiles'][0]}
 
         return info

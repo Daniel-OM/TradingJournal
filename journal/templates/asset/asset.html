@@ -4,6 +4,7 @@
 {% block title %}Stock Finder{% endblock %}
 
 {% block style %}
+<link href="{{ url_for('static', filename='css/chart.css') }}" rel="stylesheet">
 <style>
 
     .chart-container {
@@ -151,22 +152,20 @@
 {% block content %}
 
     <!-- Hero Section -->
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card card-body">
-                <p class="text-center text-secondary mb-4">
-                    Encuentra información detallada sobre cualquier acción del mercado
-                </p>
-                <div class="row g-3">
-                    <div class="col-md-8">
-                        <input type="text" id="symbolInput" class="form-control search-input" 
-                                placeholder="Ingresa el símbolo (ej: AAPL, TSLA, MSFT...)">
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-search w-100" onclick="searchStock()">
-                            <i class="fas fa-search me-2"></i>Buscar
-                        </button>
-                    </div>
+    <div class="justify-content-center">
+        <div class="card card-body">
+            <p class="text-center text-secondary mb-4">
+                Encuentra información detallada sobre cualquier acción del mercado
+            </p>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" id="symbolInput" class="form-control search-input rounded-pill" 
+                            placeholder="Ingresa el símbolo (ej: AAPL, TSLA, MSFT...)">
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-search w-100" onclick="searchStock()">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
                 </div>
             </div>
         </div>
@@ -191,89 +190,77 @@
     <!-- Results Container -->
     <div id="resultsContainer" style="display: none;">
         <!-- Stock Header -->
-        <div class="card fade-in" id="stockHeader">
+        <div class="card fade-in mt-4" id="stockHeader">
             <div class="card-header">
-                <div class="d-flex align-items-center">
-                    <img id="companyLogo" class="company-logo" src="" alt="Logo" style="display: none;">
-                    <div>
-                        <h2 class="stock-title" id="stockTitle">-</h2>
-                        <p class="stock-subtitle" id="stockSubtitle">-</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="row">
+                        <img id="companyLogo" class="company-logo" src="" alt="Logo" style="display: none;">
+                        <div class="col">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <a id="website" href="#" class="stock-title text-decoration-none" target="_blank"><h2 id="stockTitle" class="me-2">-</h2></a>
+                                (<p id="exchange" class="text-muted mb-0"></p>)
+                            </div>
+                            <p id="stockSector" class="text-muted m-0"></p>
+                        </div>
                     </div>
-                </div>
-                <div class="price-container">
-                    <h3 class="current-price" id="currentPrice">-</h3>
-                    <div class="price-change" id="priceChange">
-                        <span>-</span>
+                    <div class="price-container">
+                        <h3 class="current-price" id="currentPrice">-</h3>
+                        <div class="price-change" id="priceChange">
+                            <span>-</span>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="card-body metrics-grid" id="keyMetrics">
+            <div class="card-body row" id="keyMetrics">
                 <!-- Métricas principales se llenarán dinámicamente -->
             </div>
-        </div>
 
-        <!-- Navigation Tabs -->
-        <ul class="nav nav-tabs" id="stockTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
-                    <i class="fas fa-chart-line me-2"></i>Resumen
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="fundamentals-tab" data-bs-toggle="tab" data-bs-target="#fundamentals" type="button">
-                    <i class="fas fa-calculator me-2"></i>Fundamentales
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button">
-                    <i class="fas fa-newspaper me-2"></i>Noticias
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button">
-                    <i class="fas fa-chart-bar me-2"></i>Gráficos
-                </button>
-            </li>
-        </ul>
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs border-bottom" id="stockTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
+                        <i class="fas fa-chart-line me-2"></i>Resumen
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button">
+                        <i class="fas fa-newspaper me-2"></i>Noticias
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button">
+                        <i class="fas fa-chart-bar me-2"></i>Gráficos
+                    </button>
+                </li>
+            </ul>
 
-        <!-- Tab Content -->
-        <div class="tab-content" id="stockTabContent">
-            <!-- Overview Tab -->
-            <div class="tab-pane fade show active" id="overview">
-                <div class="card">
-                    <h4><i class="fas fa-info-circle me-2"></i>Información de la Empresa</h4>
-                    <div id="companyInfo">
-                        <!-- Información de la empresa -->
+            <!-- Tab Content -->
+            <div class="tab-content mt-0" id="stockTabContent">
+                <!-- Fundamentals Tab -->
+                <div class="tab-pane fade show active" id="overview">
+                    <div class="col" id="fundamentalsGrid">
+                        <!-- Datos fundamentales -->
                     </div>
                 </div>
-            </div>
 
-            <!-- Fundamentals Tab -->
-            <div class="tab-pane fade" id="fundamentals">
-                <div class="col" id="fundamentalsGrid">
-                    <!-- Datos fundamentales -->
-                </div>
-            </div>
-
-            <!-- News Tab -->
-            <div class="tab-pane fade" id="news">
-                <div>
-                    <h4><i class="fas fa-newspaper me-2"></i>Últimas Noticias</h4>
-                    <div id="newsContainer" class="col">
+                <!-- News Tab -->
+                <div class="tab-pane fade mt-3" id="news">
+                    <div id="newsContainer" class="col ms-5 me-5">
                         <!-- Noticias -->
                     </div>
                 </div>
+
+                <!-- Charts Tab -->
+                <div class="tab-pane fade" id="charts">
+                </div>
             </div>
 
-            <!-- Charts Tab -->
-            <div class="tab-pane fade" id="charts">
-                <div class="card">
-                    <h4><i class="fas fa-chart-bar me-2"></i>Gráficos de Precio</h4>
-                    <div>
-                        <canvas id="priceChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
+            <div class="card-footer d-flex text-muted">
+                <p class="mb-0" id="headquartersData"></p>
+                <button class="btn btn-primary ms-auto ml-0" onclick="addToWatchlist()">
+                    <i class="fas fa-plus me-2"></i>Add To Watchlist
+                </button>
             </div>
         </div>
     </div>
@@ -281,11 +268,41 @@
 {% endblock %}
 
 {% block modals %}
+
+<!-- Modal para detalles del error -->
+<div class="modal fade" id="watchlistModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-analytics me-2"></i>
+                    Choose Watchlist
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="watchlistOptions"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="addToWatchlist()">
+                    <i class="fas fa-plus me-1"></i>Add
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
+
 {% block scripts %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
     
     <script>
 
@@ -297,43 +314,43 @@
                 "52W_Low_Low": 169.21,
                 "52_week_high": 260.1,
                 "52_week_low": 169.2101,
-                "ATR_(14)": 4.16,
+                "ATR_14": 4.16,
                 "Avg_Volume": 53530000.0,
                 "Beta": 1.1,
-                "Book/sh": 4.43,
+                "Book_per_sh": 4.43,
                 "CIK": 320193,
-                "Cash/sh": 3.73,
-                "Change Pct": -0.21,
+                "Cash_per_sh": 3.73,
+                "Change_Pct": -0.21,
                 "Company": "Apple Inc",
                 "Country": "USA",
-                "Current Ratio": 0.87,
-                "Debt/Eq": 1.54,
+                "Current_Ratio": 0.87,
+                "Debt_per_Eq": 1.54,
                 "Description": "Apple, Inc. engages in the design, manufacture, and sale of smartphones, personal computers, tablets, wearables and accessories, and other varieties of related services. It operates through the following geographical segments: Americas, Europe, Greater China, Japan, and Rest of Asia Pacific. The Americas segment includes North and South America. The Europe segment consists of European countries, as well as India, the Middle East, and Africa. The Greater China segment comprises China, Hong Kong, and Taiwan. The Rest of Asia Pacific segment includes Australia and Asian countries. Its products and services include iPhone, Mac, iPad, AirPods, Apple TV, Apple Watch, Beats products, AppleCare, iCloud, digital content stores, streaming, and licensing services. The company was founded by Steven Paul Jobs, Ronald Gerald Wayne, and Stephen G. Wozniak in April 1976 and is headquartered in Cupertino, CA.",
-                "Dividend_Est._High_Pct": -0.51,
-                "Dividend_Est._Low": 1.03,
-                "Dividend_Ex-Date": "Aug 11, 2025",
-                "Dividend_Gr._3/5Y_High_Pct": 5.5,
-                "Dividend_Gr._3/5Y_Low_Pct": 4.86,
+                "Dividend_Est_High_Pct": -0.51,
+                "Dividend_Est_Low": 1.03,
+                "Dividend_Ex_Date": "Aug 11, 2025",
+                "Dividend_Gr_3_per_5Y_High_Pct": 5.5,
+                "Dividend_Gr_3_per_5Y_Low_Pct": 4.86,
                 "Dividend_TTM_High_Pct": -0.5,
                 "Dividend_TTM_Low": 1.01,
-                "EPS_(ttm)": 6.58,
-                "EPS_Q/Q_Pct": 12.19,
-                "EPS_Y/Y_TTM_Pct": 0.15,
+                "EPS_ttm": 6.58,
+                "EPS_Q_per_Q_Pct": 12.19,
+                "EPS_Y_per_Y_TTM_Pct": 0.15,
                 "EPS_next_5Y_Pct": 8.49,
                 "EPS_next_Q": 1.75,
                 "EPS_next_Y_Pct": 7.91,
-                "EPS_past_3/5Y_High_Pct": 15.41,
-                "EPS_past_3/5Y_Low_Pct": 2.71,
+                "EPS_past_3_per_5Y_High_Pct": 15.41,
+                "EPS_past_3_per_5Y_Low_Pct": 2.71,
                 "EPS_this_Y_Pct": 8.95,
-                "EPS/Sales_Surpr._High_Pct": 4.99,
-                "EPS/Sales_Surpr._Low_Pct": 9.18,
-                "EV/EBITDA": 21.58,
-                "EV/Sales": 7.48,
+                "EPS_per_Sales_Surpr_High_Pct": 4.99,
+                "EPS_per_Sales_Surpr_Low_Pct": 9.18,
+                "EV_per_EBITDA": 21.58,
+                "EV_per_Sales": 7.48,
                 "Earnings": "Jul 31 After Market Close",
                 "Employees": 164000,
                 "Enterprise_Value": 3057740000000.0,
                 "Exchange": "NASD",
-                "Forward_P/E": 25.57,
+                "Forward_P_per_E": 25.57,
                 "Gross_Margin_Pct": 46.68,
                 "IPO": "Dec 12, 1980",
                 "Income": 99280000000.0,
@@ -347,15 +364,15 @@
                 "Insider_Trans_Pct": -1.27,
                 "Inst_Own_Pct": 64.33,
                 "Inst_Trans_Pct": -0.58,
-                "LT_Debt/Eq": 1.25,
+                "LT_Debt_per_Eq": 1.25,
                 "Market_Cap": 3011410000000.0,
-                "Oper._Margin_Pct": 31.87,
+                "Oper_Margin_Pct": 31.87,
                 "Option": true,
-                "P/B": 45.8,
-                "P/C": 54.39,
-                "P/E": 30.85,
-                "P/FCF": 31.31,
-                "P/S": 7.37,
+                "P_per_B": 45.8,
+                "P_per_C": 54.39,
+                "P_per_E": 30.85,
+                "P_per_FCF": 31.31,
+                "P_per_S": 7.37,
                 "PEG": 3.63,
                 "Payout_Pct": 16.11,
                 "Perf_10Y_Pct": 557.87,
@@ -374,17 +391,17 @@
                 "ROA_Pct": 29.94,
                 "ROE_Pct": 149.81,
                 "ROIC_Pct": 66.96,
-                "RSI_(14)": 37.38,
+                "RSI_14": 37.38,
                 "Recom": 1.86,
                 "Rel_Volume": 0.79,
                 "SMA20_Pct": -3.44,
                 "SMA200_Pct": -8.3,
                 "SMA50_Pct": -1.18,
                 "Sales": 408620000000.0,
-                "Sales_Q/Q_Pct": 9.63,
-                "Sales_Y/Y_TTM_Pct": 5.97,
-                "Sales_past_3/5Y_High_Pct": 8.51,
-                "Sales_past_3/5Y_Low_Pct": 2.25,
+                "Sales_Q_per_Q_Pct": 9.63,
+                "Sales_Y_per_Y_TTM_Pct": 5.97,
+                "Sales_past_3_per_5Y_High_Pct": 8.51,
+                "Sales_past_3_per_5Y_Low_Pct": 2.25,
                 "Sector": "Technology",
                 "Short": true,
                 "Short_Float_Pct": 0.63,
@@ -3849,13 +3866,9 @@
             "success": true
         }
 
-        // Initialize AOS
-        AOS.init({
-            duration: 1000,
-            once: true
-        });
 
         let currentChart = null;
+        let chart;
 
         // Search functionality
         function searchStock() {
@@ -3869,7 +3882,8 @@
             hideError();
             
             // Simular llamada a Flask backend
-            fetchStockData(symbol);
+            //fetchStockData(symbol);
+            fetchStockDataFromFlask(symbol);
         }
 
         // Enter key support
@@ -3882,18 +3896,23 @@
         // Mock data for demonstration
         function fetchStockData(symbol) {
             // Simulate API delay
+            fetchStockDataFromFlask(symbol);
             displayStockData(window.asset['data']);
             hideLoading();
         }
 
         function displayStockData(data) {
             // Update header
-            document.getElementById('stockTitle').textContent = `${data.symbol} - ${data.company_name}`;
-            document.getElementById('stockSubtitle').textContent = `${data.symbol}`;
+            document.getElementById('stockTitle').textContent = `${data.symbol} - ${data.companyStandardName}`;
+            document.getElementById('website').href = data.website;
+            document.getElementById('exchange').textContent = data.exchange;
+            document.getElementById('stockSector').textContent = `${data.industry} (${data.sector})`;
             document.getElementById('currentPrice').textContent = `$${data.current_price.toFixed(2)}`;
+            document.getElementById('headquartersData').textContent = `${data.totalEmployees} employees | Headquarters: ${data.city}, ${data.country}`;
+            data.change = data.candles[data.candles.length - 1].close - data.candles[data.candles.length - 2].close;
             
             const changeElement = document.getElementById('priceChange');
-            const changeClass = data.change >= 0 ? 'positive' : 'negative';
+            const changeClass = data.change >= 0 ? 'text-success' : 'text-danger';
             const changeIcon = data.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
             
             changeElement.className = `price-change ${changeClass}`;
@@ -3905,9 +3924,6 @@
             // Update key metrics
             updateKeyMetrics(data);
             
-            // Update company info
-            updateCompanyInfo(data);
-            
             // Update fundamentals
             updateFundamentals(data);
             
@@ -3915,7 +3931,8 @@
             updateNews(data.news);
             
             // Update chart
-            updateChart(data.candles);
+            // updateChart(data.candles);
+            initializeChart();
 
             // Show results
             document.getElementById('resultsContainer').style.display = 'block';
@@ -3925,104 +3942,91 @@
         function updateKeyMetrics(data) {
             const metricsContainer = document.getElementById('keyMetrics');
             metricsContainer.innerHTML = `
-                <div class="metric-item">
-                    <div class="metric-label">Volumen</div>
-                    <div class="metric-value">${formatNumber(data.volume)}</div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>ADR:</strong> 
+                        <p>${ data.current_price > 0 ? (data.ATR_14 / data.current_price * 100).toFixed(2) : 'undefined'} %</p></div>
                 </div>
-                <div class="metric-item">
-                    <div class="metric-label">Cap. de Mercado</div>
-                    <div class="metric-value">${formatNumber(data.marketCap)}</div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Volume:</strong> <p>${ formatNumber(data.volume) }</p></div>
                 </div>
-                <div class="metric-item">
-                    <div class="metric-label">P/E Ratio</div>
-                    <div class="metric-value">${data.peRatio.toFixed(2)}</div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Avg. Volume:</strong> <p>${ formatNumber(data.avg_volume) }</p></div>
                 </div>
-                <div class="metric-item">
-                    <div class="metric-label">EPS</div>
-                    <div class="metric-value">$${data.eps.toFixed(2)}</div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Float Shares:</strong> <p>${ formatNumber(data.shares_float) }</p></div>
                 </div>
-            `;
-        }
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Cap. de Mercado:</strong> <p>${ formatNumber(data.market_cap) }</p></div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>P/E Ratio:</strong> <p>${ data.pe?.toFixed(2) }</p></div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>EPS:</strong> <p>${ data.eps?.toFixed(2) }</p></div>
+                </div>
 
-        function updateCompanyInfo(data) {
-            document.getElementById('companyInfo').innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-building me-2"></i>Descripción</h6>
-                        <p class="text-secondary">${data.description}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-chart-line me-2"></i>Métricas Rápidas</h6>
-                        <div class="row">
-                            <div class="col-6">
-                                <small class="text-secondary">Símbolo:</small><br>
-                                <strong>${data.symbol}</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-secondary">Precio Actual:</small><br>
-                                <strong>$${data.current_price.toFixed(2)}</strong>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 30d:</strong> <p>${ data.Perf_Month_Pct } %</p></div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 90d:</strong> <p>${ data.Perf_Quarter_Pct } %</p></div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4 justify-content-center">
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 180d:</strong> <p>${ data.Perf_Half_Y_Pct } %</p></div>
                 </div>
             `;
         }
 
         function updateFundamentals(fundamentals) {
             const fundamentalsGrid = document.getElementById('fundamentalsGrid');
-            fundamentalsGrid.innerHTML = `
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="fundamental-title">Ingresos y Rentabilidad</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="metric-label">Ingresos</div>
-                                <div class="metric-value">${formatNumber(fundamentals.Income)}</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-label">Deuda</div>
-                                <div class="metric-value">${formatNumber(fundamentals.currentDebt)}</div>
-                            </div>
-                        </div>
+            let txt = `
+            <div class="card-body ms-4 me-4">
+                <div class="row">
+                    <div class="col">
+                        <h6><i class="fas fa-building me-2"></i>Descripción</h6>
+                        <p class="text-secondary"><small>${fundamentals.description}</small></p>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="fundamental-title">Ratios Financieros</h5>
+                <hr>
+                <div class="row">
+                    <!-- Columna 1 -->
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>P/E:</strong> <p>${fundamentals.pe?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Forward P/E:</strong> <p>${fundamentals.forwardPeRatio?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>PEG:</strong> <p>${fundamentals.PEG?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>P/B:</strong> <p>${fundamentals.P_per_B?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>P/S:</strong> <p>${fundamentals.P_per_S?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>EV/EBITDA:</strong> <p>${fundamentals.EV_per_EBITDA?.toFixed(2)}</p></div>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="metric-label">ROE</div>
-                                <div class="metric-value">${fundamentals.ROE_Pct.toFixed(2)}%</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-label">Deuda/Patrimonio</div>
-                                <div class="metric-value">${fundamentals.totalDebtEquityRatio.toFixed(2)}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="fundamental-card">
-                    <div class="card-header">
-                        <h5 class="fundamental-title">Valor por Acción</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="metric-label">EPS</div>
-                                <div class="metric-value">$${fundamentals.eps.toFixed(2)}</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-label">Valor en Libros</div>
-                                <div class="metric-value">$${(fundamentals.tangibleBookValuePerShare * fundamentals.shares_outstanding).toFixed(2)}</div>
-                            </div>
-                        </div>
+                    <!-- Columna 2 -->
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ingresos:</strong> <p>$${formatNumber(fundamentals.Sales)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Beneficio neto:</strong> <p>$${formatNumber(fundamentals.Income)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>EPS (TTM):</strong> <p>$${fundamentals.eps?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen bruto:</strong> <p>${fundamentals.grossMargin?.toFixed(4) * 100}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen operativo:</strong> <p>${fundamentals.Oper_Margin_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen neto:</strong> <p>${fundamentals.Profit_Margin_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>ROE:</strong> <p>${fundamentals.ROE_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>ROIC:</strong> <p>${fundamentals.ROIC_Pct?.toFixed(2)}%</p></div>
                     </div>
                 </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Debt/Equity:</strong> <p>${fundamentals.totalDebtEquityRatio?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Current Ratio:</strong> <p>${fundamentals.Current_Ratio?.toFixed(2)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Quick Ratio:</strong> <p>${fundamentals.Quick_Ratio?.toFixed(2)}</p></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Dividend Yield:</strong> <p>${fundamentals.dividendYield?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Payout Ratio:</strong> <p>${fundamentals.Payout_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ex-Dividendo:</strong> <p>${(new Date(fundamentals.Dividend_Ex_Date)).toLocaleDateString()}</p></div>
+                    </div>
+                </div>
+            </div>
             `;
+
+            fundamentalsGrid.innerHTML = txt;
         }
 
         function updateNews(news) {
@@ -4105,6 +4109,23 @@
             });
         }
 
+
+        function initializeChart () {
+            if (chart) {
+                // Si ya existe un chart, actualizarlo con nuevos datos
+                if (candleData) {
+                    chart.loadData(window.asset.data.candles);
+                } else {
+                    chart.generateData();
+                }
+                chart.reset();
+                chart.drawCharts();
+            } else {
+                // Crear nuevo chart
+                chart = new TradingChart(document.getElementById('charts'), window.asset.data.candles, null, null, null, false);
+            }
+        }
+
         function showLoading() {
             document.getElementById('loadingSpinner').style.display = 'block';
             document.getElementById('resultsContainer').style.display = 'none';
@@ -4142,7 +4163,7 @@
         // Real Flask integration functions
         function fetchStockDataFromFlask(symbol) {
             // Esta función se conectaría con tu backend Flask
-            fetch('/api/asset/' + symbol, {
+            fetch("{{ url_for('asset_endpoints.api_asset', symbol='0') }}".replace('0', symbol), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -4155,7 +4176,8 @@
                 return response.json();
             })
             .then(data => {
-                displayStockData(data);
+                window.asset = data;
+                displayStockData(data['data']);
                 hideLoading();
             })
             .catch(error => {
@@ -4168,21 +4190,61 @@
         // Function to fetch real-time data (uncomment and modify for production)
         /*
         function fetchStockData(symbol) {
-            fetchStockDataFromFlask(symbol);
         }
         */
 
+
+        function showLoadingModal (modalId) {
+            const modal = document.querySelector(`#${modalId} .loading-spinner`);
+            const content = document.querySelector(`#${modalId} .modal-body > div:not(.loading-spinner)`);
+
+            if (modal) modal.style.display = 'block';
+            if (content) content.style.display = 'none';
+        }
+
+        function hideLoadingModal (modalId) {
+            const modal = document.querySelector(`#${modalId} .loading-spinner`);
+            const content = document.querySelector(`#${modalId} .modal-body > div:not(.loading-spinner)`);
+
+            if (modal) modal.style.display = 'none';
+            if (content) content.style.display = 'block';
+        }
         // Additional features
-        function addToWatchlist(symbol) {
+        function openWatchlistModal() {
+            showLoading('watchlistModal');
+            document.getElementById('watchlistOptions').innerHTML = `
+                <select class="form-select" id="watchlistSelect">
+                    <option value="" disabled selected>Selecciona una lista de seguimiento</option>
+                    <option value="default">Lista de seguimiento por defecto</option>
+                    <option value="personal">Lista de seguimiento personal</option>
+                </select>
+            `;
+            // Traer la lista de watchlists para añadir este activo y sus datos a la watchlist
+            new bootstrap.Modal(document.getElementById('watchlistModal')).show();
+            hideLoading('watchlistModal');
+
+        }
+
+        function addToWatchlist() {
             // Add to watchlist functionality
-            const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
-            if (!watchlist.includes(symbol)) {
-                watchlist.push(symbol);
-                localStorage.setItem('watchlist', JSON.stringify(watchlist));
-                showNotification('Agregado a la lista de seguimiento');
-            } else {
-                showNotification('Ya está en tu lista de seguimiento');
-            }
+            const data = window.asset['data'];
+            const entry = {
+                'symbol': data.symbol,
+                'company_name': data.companyStandardName,
+                'atr': data.current_price != 0 ? data.ATR_14 / data.current_price : 0,
+                'volume': data.volume,
+                'avg_volume': data.avg_volume,
+                'market_cap': data.market_cap,
+                'float_shares': data.shares_float,
+                'per': data.peRatio,
+                'eps': data.eps,
+                'exchange': data.exchange,
+                'sector': data.sector,
+                'industry': data.industry,
+                'country': data.country,
+                'price': data.current_price,
+            };
+            window.location.href = `{{ url_for('watchlist_endpoints.add_watchlist_entry') }}?entry=${JSON.stringify(entry)}`;
         }
 
         function showNotification(message) {
@@ -4279,33 +4341,6 @@
             console.log('Exportar datos - Funcionalidad futura');
         }
 
-        // Initialize everything when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            setupSearchSuggestions();
-            updateMarketStatus();
-            
-            // Update market status every minute
-            setInterval(updateMarketStatus, 60000);
-            
-            // Add some example popular stocks for quick access
-            const heroSection = document.querySelector('.hero-section .container');
-            const quickAccessDiv = document.createElement('div');
-            quickAccessDiv.className = 'row justify-content-center mt-4';
-            quickAccessDiv.innerHTML = `
-                <div class="col-lg-8">
-                    <div class="text-center">
-                        <p class="text-secondary mb-2">Acciones populares:</p>
-                        <div class="d-flex flex-wrap justify-content-center gap-2">
-                            ${['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'].map(stock => 
-                                `<button class="btn btn-outline-light btn-sm" onclick="quickSearch('${stock}')">${stock}</button>`
-                            ).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-            heroSection.appendChild(quickAccessDiv);
-        });
-
         function quickSearch(symbol) {
             document.getElementById('symbolInput').value = symbol;
             searchStock();
@@ -4361,7 +4396,15 @@
 
         // Initialize lazy loading
         document.addEventListener('DOMContentLoaded', function() {
-            lazyLoadChart();
+            setupSearchSuggestions();
+
+            // Update market status every minute
+            updateMarketStatus();
+            setInterval(updateMarketStatus, 60000);
         });
+
+        // Exportar funciones para uso global si es necesario
+        window.TradingChart = TradingChart;
+        window.initializeChart = initializeChart;
     </script>
 {% endblock %}

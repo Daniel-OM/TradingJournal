@@ -226,45 +226,59 @@ class Trade(Model):
             )
         
         db.session.commit()
-    
-    @property
-    def error_descriptions(self):
-        """Lista de descripciones de errores para este trade"""
-        return [error.description for error in self.errors]
+
+    def getCandles(self, timeframe='1m') -> list[Candle]:
         
-    def equity_curve(self, initial_balance: float = 0):
-        if not self.transactions:
-            return []
+        start_datetime = datetime.combine(self.entry_date, datetime.strptime(self.entry_time, '%H:%M:%S').time())
+        end_datetime = datetime.combine(self.exit_date, datetime.strptime(self.exit_time, '%H:%M:%S').time())
 
-        # Crear datetime completo para cada transacción
-        def get_transaction_datetime(tx):
-            # Combinar fecha (date) con hora UTC (time)
-            time_str = tx.time or '00:00:00'
-            # Asegurar que tenga formato HH:MM:SS
-            if len(time_str.split(':')) == 2:
-                time_str += ':00'
-            
-            naive_dt = datetime.combine(tx.date, datetime.strptime(time_str, '%H:%M:%S').time())
-            # Convertir a UTC ya que las horas están en UTC
-            return naive_dt.replace(tzinfo=timezone.utc)
-
-        sorted_transactions = sorted(self.transactions, key=get_transaction_datetime)
-
-        # Obtener el rango de tiempo
-        start_datetime = get_transaction_datetime(sorted_transactions[0]) - timedelta(minutes=1)
-        end_datetime = get_transaction_datetime(sorted_transactions[-1]) + timedelta(minutes=1)
-
-        # Buscar candles en el rango (date ya es datetime con UTC)
         candles = Candle.query.filter(
             Candle.symbol == self.symbol,
             Candle.date >= start_datetime,
             Candle.date <= end_datetime,
-            Candle.timeframe == '1m'
+            Candle.timeframe == timeframe
         ).all()
 
         if not candles:
             print(f'No candles data between {start_datetime} and {end_datetime}')
             return []
+        
+        return candles
+    
+    @property
+    def error_descriptions(self):
+        """Lista de descripciones de errores para este trade"""
+        return [error.description for error in self.errors]
+    
+    def get_transaction_datetime(self, tx:Transaction) -> datetime:
+        # Combinar fecha (date) con hora UTC (time)
+        time_str = tx.time or '00:00:00'
+        # Asegurar que tenga formato HH:MM:SS
+        if len(time_str.split(':')) == 2:
+            time_str += ':00'
+        
+        naive_dt = datetime.combine(tx.date, datetime.strptime(time_str, '%H:%M:%S').time())
+        # Convertir a UTC ya que las horas están en UTC
+        return naive_dt.replace(tzinfo=timezone.utc)
+    
+    def getStartEndDatetime(self) -> tuple[datetime, datetime, list[Transaction]]:
+
+        sorted_transactions = sorted(self.transactions, key=self.get_transaction_datetime)
+
+        # Obtener el rango de tiempo
+        start_datetime = self.get_transaction_datetime(sorted_transactions[0]) - timedelta(minutes=1)
+        end_datetime = self.get_transaction_datetime(sorted_transactions[-1]) + timedelta(minutes=1)
+
+        return start_datetime, end_datetime, sorted_transactions
+    
+    def equity_curve(self, initial_balance: float = 0):
+        if not self.transactions:
+            return []
+
+        start_datetime, end_datetime, sorted_transactions = self.getStartEndDatetime()
+
+        # Buscar candles en el rango (date ya es datetime con UTC)
+        candles = self.getCandles(timeframe='1m')
 
         # Preparar DataFrame de candles
         df_candles = pd.DataFrame([c.to_dict() for c in candles])
@@ -276,7 +290,7 @@ class Trade(Model):
         # Crear lista de transacciones con datetime completo
         transactions_with_dt = []
         for tx in sorted_transactions:
-            tx_dt = get_transaction_datetime(tx)
+            tx_dt = self.get_transaction_datetime(tx)
             transactions_with_dt.append({
                 'datetime': tx_dt,
                 'transaction': tx
@@ -297,7 +311,7 @@ class Trade(Model):
             while tx_index < len(transactions_with_dt):
                 tx_data = transactions_with_dt[tx_index]
                 tx_time = tx_data['datetime']
-                tx = tx_data['transaction']
+                tx: Transaction = tx_data['transaction']
                 
                 if tx_time > current_time:
                     break
@@ -444,3 +458,21 @@ class Trade(Model):
             pass
         
         return None
+    
+    def maximumFavorableAverse(self) -> tuple[float, float]:
+        
+        if not self.transactions:
+            return 0.0
+        
+        # Obtener precios de entrada y salida
+        entry_price = self.entry_price
+        exit_price = self.exit_price
+        candles: list[Candle] = self.getCandles(timeframe='1m')
+        
+        if entry_price is None or exit_price is None:
+            return 0.0
+        
+        mae = max(self.entry_price - candle.close for candle in candles if candle.date >= self.entry_date and candle.date <= self.exit_date)
+        mfe = max(candle.close - self.entry_price for candle in candles if candle.date >= self.entry_date and candle.date <= self.exit_date)
+
+        return mae, mfe

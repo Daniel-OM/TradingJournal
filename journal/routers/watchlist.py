@@ -1,4 +1,5 @@
 
+import json
 from datetime import date, datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required, current_user
@@ -143,6 +144,14 @@ def add_watchlist_entry():
             atr=float(request.form['atr']) if request.form['atr'] else None,
             volume=float(request.form['volume']) if request.form['volume'] else None,
             avg_volume=float(request.form['avg_volume']) if request.form['avg_volume'] else None,
+            market_cap=float(request.form['market_cap']) if request.form['market_cap'] else None,
+            float_shares=float(request.form['float_shares']) if request.form['float_shares'] else None,
+            per=float(request.form['per']) if request.form['per'] else None,
+            eps=float(request.form['eps']) if request.form['eps'] else None,
+            exchange=request.form['exchange'] if request.form['exchange'] else None,
+            sector=request.form['sector'] if request.form['sector'] else None,
+            industry=request.form['industry'] if request.form['industry'] else None,
+            country=request.form['country'] if request.form['country'] else None,
             price=float(request.form['price']) if request.form['price'] else None,
             score=float(request.form['score']) if request.form['score'] else None,
             description=request.form['description'],
@@ -181,7 +190,13 @@ def add_watchlist_entry():
         return redirect(url_for('watchlist_endpoints.watchlist_detail', id=entry.watchlist_id))
     
     watchlists = Watchlist.query.all()
-    return render_template('watchlist_entry/create.html', watchlist_id=request.args.get('watchlist_id', None), date=date, watchlists=watchlists, json_watchlists=[s.to_dict(exclude=['entries']) for s in watchlists])
+    entry = json.loads(request.args.get(key='entry', default=None))
+    
+    return render_template('watchlist_entry/create.html', 
+                           watchlist_id=request.args.get('watchlist_id', None), 
+                           date=date, watchlists=watchlists, 
+                           json_watchlists=[s.to_dict(exclude=['entries']) for s in watchlists], 
+                           entry=WatchlistEntry.from_dict(entry) if entry else None)
 
 @watchlist_bp.route('/entry/<int:id>/detail')
 @login_required
@@ -320,6 +335,14 @@ def edit_watchlist_entry(id):
         entry.price = float(request.form.get('price')) if request.form.get('price') else None
         entry.volume = float(request.form.get('volume')) if request.form.get('volume') else None
         entry.avg_volume = float(request.form.get('avg_volume')) if request.form.get('avg_volume') else None
+        entry.market_cap = float(request.form.get('market_cap')) if request.form.get('market_cap') else None
+        entry.float_shares = float(request.form.get('float_shares')) if request.form.get('float_shares') else None
+        entry.per = float(request.form.get('per')) if request.form.get('per') else None
+        entry.eps = float(request.form.get('eps')) if request.form.get('eps') else None
+        entry.exchange = request.form['exchange'] if request.form.get('exchange') else None
+        entry.sector = request.form['sector'] if request.form.get('sector') else None
+        entry.industry = request.form['industry'] if request.form.get('industry') else None
+        entry.country = request.form['country'] if request.form.get('country') else None
         entry.description = request.form.get('description', '')
         entry.negative_action = request.form.get('negative_action', '')
         entry.hashtags = request.form.get('hashtags', '')
@@ -393,6 +416,14 @@ def update_watchlist(id):
         entry.price = float(request.form.get('price')) if request.form.get('price') else None
         entry.volume = float(request.form.get('volume')) if request.form.get('volume') else None
         entry.avg_volume = float(request.form.get('avg_volume')) if request.form.get('avg_volume') else None
+        entry.market_cap = float(request.form.get('market_cap')) if request.form.get('market_cap') else None
+        entry.float_shares = float(request.form.get('float_shares')) if request.form.get('float_shares') else None
+        entry.per = float(request.form.get('per')) if request.form.get('per') else None
+        entry.eps = float(request.form.get('eps')) if request.form.get('eps') else None
+        entry.exchange = request.form['exchange'] if request.form.get('exchange') else None
+        entry.sector = request.form['sector'] if request.form.get('sector') else None
+        entry.industry = request.form['industry'] if request.form.get('industry') else None
+        entry.country = request.form['country'] if request.form.get('country') else None
         entry.description = request.form.get('description', '')
         entry.negative_action = request.form.get('negative_action', '')
         entry.hashtags = request.form.get('hashtags', '')
