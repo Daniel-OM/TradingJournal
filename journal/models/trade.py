@@ -1,5 +1,6 @@
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, date, timedelta, timezone
+import pytz
 import pandas as pd
 from sqlalchemy import and_
 
@@ -93,6 +94,16 @@ class Trade(Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'equity': self.equity_curve() if equity else [],
         }
+    
+    @property
+    def error_descriptions(self) -> list[str]:
+        """Lista de descripciones de errores para este trade"""
+        return [error.description for error in self.errors]
+    
+    def toDatetime(self, date_input:str|date, time_input:str|datetime) -> datetime:
+        date_input = date_input if isinstance(date_input, date) else datetime.strptime(date_input, '%Y-%m-%d').date()
+        time_input = time_input if isinstance(time_input, datetime) else datetime.strptime(time_input, '%H:%M:%S').time()
+        return datetime.combine(date_input, time_input, tzinfo=timezone.utc)
     
     def add_transaction(self, date, price:float, time, quantity:float, commission:float, type:str):
         
@@ -199,7 +210,7 @@ class Trade(Model):
         if condition_id is None or condition_id == '':
             return
         
-        condition = StrategyCondition.query.filter_by(id=condition_id).first()
+        # condition = StrategyCondition.query.filter_by(id=condition_id).first()
         
         # Verificar si la relación ya existe
         exists = db.session.execute(
@@ -235,7 +246,7 @@ class Trade(Model):
         candles = Candle.query.filter(
             Candle.symbol == self.symbol,
             Candle.date >= start_datetime,
-            Candle.date <= end_datetime,
+            Candle.date <= end_datetime + timedelta(minutes=1),
             Candle.timeframe == timeframe
         ).all()
 
@@ -244,11 +255,6 @@ class Trade(Model):
             return []
         
         return candles
-    
-    @property
-    def error_descriptions(self):
-        """Lista de descripciones de errores para este trade"""
-        return [error.description for error in self.errors]
     
     def get_transaction_datetime(self, tx:Transaction) -> datetime:
         # Combinar fecha (date) con hora UTC (time)
@@ -471,8 +477,8 @@ class Trade(Model):
         
         if entry_price is None or exit_price is None:
             return 0.0, 0.0
-        
-        mae = max(self.entry_price - candle.close for candle in candles if candle.date >= self.entry_date and candle.date <= self.exit_date)
-        mfe = max(candle.close - self.entry_price for candle in candles if candle.date >= self.entry_date and candle.date <= self.exit_date)
+
+        mae = max(self.entry_price - candle.low for candle in candles)
+        mfe = max(candle.high - self.entry_price for candle in candles)
 
         return mae, mfe

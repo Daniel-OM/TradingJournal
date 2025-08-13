@@ -252,7 +252,7 @@ def add_trade() -> Response | str:
     strategies = Strategy.query.all()
     errors = Error.query.filter_by(is_active=True).all()
     
-    return render_template('trade/create.html', strategies=strategies, errors=errors, json_strategies=[strat.to_dict() for strat in strategies], date=date)
+    return render_template('trade/create.html', strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
 @journal_bp.route('/edit/<int:trade_id>', methods=['GET', 'POST'])
 @login_required
@@ -663,7 +663,7 @@ def globalPerformance():
     return render_template('trade/performance-global.html', stats=stats, strategies=strategies)
 
 
-@journal_bp.route('/performance')
+@journal_bp.route('/performance-old')
 @login_required
 def performance_old():
     # Obtener filtros
@@ -833,7 +833,7 @@ def performance():
     
     # ===== CALCULAR ESTADÍSTICAS =====
     stats = PerformanceMetrics(trades=all_trades).getComplete()
-    
+    print(stats.keys())
     stats['balances'] = get_balance_data()
     
     # ===== OBTENER DATOS ADICIONALES =====

@@ -258,8 +258,8 @@ class PerformanceMetrics:
             'scratch_trades': scratch_trades,
             'win_rate': (winning_trades / total_trades * 100) if total_trades > 0 else 0,
             'loss_rate': (losing_trades / total_trades * 100) if total_trades > 0 else 0,
-            'winning_pnl': winning_pnl,
-            'losing_pnl': losing_pnl,
+            'winning_pnl': sum(winning_pnl),
+            'losing_pnl': sum(losing_pnl),
             'avg_trade_pnl': avg_trade_pnl,
             'avg_pnl_per_share': round(avg_pnl_per_share, 4),
             'median_trade_pnl': median_trade_pnl,
@@ -316,8 +316,8 @@ class PerformanceMetrics:
         def get_hold_time(trade:Trade):
             if hasattr(trade, 'exit_date') and trade.exit_date and trade.entry_date:
                 if hasattr(trade, 'entry_time') and hasattr(trade, 'exit_time'):
-                    entry_datetime = datetime.combine(trade.entry_date, trade.entry_time or datetime.min.time())
-                    exit_datetime = datetime.combine(trade.exit_date, trade.exit_time or datetime.min.time())
+                    entry_datetime = datetime.combine(trade.entry_date, datetime.strptime(trade.entry_time, '%H:%M:%S').time() or datetime.min.time())
+                    exit_datetime = datetime.combine(trade.exit_date, datetime.strptime(trade.exit_time, '%H:%M:%S').time() or datetime.min.time())
                     return (exit_datetime - entry_datetime).total_seconds() / 60
                 else:
                     return (trade.exit_date - trade.entry_date).days * 24 * 60
