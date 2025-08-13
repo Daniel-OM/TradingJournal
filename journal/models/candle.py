@@ -12,13 +12,13 @@ class Candle(Model):
     low = db.Column(db.Float, nullable=False)
     close = db.Column(db.Float, nullable=False)
     volume = db.Column(db.Float, nullable=True)
-    session = db.Column(db.String, nullable=True, default='RH') # PM, RH, AH
+    session = db.Column(db.String, nullable=True, default='REG') # PRE, REG, POST
     timeframe = db.Column(db.String, nullable=False)
     
     def to_dict(self, exclude:list=[]):
         return {
             'id': self.id,
-            'date': self.date.strftime('%Y-%m-%d %H:%M:%S%z'),
+            'date': self.date.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
             'symbol': self.symbol,
             'open': float(self.open),
             'high': float(self.high),

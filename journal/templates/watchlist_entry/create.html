@@ -121,6 +121,28 @@
                         <label class="form-label">Nombre de la Compañía</label>
                         <input type="text" name="company_name" class="form-control" value="{{ entry.company_name if entry else ''}}" placeholder="Apple Inc.">
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Exchange</label>
+                            <input type="text" name="exchange" class="form-control" value="{{ entry.exchange if entry else ''}}" placeholder="NASDAQ">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Country</label>
+                            <input type="text" name="country" class="form-control" value="{{ entry.country if entry else ''}}"
+                                placeholder="USA">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sector</label>
+                            <input type="text" name="sector" class="form-control" value="{{ entry.sector if entry else ''}}" placeholder="Technology">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Industry</label>
+                            <input type="text" name="industry" class="form-control" value="{{ entry.industry if entry else ''}}"
+                                placeholder="Consumer Electronics">
+                        </div>
+                    </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -141,6 +163,32 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Avg. Volume</label>
                             <input type="number" step="0.01" name="avg_volume" class="form-control" value="{{ entry.avg_volume if entry else ''}}" placeholder="250000">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Market Cap.</label>
+                            <input type="number" step="0.01" name="market_cap" class="form-control" value="{{ entry.market_cap if entry else ''}}"
+                                placeholder="10000000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Floating Shares</label>
+                            <input type="number" step="0.01" name="float_shares" class="form-control"
+                                value="{{ entry.float_shares if entry else ''}}" placeholder="2500000">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">P/E Ratio</label>
+                            <input type="number" step="0.01" name="per" class="form-control" value="{{ entry.per if entry else ''}}"
+                                placeholder="30.79">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Earnings per Share</label>
+                            <input type="number" step="0.01" name="eps" class="form-control"
+                                value="{{ entry.eps if entry else ''}}" placeholder="6.58">
                         </div>
                     </div>
                     
@@ -431,8 +479,8 @@
                     document.getElementById(`condition_${condition.id}`).click();
                 {% endfor %}
             {% else %}
-            addLevel();
-            loadWatchlistConditions();
+                addLevel();
+                loadWatchlistConditions();
             {% endif %}
         });
     </script>

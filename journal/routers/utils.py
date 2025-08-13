@@ -102,20 +102,19 @@ def download_candles(db, symbol:str, config:dict[str, datetime|str]):
 
         db.session.commit()
 
-        sessions = {'PRE': 'PM', 'REG': 'RH', 'POST': 'AH'}
         candle_objs = []
         for tf, candles in data:
             if hasattr(candles, 'iterrows'):
                 candle_objs += [
                     Candle(
                         symbol=symbol,
-                        date=row['date'] if 'date' in row else idx,
+                        date=row['date'] if 'date' in row else idx, # .strftime('%Y-%m-%d %H:%M:%S%z')
                         open=row['open'],
                         high=row['high'],
                         low=row['low'],
                         close=row['close'],
                         volume=row.get('volume', None),
-                        session=sessions[row.get('session', 'REG')],
+                        session=row.get('session', 'REG'),
                         timeframe=tf
                     ) for idx, row in candles.iterrows()
                 ]
@@ -123,13 +122,13 @@ def download_candles(db, symbol:str, config:dict[str, datetime|str]):
                 candle_objs += [
                     Candle(
                         symbol=symbol,
-                        date=row['date'],
+                        date=row['date'], # .strftime('%Y-%m-%d %H:%M:%S%z'),
                         open=row['open'],
                         high=row['high'],
                         low=row['low'],
                         close=row['close'],
                         volume=row.get('volume', None),
-                        session=sessions[row.get('session', 'REG')],
+                        session=row.get('session', 'REG'),
                         timeframe=tf
                     ) for row in candles
                 ]

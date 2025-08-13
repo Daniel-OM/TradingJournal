@@ -22,6 +22,14 @@ class WatchlistEntry(Model):
     atr = db.Column(db.Float)
     volume = db.Column(db.Float)
     avg_volume = db.Column(db.Float)
+    market_cap = db.Column(db.Float, nullable=True)
+    float_shares = db.Column(db.Float, nullable=True)
+    per = db.Column(db.Float, nullable=True)
+    eps = db.Column(db.Float, nullable=True)
+    exchange = db.Column(db.String(50))
+    sector = db.Column(db.String(100))
+    industry = db.Column(db.String(100))
+    country = db.Column(db.String(100))
     price = db.Column(db.Float)
     score = db.Column(db.Float, nullable=False, default=0.0)
     description = db.Column(db.Text)
@@ -46,6 +54,14 @@ class WatchlistEntry(Model):
             'atr': self.atr,
             'volume': self.volume,
             'avg_volume': self.avg_volume,
+            'market_cap': self.market_cap,
+            'float_shares': self.float_shares,
+            'per': self.per,
+            'eps': self.eps,
+            'exchange': self.exchange,
+            'sector': self.sector,
+            'industry': self.industry,
+            'country': self.country,
             'price': self.price,
             'score': self.score,
             'description': self.description,
@@ -55,12 +71,40 @@ class WatchlistEntry(Model):
             'profit_target': self.profit_target,
             'other_notes': self.other_notes,
             'date_exit': self.date_exit,
-            'performance': self.performance.to_dict(),
             'watchlist': {} if 'watchlist' in exclude else self.watchlist.to_dict(exclude=['entries']+exclude),
             'levels': [] if 'levels' in exclude else [l.to_dict(exclude=['entries']+exclude) for l in self.levels],
             'conditions': [] if 'conditions' in exclude else [l.to_dict(exclude=['entries', 'watchlist']+exclude) for l in self.conditions],
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+    @staticmethod
+    def from_dict(data:dict) -> 'WatchlistEntry':
+        return WatchlistEntry(
+            id=data['id'] if 'id' in data else None,
+            date=data['date'] if 'date' in data else None,
+            symbol=data['symbol'] if 'symbol' in data else None,
+            company_name=data['company_name'] if 'company_name' in data else None,
+            atr=data['atr'] if 'atr' in data else None,
+            volume=data['volume'] if 'volume' in data else None,
+            avg_volume=data['avg_volume'] if 'avg_volume' in data else None,
+            market_cap=data['market_cap'] if 'market_cap' in data else None,
+            float_shares=data['float_shares'] if 'float_shares' in data else None,
+            per=data['per'] if 'per' in data else None,
+            eps=data['eps'] if 'eps' in data else None,
+            exchange=data['exchange'] if 'exchange' in data else None,
+            sector=data['sector'] if 'sector' in data else None,
+            industry=data['industry'] if 'industry' in data else None,
+            country=data['country'] if 'country' in data else None,
+            price=data['price'] if 'price' in data else None,
+            score=data['score'] if 'score' in data else None,
+            description=data['description'] if 'description' in data else None,
+            negative_action=data['negative_action'] if 'negative_action' in data else None,
+            hashtags=data['hashtags'] if 'hashtags' in data else None,
+            risk_reward=data['risk_reward'] if 'risk_reward' in data else None,
+            profit_target=data['profit_target'] if 'profit_target' in data else None,
+            other_notes=data['other_notes'] if 'other_notes' in data else None,
+            date_exit=data['date_exit'] if 'date_exit' in data else None,
+        )
     
     def add_level(self, price, date, impact_level='medium'):
         """Agregar un level a este trade"""

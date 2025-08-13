@@ -520,67 +520,7 @@
     </div>
 
     <!-- Stock chart -->
-    <div class="card main-card">
-        <div class="card-header text-center py-3">
-            <h2 class="mb-0" style="background: linear-gradient(90deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                <i class="fas fa-chart-candlestick me-2"></i>Trading Analytics Pro
-            </h2>
-        </div>
-        <div class="card-body">
-            <!-- Controles -->
-            <div class="controls-panel">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h5><i class="fas fa-play-circle me-2"></i>Controles de Replay</h5>
-                        <div class="btn-group me-3" role="group">
-                            <button id="playBtn" class="btn btn-custom">
-                                <i class="fas fa-play"></i> Play
-                            </button>
-                            <button id="pauseBtn" class="btn btn-custom" disabled>
-                                <i class="fas fa-pause"></i> Pause
-                            </button>
-                            <button id="stopBtn" class="btn btn-danger-custom" disabled>
-                                <i class="fas fa-stop"></i> Stop
-                            </button>
-                            <button id="nextBtn" class="btn btn-success-custom">
-                                <i class="fas fa-step-forward"></i> Siguiente
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="speed-slider">
-                            <label class="form-label">Velocidad: <span id="speedValue">1x</span></label>
-                            <input type="range" class="form-range" id="speedSlider" min="1" max="10" value="1">
-                        </div>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Fecha de inicio del replay:</label>
-                        <input type="datetime-local" class="form-control" id="startTime">
-                    </div>
-                    <div class="col-md-6">
-                        <button id="resetBtn" class="btn btn-custom mt-4">
-                            <i class="fas fa-refresh"></i> Reiniciar Replay
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gráfico Diario -->
-            <div class="card">
-                <div class="card-body charts">
-                </div>
-            </div>
-
-            <!-- Información de transacciones -->
-            <div class="controls-panel mt-3">
-                <h5><i class="fas fa-exchange-alt me-2"></i>Transacciones Recientes</h5>
-                <div id="transactionsList" class="mt-3">
-                    <!-- Las transacciones se mostrarán aquí -->
-                </div>
-            </div>
-        </div>
+    <div id="chartCard" class="card main-card">
     </div>
 
     <div class="action-buttons">
@@ -894,7 +834,7 @@
                 chart.drawCharts();
             } else {
                 // Crear nuevo chart
-                chart = new TradingChart(document.querySelector('div.charts'), candleData, globalTransactionData, {startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time});
+                chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, {startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time});
             }
         }
         
