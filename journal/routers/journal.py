@@ -13,6 +13,8 @@ from werkzeug.wrappers.response import Response
 
 from ..models.watchlist_entry import WatchlistEntry
 
+from ..models.watchlist_entry import WatchlistEntry
+
 from ..config import UPLOAD_FOLDER
 from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
 from ..src.performance import PerformanceMetrics
@@ -390,7 +392,7 @@ def globalPerformance():
         base_query = base_query.join(
             WatchlistEntry,
             and_(
-                Trade.symbol == WatchlistEntry.symbol,  # Asumiendo que el campo se llama 'ticker'
+                Trade.symbol == WatchlistEntry.symbol,
                 Trade.entry_date >= WatchlistEntry.date,
                 Trade.entry_date <= WatchlistEntry.date_exit
             )
