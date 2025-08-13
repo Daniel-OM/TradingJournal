@@ -5,5 +5,6 @@ from .strategy import strategy_bp
 from .watchlist import watchlist_bp
 from .journal import journal_bp
 from .error import error_bp
+from .asset import asset_bp
 
 from .utils import *

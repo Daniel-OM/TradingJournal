@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+
+{% block style %}
+<style>
+.profit { color: #28a745 !important; }
+.loss { color: #dc3545 !important; }
+.card { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
+.nav-tabs .nav-link { border-bottom: 2px solid transparent; }
+.nav-tabs .nav-link.active { border-bottom-color: #007bff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- TODO: Apply filters (almost for everything). Plot trade evolution charts and trader 
+     evolution charts (based on errors and trade conditions met) -->
+    <!-- Header con filtros -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-bar me-2"></i>Análisis de Rendimiento</h2>
+        
+        <!-- Filtros de período -->
+        <div class="d-flex gap-2">
+            <select id="periodFilter" class="form-select form-select-sm" style="width: auto;">
+                <option value="all">Todo el tiempo</option>
+                <option value="30">Últimos 30 días</option>
+                <option value="90">Últimos 90 días</option>
+                <option value="365">Último año</option>
+            </select>
+            <select id="strategyFilter" class="form-select form-select-sm" style="width: auto;">
+                <option value="">Todas las estrategias</option>
+                {% for strategy in strategies %}
+                <option value="{{ strategy.id }}">{{ strategy.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- KPIs principales -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">{{ stats.total_trades }}</h3>
+                    <p class="text-muted mb-0 small">Total Trades</p>
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up"></i> {{ stats.trades_this_month }} este mes
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-percentage fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">{{ stats.win_rate }}%</h3>
+                    <p class="text-muted mb-0 small">Tasa de Éxito</p>
+                    <div class="progress mt-2" style="height: 5px;">
+                        <div class="progress-bar bg-success" style="width: {{ stats.win_rate }}%"></div>
+                    </div>
+                    <small class="text-muted">
+                        {{ stats.winning_trades }}W / {{ stats.losing_trades }}L
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="{% if stats.total_pnl > 0 %}text-success{% else %}text-danger{% endif %} mb-2">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1 {% if stats.total_pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(stats.total_pnl) }}
+                    </h3>
+                    <p class="text-muted mb-0 small">P&L Total</p>
+                    <small class="{% if stats.pnl_change > 0 %}text-success{% else %}text-danger{% endif %}">
+                        <i class="fas fa-arrow-{{ 'up' if stats.pnl_change > 0 else 'down' }}"></i> 
+                        {{ "%.1f"|format(stats.pnl_change|abs) }}% vs mes anterior
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">{{ "%.2f"|format(stats.avg_trade) }}</h3>
+                    <p class="text-muted mb-0 small">P&L Promedio</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-bullseye fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">{{ "%.2f"|format(stats.sharpe_ratio) }}</h3>
+                    <p class="text-muted mb-0 small">Ratio Sharpe</p>
+                    <small class="{% if stats.sharpe_ratio > 1 %}text-success{% elif stats.sharpe_ratio > 0.5 %}text-warning{% else %}text-danger{% endif %}">
+                        {% if stats.sharpe_ratio > 1 %}Excelente
+                        {% elif stats.sharpe_ratio > 0.5 %}Bueno
+                        {% else %}Mejorable{% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-danger mb-2">
+                        <i class="fas fa-arrow-down fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">{{ "%.1f"|format(stats.max_drawdown) }}%</h3>
+                    <p class="text-muted mb-0 small">Max Drawdown</p>
+                    <small class="{% if stats.max_drawdown < 5 %}text-success{% elif stats.max_drawdown < 15 %}text-warning{% else %}text-danger{% endif %}">
+                        {% if stats.max_drawdown < 5 %}Bajo riesgo
+                        {% elif stats.max_drawdown < 15 %}Riesgo moderado
+                        {% else %}Alto riesgo{% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos principales -->
+    <div class="row mb-4">
+        <!-- Balance histórico -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Evolución del Balance</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="chartType" id="equity" checked>
+                        <label class="btn btn-outline-primary" for="equity">Equity</label>
+                        
+                        <input type="radio" class="btn-check" name="chartType" id="drawdown">
+                        <label class="btn btn-outline-primary" for="drawdown">Drawdown</label>
+                        
+                        <input type="radio" class="btn-check" name="chartType" id="returns">
+                        <label class="btn btn-outline-primary" for="returns">Retornos</label>
+                    </div>
+                </div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="balanceChart" style="height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Distribución y métricas -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Distribución P&L</h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="pnlDistribution" style="height: 250px;"></canvas>
+                    </div>
+                    
+                    <!-- Métricas de riesgo -->
+                    <div class="mt-4">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h6 class="text-success">Ganancia Promedio</h6> 
+                                <strong class="text-success">${{ "%.2f"|format(stats.avg_win) }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="text-danger">Pérdida Promedio</h6>
+                                <strong class="text-danger">${{ "%.2f"|format(stats.avg_loss) }}</strong>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <h6>Ratio Ganancia/Pérdida</h6>
+                            <h4 class="{% if stats.profit_factor > 1 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "%.2f"|format(stats.risk_reward) }} (PF: {{ "%.2f"|format(stats.profit_factor) }})
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs para análisis detallados -->
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#strategies-tab">
+                        <i class="fas fa-chess me-2"></i>Por Estrategia
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#watchlists-tab">
+                        <i class="fas fa-list me-2"></i>Por Watchlist
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#monthly-tab">
+                        <i class="fas fa-calendar me-2"></i>Por Mes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#symbols-tab">
+                        <i class="fas fa-chart-bar me-2"></i>Por Símbolo
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#errors-tab">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Análisis de Errores
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Análisis por estrategia -->
+                <div class="tab-pane fade show active" id="strategies-tab">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Estrategia</th>
+                                            <th>Trades</th>
+                                            <th>Win Rate</th>
+                                            <th>P&L Total</th>
+                                            <th>P&L Promedio</th>
+                                            <th>Profit Factor</th>
+                                            <th>Max DD</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for strategy in stats.strategy_stats %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ strategy.name }}</strong>
+                                                <br><small class="text-muted">{{ strategy.description[:50] }}...</small>
+                                            </td>
+                                            <td>{{ strategy.total_trades }}</td>
+                                            <td>
+                                                <span class="{% if strategy.win_rate > 60 %}text-success{% elif strategy.win_rate > 40 %}text-warning{% else %}text-danger{% endif %}">
+                                                    {{ "%.1f"|format(strategy.win_rate) }}%
+                                                </span>
+                                            </td>
+                                            <td class="{% if strategy.total_pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                ${{ "%.2f"|format(strategy.total_pnl) }}
+                                            </td>
+                                            <td class="{% if strategy.avg_pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                ${{ "%.2f"|format(strategy.avg_pnl) }}
+                                            </td>
+                                            <td>
+                                                <span class="{% if strategy.profit_factor > 1.5 %}text-success{% elif strategy.profit_factor > 1 %}text-warning{% else %}text-danger{% endif %}">
+                                                    {{ "%.2f"|format(strategy.profit_factor) }}
+                                                </span>
+                                            </td>
+                                            <td class="text-danger">{{ "%.1f"|format(strategy.max_drawdown) }}%</td>
+                                            <td>
+                                                {% if strategy.total_pnl > 0 and strategy.win_rate > 50 %}
+                                                    <span class="badge bg-success">Rentable</span>
+                                                {% elif strategy.total_pnl > 0 %}
+                                                    <span class="badge bg-warning">Prometedora</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Revisar</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-4" style="height: 300px;">
+                            <canvas id="strategyChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis por watchlist -->
+                <div class="tab-pane fade" id="watchlists-tab">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Watchlist</th>
+                                            <th>Símbolos</th>
+                                            <th>Trades</th>
+                                            <th>Win Rate</th>
+                                            <th>P&L Total</th>
+                                            <th>Mejor Símbolo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for watchlist in stats.watchlist_stats %}
+                                        <tr>
+                                            <td><strong>{{ watchlist.name }}</strong></td>
+                                            <td>{{ watchlist.symbol_count }}</td>
+                                            <td>{{ watchlist.total_trades }}</td>
+                                            <td class="{% if watchlist.win_rate > 60 %}text-success{% elif watchlist.win_rate > 40 %}text-warning{% else %}text-danger{% endif %}">
+                                                {{ "%.1f"|format(watchlist.win_rate) }}%
+                                            </td>
+                                            <td class="{% if watchlist.total_pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                ${{ "%.2f"|format(watchlist.total_pnl) }}
+                                            </td>
+                                            <td>
+                                                <strong>{{ watchlist.best_symbol }}</strong>
+                                                <small class="text-success">(${{ "%.2f"|format(watchlist.best_symbol_pnl) }})</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-4" style="height: 300px;">
+                            <canvas id="watchlistChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis mensual -->
+                <div class="tab-pane fade" id="monthly-tab">
+                    <div style="height: 400px;">
+                        <canvas id="monthlyChart" style="height: 400px;"></canvas>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        {% for month in stats.monthly_stats %}
+                        <div class="col-md-2 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6>{{ month.month_name }}</h6>
+                                    <h4 class="{% if month.pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.0f"|format(month.pnl) }}
+                                    </h4>
+                                    <small class="text-muted">{{ month.trades }} trades</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Análisis por símbolo -->
+                <div class="tab-pane fade" id="symbols-tab">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h5>Top Performers</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Símbolo</th>
+                                            <th>Trades</th>
+                                            <th>Win Rate</th>
+                                            <th>P&L</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for symbol in stats.top_symbols %}
+                                        <tr>
+                                            <td><strong>{{ symbol.symbol }}</strong></td>
+                                            <td>{{ symbol.trades }}</td>
+                                            <td class="text-success">{{ "%.0f"|format(symbol.win_rate) }}%</td>
+                                            <td class="text-success">${{ "%.2f"|format(symbol.pnl) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                            <h5>Worst Performers</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Símbolo</th>
+                                            <th>Trades</th>
+                                            <th>Win Rate</th>
+                                            <th>P&L</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for symbol in stats.worst_symbols %}
+                                        <tr>
+                                            <td><strong>{{ symbol.symbol }}</strong></td>
+                                            <td>{{ symbol.trades }}</td>
+                                            <td class="text-danger">{{ "%.0f"|format(symbol.win_rate) }}%</td>
+                                            <td class="text-danger">${{ "%.2f"|format(symbol.pnl) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis de errores -->
+                <div class="tab-pane fade" id="errors-tab">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Error</th>
+                                            <th>Frecuencia</th>
+                                            <th>Impacto Promedio</th>
+                                            <th>Pérdida Total</th>
+                                            <th>Última Ocurrencia</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for error in stats.error_stats %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ error.description }}</strong>
+                                                <br><small class="text-muted">{{ error.category }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ error.frequency }}</span>
+                                            </td>
+                                            <td class="text-danger">${{ "%.2f"|format(error.avg_impact) }}</td>
+                                            <td class="text-danger">${{ "%.2f"|format(error.total_loss) }}</td>
+                                            <td>{{ error.last_occurrence.strftime('%d/%m/%Y') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-4" style="height: 300px;">
+                            <canvas id="errorsChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trades destacados -->
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-trophy text-warning me-2"></i>Mejores Trades</h5>
+                </div>
+                <div class="card-body">
+                    {% for trade in stats.best_trades %}
+                    <a class="text-decoration-none text-reset" href="{{ url_for('journal_endpoints.get_trade', id=trade.id) }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8f9fa;">
+                            <div>
+                                <strong>{{ trade.symbol }}</strong> - {{ trade.strategy.name if trade.strategy }}
+                                <br><small class="text-muted">{{ trade.entry_date.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">${{ "%.2f"|format(trade.profit_loss) }}</strong>
+                                <br><small class="text-muted">{{ "%.1f"|format((trade.profit_loss / trade.entry_price * trade.quantity * 100)|abs) }}%</small>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle text-danger me-2"></i>Peores Trades</h5>
+                </div>
+                <div class="card-body">
+                    {% for trade in stats.worst_trades %}
+                    <a class="text-decoration-none text-reset" href="{{ url_for('journal_endpoints.get_trade', id=trade.id) }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background-color: #f8f9fa;">
+                            <div>
+                                <strong>{{ trade.symbol }}</strong> - {{ trade.strategy.name if trade.strategy }}
+                                <br><small class="text-muted">{{ trade.entry_date.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-danger">${{ "%.2f"|format(trade.profit_loss) }}</strong>
+                                <br><small class="text-muted">{{ "%.1f"|format((trade.profit_loss / trade.entry_price * trade.quantity * 100)|abs) }}%</small>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='chatjs-4.5.0-dist/chart.umd.min.js') }}"></script>
+<script>
+// Configuración de datos para los gráficos
+const chartData = {
+    balances: {{ stats.balances | tojson }},
+    strategyStats: {{ stats.strategy_stats | tojson }},
+    monthlyStats: {{ stats.monthly_stats | tojson }},
+    errorStats: {{ stats.error_stats | tojson }}
+};
+
+// Inicializar todos los gráficos
+document.addEventListener('DOMContentLoaded', function() {
+    initBalanceChart();
+    initPnLDistribution();
+    initStrategyChart();
+    initWatchlistChart();
+    initMonthlyChart();
+    initErrorsChart();
+});
+
+function initBalanceChart() {
+    const ctx = document.getElementById('balanceChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.balances.map(b => b.date),
+            datasets: [{
+                label: 'Balance',
+                data: chartData.balances.map(b => b.balance),
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initPnLDistribution() {
+    const ctx = document.getElementById('pnlDistribution');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Ganadores', 'Perdedores'],
+            datasets: [{
+                data: [{{ stats.winning_trades }}, {{ stats.losing_trades }}],
+                backgroundColor: ['#28a745', '#dc3545'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function initStrategyChart() {
+    const ctx = document.getElementById('strategyChart');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.strategyStats.map(s => s.name),
+            datasets: [{
+                label: 'P&L',
+                data: chartData.strategyStats.map(s => s.total_pnl),
+                backgroundColor: chartData.strategyStats.map(s => 
+                    s.total_pnl > 0 ? '#28a745' : '#dc3545'
+                )
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+// Funciones para los otros gráficos...
+function initWatchlistChart() {
+    const ctx = document.getElementById('watchlistChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.watchlistStats.map(w => w.name),
+            datasets: [{
+                label: 'P&L',
+                data: chartData.watchlistStats.map(w => w.total_pnl),
+                backgroundColor: chartData.watchlistStats.map(w =>
+                    w.total_pnl > 0 ? '#28a745' : '#dc3545'
+                )
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function initMonthlyChart() {
+    const ctx = document.getElementById('monthlyChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.monthlyStats.map(m => m.month_name),
+            datasets: [{
+                label: 'P&L Mensual',
+                data: chartData.monthlyStats.map(m => m.pnl),
+                backgroundColor: chartData.monthlyStats.map(m =>
+                    m.pnl > 0 ? '#28a745' : '#dc3545'
+                )
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function initErrorsChart() {
+    const ctx = document.getElementById('errorsChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.errorStats.map(e => e.description),
+            datasets: [{
+                label: 'Pérdida Total',
+                data: chartData.errorStats.map(e => e.total_loss),
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Filtros dinámicos
+document.getElementById('periodFilter').addEventListener('change', function() {
+    // Implementar filtrado por período
+});
+
+document.getElementById('strategyFilter').addEventListener('change', function() {
+    // Implementar filtrado por estrategia
+});
+</script>
+{% endblock %}

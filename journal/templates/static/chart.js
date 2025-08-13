@@ -1,63 +1,59 @@
 // TODO: Plot volume as histogram on bottom and transactions overlay
 class TradingChart {
-    constructor(element, candleData = null, transactionData = null, options = {}) {
+    constructor(element, dailyData = null, intradayData = null, transactionData = null, options = {}, replay = false) {
         this.theme = {
-            background: options.background || '#ffffff',
-            gridColor: options.gridColor || '#e0e0e0',
-            textColor: options.textColor || '#333333',
-            bullColor: options.bullColor || '#00ff41',
-            bearColor: options.bearColor || '#ff4757',
-            textFont: options.textFont || '12px Arial',
-            padding: options.padding || 40,
-            bottomPadding: options.bottomPadding || 60,
-            startReplay: options.startReplay || new Date().toISOString(),
-            ...options.theme
+            background: options?.background || '#ffffff',
+            gridColor: options?.gridColor || '#e0e0e0',
+            textColor: options?.textColor || '#333333',
+            bullColor: options?.bullColor || '#00ff41',
+            bearColor: options?.bearColor || '#ff4757',
+            textFont: options?.textFont || '12px Arial',
+            padding: options?.padding || 40,
+            bottomPadding: options?.bottomPadding || 60,
+            startReplay: options?.startReplay || new Date().toISOString(),
+            ...options?.theme
         };
-        this.intializeCanvas(element);
-        this.dailyCanvas = document.getElementById('dailyChart');
-        this.intradayCanvas = document.getElementById('intradayChart');
-        this.dailyCtx = this.dailyCanvas.getContext('2d');
-        this.intradayCtx = this.intradayCanvas.getContext('2d');
-        
+
+        this.dailyCanvas = null;
+        this.intradayCanvas = null;
         this.isPlaying = false;
         this.currentTime = new Date();
         this.speed = 1;
         this.replayInterval = null;
-        
-        this.dailyZoom = 1;
-        this.intradayZoom = 1;
 
-        if (candleData && candleData['1d']) {
-            const dailyLength = candleData['1d'].length;
+        this.dailyZoom = 1;
+        this.dailyViewStart = 0;
+        this.dailyViewEnd = 30;
+        this.intradayZoom = 1;
+        this.intradayViewStart = 0;
+        this.intradayViewEnd = 60; 
+
+        this.intializeCanvas(element, dailyData != null, intradayData != null, replay);
+        // Cargar datos si se proporcionan, sino generar datos de ejemplo
+        if (dailyData != null || intradayData != null) {
+            this.loadData(dailyData, intradayData, transactionData, replay);
+        } else {
+            this.generateData();
+        }
+        
+        if (dailyData && this.dailyData) {
+            const dailyLength = this.dailyData.length;
             this.dailyViewStart = Math.max(0, dailyLength - 31);
             this.dailyViewEnd = dailyLength;
-        } else {
-            this.dailyViewStart = 0;
-            this.dailyViewEnd = 30;
+            console.log(`Vista diaria configurada: ${this.dailyViewStart} a ${this.dailyViewEnd} (total: ${dailyLength})`);
         }
 
-        if (candleData && candleData['1m']) {
-            const intradayLength = candleData['1m'].length;
+        if (intradayData && this.allIntradayData) {
+            const intradayLength = this.allIntradayData.length;
             this.intradayViewStart = Math.max(0, intradayLength - 60);
             this.intradayViewEnd = intradayLength;
-        } else {
-            this.intradayViewStart = 0;
-            this.intradayViewEnd = 60;
+            console.log(`Vista intraday configurada: ${this.intradayViewStart} a ${this.intradayViewEnd} (total: ${intradayLength})`);
         }
             
         this.tooltip = null;
         this.createTooltip();
         
         this.setupCanvas();
-        
-        // Cargar datos si se proporcionan, sino generar datos de ejemplo
-        if (candleData) {
-            this.loadData(candleData, transactionData);
-        } else {
-            this.generateData();
-        }
-        
-        this.setupEventHandlers();
         this.drawCharts();
 
         // Configure responsive
@@ -66,98 +62,187 @@ class TradingChart {
             this.drawCharts();
         });
 
-        // Add keyboard controls
-        document.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    if (this.isPlaying) {
-                        this.pause();
-                    } else {
-                        this.play();
-                    }
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    this.nextStep();
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    this.stop();
-                    break;
-                case 'KeyR':
-                    if (e.ctrlKey) {
+        if (replay) {
+            this.setupEventHandlers();
+
+            // Add keyboard controls
+            document.addEventListener('keydown', (e) => {
+                switch (e.code) {
+                    case 'Space':
                         e.preventDefault();
-                        this.reset();
-                    }
-                    break;
-            }
-        });
+                        if (this.isPlaying) {
+                            this.pause();
+                        } else {
+                            this.play();
+                        }
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        this.nextStep();
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        this.stop();
+                        break;
+                    case 'KeyR':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            this.reset();
+                        }
+                        break;
+                }
+            });
+        }
     }
 
-    intializeCanvas(element) {
-        let div = document.createElement('div');
-        div.id = `trading-charts-${document.querySelectorAll('[id^="trading-charts-"]').length + 1}`;
-        div.innerHTML = `
-        <h4 class="">Daily Chart</h4>
-        <div class="zoom-controls daily-controls">
-            <button class="zoom-btn zoom-in"> <i class="fas fa-search-plus"></i> </button>
-            <button class="zoom-btn zoom-out"> <i class="fas fa-search-minus"></i> </button>
-        </div>
-        <canvas id="dailyChart" width="800" height="300"></canvas>
-        <div class="loading-spinner" id="dailySpinner">
-            <div class="spinner-border" role="status"></div>
-        </div>
+    intializeCanvas(element, daily=true, intraday=true, replay=false, buttons=false) {
 
-        <h4 class="">Intraday Chart (1m)</h4>
-        <div class="zoom-controls intraday-controls">
-            <button class="zoom-btn zoom-in"> <i class="fas fa-search-plus"></i> </button>
-            <button class="zoom-btn zoom-out"> <i class="fas fa-search-minus"></i> </button>
+        const buttonElement = (name) => {
+            return `
+            <div class="zoom-controls ${name}-controls">
+                <button class="zoom-btn zoom-in"> <i class="fas fa-search-plus"></i> </button>
+                <button class="zoom-btn zoom-out"> <i class="fas fa-search-minus"></i> </button>
+            </div>
+            `;
+        };
+
+        let txt = '';
+        if (replay) {
+            txt += `
+            <div class="controls-panel">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-play-circle me-2"></i>Controles de Replay</h5>
+                        <div class="btn-group me-3" role="group">
+                            <button id="playBtn" class="btn btn-custom">
+                                <i class="fas fa-play"></i> Play
+                            </button>
+                            <button id="pauseBtn" class="btn btn-custom" disabled>
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger-custom" disabled>
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button id="nextBtn" class="btn btn-success-custom">
+                                <i class="fas fa-step-forward"></i> Siguiente
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="speed-slider">
+                            <label class="form-label">Velocidad: <span id="speedValue">1x</span></label>
+                            <input type="range" class="form-range" id="speedSlider" min="1" max="10" value="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha de inicio del replay:</label>
+                        <input type="datetime-local" class="form-control" id="startTime">
+                    </div>
+                    <div class="col-md-6">
+                        <button id="resetBtn" class="btn btn-custom mt-4">
+                            <i class="fas fa-refresh"></i> Reiniciar Replay
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+        txt += `
+        <div class="card">
+            <div class="card-body charts">
+                <div id="trading-charts-${document.querySelectorAll('[id^="trading-charts-"]').length + 1}">
+                `;
+        if (daily) {
+            txt += `
+            <h4 class="">Daily Chart</h4>
+            ${buttons ? buttonElement('daily') : ''}
+            <canvas id="dailyChart" width="800" height="300"></canvas>
+            <div class="loading-spinner" id="dailySpinner">
+                <div class="spinner-border" role="status"></div>
+            </div>
+            `;
+        }
+        if (intraday) {
+            txt += `
+            <h4 class="">Intraday Chart (1m)</h4>
+            ${buttons ? buttonElement('intraday') : ''}
+            <canvas id="intradayChart" width="800" height="300"></canvas>
+            <div class="loading-spinner" id="intradaySpinner">
+                <div class="spinner-border" role="status"></div>
+            </div>
+            `;
+        }
+        txt += `
+                </div>
+            </div>
         </div>
-        <canvas id="intradayChart" width="800" height="300"></canvas>
-        <div class="loading-spinner" id="intradaySpinner">
-            <div class="spinner-border" role="status"></div>
-        </div>
-        `
-        div.querySelector('.daily-controls .zoom-btn.zoom-in').addEventListener('click', () => {
-            this.zoomChart('daily', 1.2)
-        });
-        div.querySelector('.daily-controls .zoom-btn.zoom-out').addEventListener('click', () => {
-            this.zoomChart('daily', 0.8)
-        });
-        div.querySelector('.intraday-controls .zoom-btn.zoom-in').addEventListener('click', () => {
-            this.zoomChart('intraday', 1.2)
-        });
-        div.querySelector('.intraday-controls .zoom-btn.zoom-out').addEventListener('click', () => {
-            this.zoomChart('intraday', 0.8)
-        });
-        element.appendChild(div);
+        `;
+        if (replay) {
+            txt += `
+            <!-- Información de transacciones -->
+            <div class="controls-panel mt-3">
+                <h5><i class="fas fa-exchange-alt me-2"></i>Transacciones Recientes</h5>
+                <div id="transactionsList" class="mt-3">
+                    <!-- Las transacciones se mostrarán aquí -->
+                </div>
+            </div>
+            `;
+        }
+        element.innerHTML = txt;
+
+        if (daily) {
+            if (buttons) {
+                element.querySelector('.daily-controls .zoom-btn.zoom-in').addEventListener('click', () => {
+                    this.zoomChart('daily', 1.2);
+                });
+                element.querySelector('.daily-controls .zoom-btn.zoom-out').addEventListener('click', () => {
+                    this.zoomChart('daily', 0.8);
+                });
+            }
+            this.dailyCanvas = document.getElementById('dailyChart');
+            this.dailyCtx = this.dailyCanvas.getContext('2d');
+        }
+        if (intraday) {
+            if (buttons) {
+                element.querySelector('.intraday-controls .zoom-btn.zoom-in').addEventListener('click', () => {
+                    this.zoomChart('intraday', 1.2)
+                });
+                element.querySelector('.intraday-controls .zoom-btn.zoom-out').addEventListener('click', () => {
+                    this.zoomChart('intraday', 0.8)
+                });
+            }
+            this.intradayCanvas = document.getElementById('intradayChart');
+            this.intradayCtx = this.intradayCanvas.getContext('2d');
+        }
     }
 
     setupCanvas() {
         // Ajustar canvas para alta resolución
         const ratio = window.devicePixelRatio || 1;
         [this.dailyCanvas, this.intradayCanvas].forEach(canvas => {
-            const container = canvas.parentElement;
-            canvas.style.width = '100%';
-            canvas.style.height = '300px';
+            if (canvas != null) {
+                const container = canvas.parentElement;
+                canvas.style.width = '100%';
+                canvas.style.height = '300px';
 
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * ratio;
-            canvas.height = rect.height * ratio;
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * ratio;
+                canvas.height = rect.height * ratio;
 
-            canvas.getContext('2d').scale(ratio, ratio);
-            this.setupInteractive(canvas);
+                canvas.getContext('2d').scale(ratio, ratio);
+                this.setupInteractive(canvas);
+            }
         });
     }
 
-    loadData (candleData, transactionData) {
+    loadData (dailyData, intradayData, transactionData, replay=false) {
 
 
         // Generar transacciones de ejemplo basadas en los datos reales
         this.transactions = [];
         this.allTransactions = [];
-
         if (transactionData) {
             this.allTransactions = transactionData.map(transaction => ({
                 time: new Date(`${transaction.date} ${transaction.time}+00:00`),
@@ -167,14 +252,14 @@ class TradingChart {
                 commission: transaction.commission,
                 id: transaction.id
             }));
-            console.log(this.allTransactions);
+            console.log('Transacciones cargadas:', this.allTransactions);
             this.allTransactions.sort((a, b) => a.time - b.time);
         }
 
         // Cargar datos de velas diarias
         this.dailyData = [];
-        if (candleData && candleData['1d']) {
-            this.dailyData = candleData['1d'].map(candle => ({
+        if (dailyData) {
+            this.dailyData = dailyData.map(candle => ({
                 date: new Date(candle.date),
                 open: candle.open,
                 high: candle.high,
@@ -184,14 +269,14 @@ class TradingChart {
                 session: candle.session,
                 id: candle.id
             }));
+            console.log('Datos diarios cargados:', this.dailyData.length, 'velas');
         }
 
         // Cargar datos intradía (1 minuto)
         this.intradayData = [];
         this.allIntradayData = [];
-        
-        if (candleData && candleData['1m']) {
-            this.allIntradayData = candleData['1m'].map(candle => ({
+        if (intradayData) {
+            this.allIntradayData = intradayData.map(candle => ({
                 time: new Date(candle.date),
                 open: candle.open,
                 high: candle.high,
@@ -221,10 +306,11 @@ class TradingChart {
                 this.intradayViewStart = Math.max(0, intradayLength - 60);
                 this.intradayViewEnd = intradayLength;
             }
+            console.log('Datos intraday cargados:', this.allIntradayData.length, 'velas');
         }
 
         // Establecer tiempo inicial basado en los datos
-        if (this.allIntradayData.length > 0) {
+        if (replay && this.allIntradayData.length > 0) {
             this.currentTime = new Date(this.theme.startReplay) || new Date(this.allIntradayData[0].time);
             document.getElementById('startTime').value =
                 this.currentTime.toISOString().slice(0, 16);
@@ -571,9 +657,30 @@ class TradingChart {
         }
     }
 
-    drawCharts() {
-        this.drawDailyChart();
-        this.drawIntradayChart();
+    drawChartsOld () {
+        if (this.dailyData != null && this.dailyData.length > 0) this.drawDailyChart();
+        if (this.allIntradayData != null && this.allIntradayData.length > 0) this.drawIntradayChart();
+    }
+
+    drawCharts () {
+        // CORRECCIÓN: Agregar logs de debug y validaciones más estrictas
+        console.log('drawCharts llamado');
+        console.log('dailyData:', this.dailyData?.length || 0);
+        console.log('allIntradayData:', this.allIntradayData?.length || 0);
+
+        if (this.dailyData && this.dailyData.length > 0) {
+            console.log('Dibujando gráfico diario...');
+            this.drawDailyChart();
+        } else {
+            console.log('No hay datos diarios para mostrar');
+        }
+
+        if (this.allIntradayData && this.allIntradayData.length > 0) {
+            console.log('Dibujando gráfico intraday...');
+            this.drawIntradayChart();
+        } else {
+            console.log('No hay datos intraday para mostrar');
+        }
     }
     
     showTooltip(e, x, y, chartType) {
@@ -616,7 +723,12 @@ class TradingChart {
         }
     }
 
-    drawDailyChart(data=null) {
+    drawDailyChart (data = null) {
+        if (!this.dailyData || this.dailyData.length === 0) {
+            console.log('No hay dailyData para mostrar:', this.allTransactions);
+            return;
+        }
+            
         const ctx = this.dailyCtx;
         const canvas = this.dailyCanvas;
         const rect = canvas.getBoundingClientRect();
@@ -665,7 +777,12 @@ class TradingChart {
         this.updateLastDailyCandle(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice, spacing, candleWidth);
     }
 
-    drawIntradayChart(data=null) {
+    drawIntradayChart (data = null) {
+        if (!this.allIntradayData || this.allIntradayData.length === 0) {
+            console.log('No hay intradayData para mostrar:', this.allTransactions);
+            return;
+        }
+        
         const ctx = this.intradayCtx;
         const canvas = this.intradayCanvas;
         const rect = canvas.getBoundingClientRect();
@@ -821,8 +938,8 @@ class TradingChart {
             if (chartType === 'intraday') {
                 // Buscar por tiempo (con tolerancia de 30 segundos)
                 index = dataToCheck.findIndex(candle => 
-                    Math.abs(candle.time - transaction.time) < 30000
-                );
+                    candle.time - transaction.time > 0
+                ) - 1;
                 console.log(`Búsqueda intraday - índice encontrado: ${index}`);
             } else {
                 // Para gráfico diario, buscar por fecha
@@ -954,10 +1071,10 @@ class TradingChart {
         }
 
         // Dibujar fondo según la sesión
-        if (session === 'PM') {
+        if (session === 'PRE') {
             ctx.fillStyle = 'rgba(255, 165, 0, 0.1)'; // naranja claro
             ctx.fillRect(padding + index * spacing, padding, spacing, chartHeight);
-        } else if (session === 'AH') {
+        } else if (session === 'POST') {
             ctx.fillStyle = 'rgba(30, 64, 175, 0.1)'; // azul oscuro claro
             ctx.fillRect(padding + index * spacing, padding, spacing, chartHeight);
         }
@@ -976,7 +1093,8 @@ class TradingChart {
 
         // Cuerpo de la vela actualizada
         const bodyHeight = Math.abs(closeY - openY);
-        ctx.fillRect(x - candleWidth/2, Math.min(openY, closeY), candleWidth, Math.max(2, bodyHeight));
+        ctx.fillRect(x - candleWidth / 2, Math.min(openY, closeY), candleWidth, Math.max(2, bodyHeight));
+        console.log('Printing daily candle');
     }
 
     printVolume (ctx, index, padding, spacing, volume, maxVolume, candleWidth, chartHeight, isUp,) {
