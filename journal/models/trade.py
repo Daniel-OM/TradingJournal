@@ -462,7 +462,7 @@ class Trade(Model):
     def maximumFavorableAverse(self) -> tuple[float, float]:
         
         if not self.transactions:
-            return 0.0
+            return 0.0, 0.0
         
         # Obtener precios de entrada y salida
         entry_price = self.entry_price
@@ -470,7 +470,7 @@ class Trade(Model):
         candles: list[Candle] = self.getCandles(timeframe='1m')
         
         if entry_price is None or exit_price is None:
-            return 0.0
+            return 0.0, 0.0
         
         mae = max(self.entry_price - candle.close for candle in candles if candle.date >= self.entry_date and candle.date <= self.exit_date)
         mfe = max(candle.close - self.entry_price for candle in candles if candle.date >= self.entry_date and candle.date <= self.exit_date)
