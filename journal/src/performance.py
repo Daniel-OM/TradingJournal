@@ -1,5 +1,7 @@
 
-from datetime import datetime
+import json
+from datetime import datetime, timedelta
+from collections import defaultdict
 import numpy as np
 from ..models.trade import Trade
 
@@ -232,7 +234,7 @@ class PerformanceMetrics:
         
         total_wins = sum(winning_pnl) if winning_pnl else 0
         total_losses = abs(sum(losing_pnl)) if losing_pnl else 0
-        profit_factor = total_wins / total_losses if total_losses > 0 else float('inf') if total_wins > 0 else 0
+        profit_factor = total_wins / total_losses if total_losses > 0 else 1e99 if total_wins > 0 else 0
         
         # Desviación estándar
         trade_pnl_std = np.std(pnl_values) if len(pnl_values) > 1 else 0
@@ -361,7 +363,7 @@ class PerformanceMetrics:
             'avg_mae': np.mean(mae_values) if mae_values else 0
         }
 
-    def getEmpty():
+    def getEmpty(self):
 
         return {
             'total_pnl': 0, 'avg_daily_pnl': 0, 'avg_daily_volume': 0, 'avg_trade_pnl': 0,
@@ -417,3 +419,331 @@ class PerformanceMetrics:
             'avg_mfe': round(mfe_mae_stats['avg_mfe'], 2),
             'avg_mae': round(mfe_mae_stats['avg_mae'], 2),
         }
+    
+
+
+class PerformanceCharts:
+    """
+    Clase para generar gráficos estilo TraderVue a partir de trades
+    """
+    
+    def __init__(self, trades:list[Trade], mode:str='net'):
+        self.trades = trades
+        self.mode = mode
+        self.pnl_values = [(trade.profit_loss + trade.commission if self.mode == 'gross' else trade.profit_loss) for trade in trades]
+        self.cumulative_pnl = np.cumsum(self.pnl_values)
+    
+    def getEquityCurve(self):
+        """Gráfico de curva de equity (P&L acumulativo)"""
+        if not self.trades:
+            return {'dates': [], 'equity': [], 'drawdown': []}
+        
+        dates = []
+        equity = [0]  # Empezar en 0
+        peak = 0
+        drawdowns = [0]
+        
+        for i, trade in enumerate(self.trades):
+            dates.append(trade.entry_date.strftime('%Y-%m-%d'))
+            current_equity = equity[-1] + (trade.profit_loss + trade.commission if self.mode == 'gross' else trade.profit_loss) # self.cumulative_pnl[i]
+            equity.append(current_equity)
+            
+            # Calcular drawdown
+            if current_equity > peak:
+                peak = current_equity
+            drawdown = peak - current_equity
+            drawdowns.append(-drawdown)  # Negativo para mostrar hacia abajo
+        
+        return {
+            'dates': dates,
+            'equity': equity[1:],  # Quitar el 0 inicial
+            'drawdown': drawdowns[1:],
+            'chart_type': 'line'
+        }
+    
+    def getPnlTimeHistogram(self, mode:str='daily'):
+        """
+        P&L histogram with time aggregation
+        
+        mode: str
+            Can be 'daily' or 'monthly'
+        """
+        if mode == 'monthly':
+            x_axis = 'months'
+            time_format = '%Y-%m'
+        else:
+            x_axis = 'dates'
+            time_format = '%Y-%m-%d'
+            
+        if not self.trades:
+            return {x_axis: [], 'pnl': []}
+        
+        time_pnl = defaultdict(float)
+        
+        for trade in self.trades:
+            time_key = trade.entry_date.strftime(time_format)
+            time_pnl[time_key] += (trade.profit_loss + trade.commission if self.mode == 'gross' else trade.profit_loss)
+        
+        sorted_dates = sorted(time_pnl.keys())
+        
+        return {
+            x_axis: sorted_dates,
+            'pnl': [time_pnl[date] for date in sorted_dates],
+            'chart_type': 'bar'
+        }
+    
+    def getPnlDistribution(self):
+        """Histograma de distribución de P&L por trade"""
+        if not self.pnl_values:
+            return {'bins': [], 'counts': []}
+        
+        # Crear bins automáticamente
+        min_pnl = min(self.pnl_values)
+        max_pnl = max(self.pnl_values)
+        
+        if min_pnl == max_pnl:
+            return {'bins': [min_pnl], 'counts': [len(self.pnl_values)]}
+        
+        # Crear 20 bins
+        n_bins = min(20, len(self.pnl_values))
+        bin_edges = np.linspace(min_pnl, max_pnl, n_bins + 1)
+        bin_centers = [(bin_edges[i] + bin_edges[i+1]) / 2 for i in range(len(bin_edges)-1)]
+        
+        counts, _ = np.histogram(self.pnl_values, bins=bin_edges)
+        
+        return {
+            'bins': [round(center, 2) for center in bin_centers],
+            'counts': counts.tolist(),
+            'chart_type': 'histogram'
+        }
+    
+    def _getStatRequirements(self, prev:dict, trade:Trade):
+
+        prev['pnl'].append(trade.profit_loss + trade.commission if self.mode == 'gross' else trade.profit_loss)
+        prev['total'] += 1
+        if prev['pnl'][-1] > 0:
+            prev['win'] += prev['pnl'][-1]
+            prev['wins'] += 1
+        elif prev['pnl'][-1] < 0:
+            prev['loss'] += prev['pnl'][-1]
+
+        return prev
+
+    def _calculateStats(self, data:dict):
+
+        total_pnl = np.sum(data['pnl'])
+        avg_pnl = np.mean(data['pnl'])
+        avg_win = data['win'] / data['wins'] if data['wins'] > 0 else 0
+        avg_loss = data['loss'] / (data['total']-data['wins']) if (data['total']-data['wins']) > 0 else 0
+        win_rates = data['wins'] / data['total'] * 100 if data['total'] > 0 else 0
+        expectancy = (data['win'] * data['wins'] - abs(data['loss']) * (data['total'] - data['wins'])) / data['total'] if data['total'] > 0 else 0
+        trade_counts = data['total']
+
+        return total_pnl, avg_pnl, avg_win, avg_loss, win_rates, expectancy, trade_counts
+
+    def getStatsByTime(self, mode:str='daily'):
+        """
+        P&L por día de la semana
+        
+        mode: str
+            Can be 'daily', 'hourly', 'monthly' or 'yearly'
+        """
+
+        if mode == 'monthly':
+            x_axis = 'months'
+            time_format = lambda x: str(x.month)
+            time_list = list(range(12))
+        elif mode == 'yearly':
+            x_axis = 'years'
+            time_format = lambda x: str(x.year)
+            time_list = None
+        elif mode == 'hourly':
+            x_axis = 'hours'
+            time_format = lambda x: f"{datetime.strptime(x, '%H:%M:%S').hour:02d}:00"
+            time_list = [f"{h:02d}:00" for h in range(24)]
+        elif mode == 'weekday':
+            x_axis = 'days'
+            days_map = {0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri', 5: 'Sat', 6: 'Sun'}
+            time_format = lambda x: days_map[x.weekday()]
+            time_list = [days_map[d] for d in range(7)]
+        else:
+            x_axis = 'days'
+            time_format = lambda x: x.strftime('%Y-%m-%d')
+            time_list = None
+
+        if not self.trades:
+            return {x_axis: [], 'total_pnl': [], 'avg_pnl': [], 'avg_win': [], 'avg_loss': [], 'win_rate': [], 'expectancy': [], 'trade_count': []}
+        
+        stats = defaultdict(lambda: {'pnl': [], 'wins': 0, 'win': 0, 'loss': 0, 'total': 0})
+        
+        for trade in self.trades:
+            time_val = time_format(trade.entry_time if mode == 'hourly' else trade.entry_date)
+            stats[time_val] = self._getStatRequirements(stats[time_val], trade)
+        
+        times_list = list(stats.keys()) if time_list is None else time_list
+        
+        (total_pnl, avg_pnl, avg_win, avg_loss, win_rates, expectancy, trade_counts) = zip(*[(self._calculateStats(stats[time_val]) if time_val in stats else (0, 0, 0, 0, 0, 0, 0)) for time_val in times_list])
+        
+        return {
+            x_axis: times_list,
+            'total_pnl': list(total_pnl),
+            'avg_pnl': list(avg_pnl),
+            'avg_win': list(avg_win),
+            'avg_loss': list(avg_loss),
+            'win_rate': list(win_rates),
+            'expectancy': list(expectancy),
+            'trade_count': list(trade_counts),
+            'chart_type': 'multi_bar'
+        }
+    
+    def getStatsBySymbol(self):
+        """P&L por símbolo (top N)"""
+        if not self.trades:
+            return {'symbols': [], 'total_pnl': [], 'avg_pnl': [], 'avg_win': [], 'avg_loss': [], 'win_rate': [], 'expectancy': [], 'trade_count': []}
+        
+        stats = defaultdict(lambda: {'pnl': [], 'wins': 0, 'win': 0, 'loss': 0, 'total': 0})
+        
+        for trade in self.trades:
+            stats[trade.symbol] = self._getStatRequirements(stats[trade.symbol], trade)
+        
+        sorted_data = sorted(
+            [(symbol,) + self._calculateStats(stat) for symbol, stat in stats.items()],
+            key=lambda x: x[1],  # x[1] es total_pnl
+            reverse=True  # De mayor a menor
+        )
+
+        # Desempaquetar de vuelta a listas separadas
+        symbols, total_pnl, avg_pnl, avg_win, avg_loss, win_rates, expectancy, trade_counts = zip(*sorted_data)
+        
+        return {
+            'symbols': list(symbols),
+            'total_pnl': list(total_pnl),
+            'avg_pnl': list(avg_pnl),
+            'avg_win': list(avg_win),
+            'avg_loss': list(avg_loss),
+            'win_rate': list(win_rates),
+            'expectancy': list(expectancy),
+            'trade_count': list(trade_counts),
+            'chart_type': 'multi_bar'
+        }
+    
+    def getHoldTimeAnalysis(self):
+        """Análisis de tiempo de mantenimiento vs P&L"""
+        if not self.trades:
+            return {'hold_times': [], 'pnl': [], 'colors': []}
+        
+        def getHoldTimeMinutes(trade: Trade):
+            if hasattr(trade, 'exit_date') and trade.exit_date and trade.entry_date:
+                if hasattr(trade, 'entry_time') and hasattr(trade, 'exit_time') and trade.entry_time and trade.exit_time:
+                    entry_datetime = datetime.combine(trade.entry_date, datetime.strptime(trade.entry_time, '%H:%M:%S').time())
+                    exit_datetime = datetime.combine(trade.exit_date, datetime.strptime(trade.exit_time, '%H:%M:%S').time())
+                    return (exit_datetime - entry_datetime).total_seconds() / 60
+                else:
+                    return (trade.exit_date - trade.entry_date).days * 1440
+            return 0
+        
+        hold_times = []
+        pnl_values = []
+        colors = []
+        
+        for trade in self.trades:
+            hold_time = getHoldTimeMinutes(trade)
+            if hold_time > 0:  # Solo incluir trades con tiempo válido
+                hold_times.append(hold_time)
+                pnl_values.append(trade.profit_loss + trade.commission if self.mode == 'gross' else trade.profit_loss)
+                colors.append('green' if pnl_values[-1] > 0 else 'red' if pnl_values[-1] < 0 else 'gray')
+        
+        return {
+            'hold_times': hold_times,
+            'pnl': pnl_values,
+            'colors': colors,
+            'chart_type': 'scatter'
+        }
+    
+    def getStreaks(self):
+        """Gráfico de rachas consecutivas"""
+        if not self.pnl_values:
+            return {'streaks': [], 'types': []}
+        
+        streaks = []
+        current_streak = 0
+        current_type = None
+        
+        for pnl in self.pnl_values:
+            if pnl > 0:  # Win
+                if current_type == 'win':
+                    current_streak += 1
+                else:
+                    if current_streak > 0:
+                        streaks.append({'length': current_streak, 'type': current_type})
+                    current_streak = 1
+                    current_type = 'win'
+            elif pnl < 0:  # Loss
+                if current_type == 'loss':
+                    current_streak += 1
+                else:
+                    if current_streak > 0:
+                        streaks.append({'length': current_streak, 'type': current_type})
+                    current_streak = 1
+                    current_type = 'loss'
+            else:  # Scratch - reset streak
+                if current_streak > 0:
+                    streaks.append({'length': current_streak, 'type': current_type})
+                current_streak = 0
+                current_type = None
+        
+        # Añadir última racha si existe
+        if current_streak > 0:
+            streaks.append({'length': current_streak, 'type': current_type})
+        
+        return {
+            'streaks': [s['length'] for s in streaks],
+            'types': [s['type'] for s in streaks],
+            'chart_type': 'streak_bar'
+        }
+    
+    def getSizeAnalysis(self):
+        """Análisis de tamaño de posición vs P&L"""
+        if not self.trades:
+            return {'sizes': [], 'pnl': [], 'colors': []}
+        
+        sizes = []
+        pnl_values = []
+        colors = []
+        
+        for trade in self.trades:
+            if hasattr(trade, 'exit_quantity') and trade.exit_quantity:
+                sizes.append(trade.exit_quantity)
+                pnl_values.append(trade.profit_loss + trade.commission if self.mode == 'gross' else trade.profit_loss)
+                colors.append('green' if pnl_values[-1] > 0 else 'red' if pnl_values[-1] < 0 else 'gray')
+        
+        return {
+            'sizes': sizes,
+            'pnl': pnl_values,
+            'colors': colors,
+            'chart_type': 'scatter'
+        }
+    
+    def getAll(self):
+        """Obtener todos los gráficos de una vez"""
+        return {
+            'equity_curve': self.getEquityCurve(),
+            'daily_pnl': self.getPnlTimeHistogram(mode='daily'),
+            'monthly_pnl': self.getPnlTimeHistogram(mode='monthly'),
+            'pnl_distribution': self.getPnlDistribution(),
+            'hour_analysis': self.getStatsByTime(mode='hourly'),
+            'day_analysis': self.getStatsByTime(mode='daily'),
+            'weekday_analysis': self.getStatsByTime(mode='weekday'),
+            'month_analysis': self.getStatsByTime(mode='monthly'),
+            'year_analysis': self.getStatsByTime(mode='yearly'),
+            'symbol_performance': self.getStatsBySymbol(),
+            'hold_time_analysis': self.getHoldTimeAnalysis(),
+            # 'streaks': self.getStreaks(),
+            'size_analysis': self.getSizeAnalysis()
+        }
+    
+    def to_json(self):
+        """Convertir todos los gráficos a JSON para enviar al frontend"""
+        charts = self.getAll()
+        return json.dumps(charts, default=str)  # default=str para manejar objetos datetime
+

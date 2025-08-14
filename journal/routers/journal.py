@@ -17,7 +17,7 @@ from ..models.watchlist_entry import WatchlistEntry
 
 from ..config import UPLOAD_FOLDER
 from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
-from ..src.performance import PerformanceMetrics
+from ..src.performance import PerformanceMetrics, PerformanceCharts
 from .utils import save_uploaded_files, calculate_max_drawdown, download_candles, localToUtc
 
 journal_bp = Blueprint(name='journal_endpoints', import_name=__name__)
@@ -812,16 +812,19 @@ def performance():
         base_query = base_query.filter(Trade.strategy_id == strategy_id)
     if asset_symbol:
         base_query = base_query.filter(Trade.symbol == asset_symbol)
-    if side:
+    if side in ['LONG', 'SHORT']:
         base_query = base_query.filter(Trade.trade_type == side.upper())
     
     # Filtros de fecha
-    if start:
-        start_date = datetime.strptime(start, '%Y-%m-%d').date()
-        base_query = base_query.filter(Trade.entry_date >= start_date)
+    start = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d') if not start else start
+    start_date = datetime.strptime(start, '%Y-%m-%d').date()
+    base_query = base_query.filter(Trade.entry_date >= start_date)
+
     if end:
         end_date = datetime.strptime(end, '%Y-%m-%d').date()
         base_query = base_query.filter(Trade.entry_date <= end_date)
+    else:
+        end = base_query.with_entities(func.max(Trade.entry_date)).scalar().strftime('%Y-%m-%d')
     
     # Aplicar límite
     if limit:
@@ -829,17 +832,19 @@ def performance():
     
     # ===== OBTENER DATOS =====
     all_trades = base_query.order_by(Trade.entry_date).distinct().all()
-    total_trades = len(all_trades)
-    
+
     # ===== CALCULAR ESTADÍSTICAS =====
     stats = PerformanceMetrics(trades=all_trades).getComplete()
-    print(stats.keys())
-    stats['balances'] = get_balance_data()
     
+    charts = {
+        'net': PerformanceCharts(trades=all_trades, mode='net').getAll(),
+        'gross': PerformanceCharts(trades=all_trades, mode='net').getAll(),
+    }
     # ===== OBTENER DATOS ADICIONALES =====
     strategies = Strategy.query.filter(Strategy.user_id == current_user.id).all()
     
-    return render_template('trade/performance.html', stats=stats, strategies=strategies)
+    return render_template('trade/performance.html', stats=stats, strategies=strategies, charts=charts, 
+                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol, watchlist_id=watchlist_id, limit=limit, side=side)
 
 def get_balance_data():
     """Obtener datos de balance histórico"""
