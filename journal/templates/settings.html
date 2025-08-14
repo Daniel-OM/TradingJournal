@@ -1,0 +1,88 @@
+
+{% extends "base.html" %}
+
+{% block style %}
+<style>
+    .container {
+        box-shadow: none;
+    }
+    
+    .card-strategy {
+        border-left: 4px solid #0d6efd;
+        margin-bottom: 1rem;
+    }
+    .criteria-item {
+        background-color: #f8f9fa;
+        border-left: 3px solid #28a745;
+        margin: 0.5rem 0;
+        padding: 0.75rem;
+    }
+    .criteria-row {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        padding: 0.75rem;
+    }
+    .btn-remove-criteria {
+        color: #dc3545;
+        border: none;
+        background: none;
+        padding: 0.25rem;
+    }
+    .btn-remove-criteria:hover {
+        color: #c82333;
+        background-color: #f5c6cb;
+        border-radius: 0.25rem;
+    }
+    .collapse-content {
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-cog me-2"></i>Configuración</h2>
+
+<!-- Configuraciones Adicionales -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-tools me-2"></i>Configuraciones Adicionales</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <input type="hidden" class="form-control" name="setting_id" value="{{ setting.id if setting.id else '' }}">
+                <div class="col-md-4">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Capital Inicial</label>
+                        <input type="number" class="form-control" name="balance" value="{{ setting.balance if setting.balance else 10000 }}" step="0.00001">
+                        <small class="form-text text-muted">Capital inicial para cálculos de rendimiento</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Comisiones por Trade</label>
+                        <input type="number" class="form-control" name="commission" value="{{ setting.commission if setting.commission else 1.00 }}" step="0.01">
+                        <small class="form-text text-muted">Comisión fija por operación</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Timezone</label>
+                        <select class="form-select" name="timezone">
+                            <option value="Europe/Madrid" {{'selected' if setting.timezone == 'Europe/Madrid' else ''}}>Europe/Madrid</option>
+                            <option value="America/New_York" {{'selected' if setting.timezone == 'America/New_York' else ''}}>America/New_York</option>
+                            <option value="UTC" {{'selected' if setting.timezone == 'UTC' else ''}}>UTC</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save me-2"></i>Guardar Configuraciones
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,487 @@
+
+{% extends "base.html" %}
+
+{% block style %}
+<style>
+    .container {
+        box-shadow: none;
+    }
+    
+    .level-input-group {
+        margin-bottom: 10px;
+    }
+    
+    .add-level-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+    
+    .add-level-btn:hover {
+        background: #218838;
+        transform: translateY(-1px);
+    }
+    
+    .btn-remove-level {
+        background: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-remove-level:hover {
+        background: #c82333;
+        border-color: #c82333;
+        color: white;
+    }
+
+    .conditions-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        display: none;
+    }
+
+    .conditions-section.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .condition-item {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+    }
+
+    .condition-item:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+    }
+
+    .condition-item.checked {
+        border-color: #28a745;
+        background: #f8fff9;
+    }
+
+    .score-display {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        margin-top: 15px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .score-breakdown {
+        font-size: 12px;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-eye me-2"></i>Agregar a Watchlist
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="watchlistForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" name="date" class="form-control" value="{{ entry.value if entry else ''}}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Símbolo</label>
+                            <input type="text" name="symbol" class="form-control" value="{{ entry.symbol if entry else ''}}" placeholder="AAPL" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la Compañía</label>
+                        <input type="text" name="company_name" class="form-control" value="{{ entry.company_name if entry else ''}}" placeholder="Apple Inc.">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Exchange</label>
+                            <input type="text" name="exchange" class="form-control" value="{{ entry.exchange if entry else ''}}" placeholder="NASDAQ">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Country</label>
+                            <input type="text" name="country" class="form-control" value="{{ entry.country if entry else ''}}"
+                                placeholder="USA">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sector</label>
+                            <input type="text" name="sector" class="form-control" value="{{ entry.sector if entry else ''}}" placeholder="Technology">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Industry</label>
+                            <input type="text" name="industry" class="form-control" value="{{ entry.industry if entry else ''}}"
+                                placeholder="Consumer Electronics">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ATR</label>
+                            <input type="number" step="0.01" name="atr" class="form-control" value="{{ entry.atr if entry else ''}}" placeholder="2.50">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Precio</label>
+                            <input type="number" step="0.01" name="price" class="form-control" value="{{ entry.price if entry else ''}}" placeholder="1.43">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Volumen</label>
+                            <input type="number" step="0.01" name="volume" class="form-control" value="{{ entry.volume if entry else ''}}" placeholder="1000000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Avg. Volume</label>
+                            <input type="number" step="0.01" name="avg_volume" class="form-control" value="{{ entry.avg_volume if entry else ''}}" placeholder="250000">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Market Cap.</label>
+                            <input type="number" step="0.01" name="market_cap" class="form-control" value="{{ entry.market_cap if entry else ''}}"
+                                placeholder="10000000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Floating Shares</label>
+                            <input type="number" step="0.01" name="float_shares" class="form-control"
+                                value="{{ entry.float_shares if entry else ''}}" placeholder="2500000">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">P/E Ratio</label>
+                            <input type="number" step="0.01" name="per" class="form-control" value="{{ entry.per if entry else ''}}"
+                                placeholder="30.79">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Earnings per Share</label>
+                            <input type="number" step="0.01" name="eps" class="form-control"
+                                value="{{ entry.eps if entry else ''}}" placeholder="6.58">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Risk/Reward</label>
+                            <input type="text" name="risk_reward" class="form-control" value="{{ entry.risk_reward if entry else ''}}" placeholder="1:3">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Objetivo de Rentabilidad ($/acción)</label>
+                            <input type="number" step="0.01" name="profit_target" class="form-control" value="{{ entry.profit_target if entry else ''}}" placeholder="5.00">
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de Niveles -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-chart-line me-2"></i>Niveles de Precio
+                        </label>
+                        <div class="levels-container">
+                            <div id="levels-list">
+                                <!-- Los niveles se agregarán dinámicamente aquí -->
+                            </div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="add-level-btn" onclick="addLevel()">
+                                    <i class="fas fa-plus me-1"></i>Agregar Nivel
+                                </button>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Agrega los niveles técnicos importantes para este activo
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción - ¿Por qué vigilar este activo?</label>
+                        <textarea name="description" class="form-control" rows="3" value="{{ entry.description if entry else ''}}" placeholder="Ruptura de resistencia clave, alto volumen..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Acción de precio que NO nos gustaría</label>
+                        <textarea name="negative_action" class="form-control" rows="2" value="{{ entry.negative_action if entry else ''}}" placeholder="Ruptura por debajo de soporte en 145..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Watchlist a añadir</label>
+                        <select name="watchlist_id" class="form-select" id="watchlistSelect" onchange="loadWatchlistConditions()">
+                            {% for watchlist in watchlists %}
+                                <option value="{{ watchlist.id }}" {% if (entry and entry.watchlist_id==watchlist.id) or (watchlist.id|string == watchlist_id) %}selected{% endif %}>
+                                    {{ watchlist.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Sección de Condiciones de Estrategia -->
+                    <div id="watchlistConditions" class="conditions-section">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <h5 class="mb-0">Condiciones de la Watchlist</h5>
+                        </div>
+                        <p class="text-muted mb-3">Marca las condiciones que se cumplen para calcular automáticamente la puntuación:</p>
+                        
+                        <div id="conditionsList">
+                            <!-- Las condiciones se cargarán dinámicamente aquí -->
+                        </div>
+
+                        <div id="scoreDisplay" class="score-display" style="display: none;">
+                            <div>Puntuación Calculada: <span id="calculatedScore">0</span>/<span id="maxScore">10</span></div>
+                            <div class="score-breakdown" id="scoreBreakdown"></div>
+                        </div>
+                        <div class="col-md-4 mb-3 d-none">
+                            <label class="form-label">Puntuación</label>
+                            <input type="number" min="0" max="100" name="score" class="form-control" placeholder="7" readonly>
+                            <small class="text-muted">Se calculará automáticamente según las condiciones</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Hashtags (separados por comas)</label>
+                        <input type="text" name="hashtags" class="form-control" value="{{ entry.hashtags if entry else ''}}" placeholder="tech, earnings, momentum">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Otras Notas Relevantes</label>
+                        <textarea name="other_notes" class="form-control" rows="2" value="{{ entry.other_notes if entry else ''}}" placeholder="Cualquier información adicional..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('watchlist_endpoints.watchlist') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        let levelCounter = 0;
+        let watchlistConditions = {};
+
+        const watchlistsData = JSON.parse('{{json_watchlists|tojson}}');
+
+        function addLevel(value = '', impact = '') {
+            levelCounter++;
+            const levelsList = document.getElementById('levels-list');
+            
+            const levelDiv = document.createElement('div');
+            levelDiv.className = 'level-input-group';
+            levelDiv.innerHTML = `
+                <div class="input-group">
+                    <input type="number" 
+                           step="0.01" 
+                           name="level_price" 
+                           class="form-control" 
+                           placeholder="Precio del nivel" 
+                           value="${value}"
+                           required>
+                    <select name="level_impact" class="form-select" style="max-width: 120px;">
+                        <option value="low" ${impact == 'low' ? 'selected' : ''}>Bajo</option>
+                        <option value="medium" ${impact == 'medium' || impact == '' ? 'selected' : ''}>Medio</option>
+                        <option value="high" ${impact == 'high' ? 'selected' : ''}>Alto</option>
+                    </select>
+                    <button type="button" class="btn btn-remove-level" onclick="removeLevel(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            levelsList.appendChild(levelDiv);
+        }
+
+        function removeLevel(button) {
+            const levelDiv = button.closest('.level-input-group');
+            levelDiv.remove();
+        }
+
+        function loadWatchlistConditions() {
+            const watchlistId = document.getElementById('watchlistSelect').value;
+            const conditionsSection = document.getElementById('watchlistConditions');
+            const conditionsList = document.getElementById('conditionsList');
+            const watchlist = watchlistsData.find(obj => obj.id === parseInt(watchlistId));
+
+            if (!watchlistId || !watchlist) {
+                conditionsSection.classList.remove('show');
+                return;
+            }
+
+            watchlistConditions = {};
+            
+            conditionsList.innerHTML = '';
+            
+            let maxScore = 0;
+            watchlist.conditions.forEach(condition => {
+                const conditionDiv = document.createElement('div');
+                conditionDiv.className = 'condition-item';
+                conditionDiv.innerHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="condition_${condition.id}"
+                               name="condition_checks"
+                               value="${condition.id}"
+                               onchange="updateScore()">
+                        <input type="hidden" id="condition-id-${condition.id}" name="condition_id" value="">
+                        <input type="hidden" id="condition-value-${condition.id}" name="condition_value" value="">
+                        <label class="form-check-label" for="condition_${condition.id}">
+                            <strong>${condition.description}</strong>
+                            <small class="text-muted d-block">+${condition.score} points</small>
+                        </label>
+                    </div>
+                `;
+                conditionsList.appendChild(conditionDiv);
+                
+                watchlistConditions[condition.id] = condition.score;
+                maxScore += condition.score;
+            });
+            
+            conditionsSection.classList.add('show');
+            updateScore();
+            document.getElementById('maxScore').textContent = maxScore;
+        }
+
+        function updateScore() {
+            const checkedConditions = document.querySelectorAll('input[name="condition_checks"]:checked');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const calculatedScoreEl = document.getElementById('calculatedScore');
+            const scoreBreakdownEl = document.getElementById('scoreBreakdown');
+            const scoreInput = document.querySelector('input[name="score"]');
+            
+            let totalScore = 0;
+            let breakdown = [];
+            checkedConditions.forEach(checkbox => {
+                const conditionId = checkbox.value;
+                const points = watchlistConditions[conditionId] || 0;
+                document.getElementById(`condition-id-${conditionId}`).value = conditionId; 
+                document.getElementById(`condition-value-${conditionId}`).value = points;
+                totalScore += points;
+                
+                const label = checkbox.parentNode.querySelector('label strong').textContent;
+                breakdown.push(`${label}: +${points}`);
+                
+                // Agregar clase visual
+                checkbox.closest('.condition-item').classList.add('checked');
+            });
+            
+            // Remover clase de condiciones no marcadas
+            document.querySelectorAll('input[name="condition_checks"]:not(:checked)').forEach(checkbox => {
+                const conditionId = checkbox.value;
+                document.getElementById(`condition-id-${conditionId}`).value = ''; 
+                document.getElementById(`condition-value-${conditionId}`).value = '';
+                checkbox.closest('.condition-item').classList.remove('checked');
+            });
+            
+            // Actualizar display
+            calculatedScoreEl.textContent = totalScore;
+            scoreBreakdownEl.innerHTML = breakdown.length > 0 ? breakdown.join('<br>') : 'Ninguna condición seleccionada';
+            
+            // Actualizar input del formulario
+            scoreInput.value = totalScore/parseInt(document.getElementById('maxScore').textContent);
+            
+            // Mostrar/ocultar display de puntuación
+            if (checkedConditions.length > 0) {
+                scoreDisplay.style.display = 'block';
+            } else {
+                scoreDisplay.style.display = 'none';
+            }
+        }
+
+        // Validación del formulario
+        document.getElementById('watchlistForm').addEventListener('submit', function(e) {
+            const watchlistSelect = document.getElementById('watchlistSelect');
+            const levelPrices = document.querySelectorAll('input[name="level_price"]');
+            
+            // Validar que se haya seleccionado una estrategia
+            if (!watchlistSelect.value) {
+                e.preventDefault();
+                alert('Debe seleccionar una watchlist.');
+                watchlistSelect.focus();
+                return false;
+            }
+            
+            // Validar que se hayan marcado condiciones
+            const checkedConditions = document.querySelectorAll('input[name="condition_checks"]:checked');
+            if (checkedConditions.length === 0) {
+                e.preventDefault();
+                alert('Debe marcar al menos una condición de la watchlist para calcular la puntuación.');
+                return false;
+            }
+            
+            // Validar niveles
+            if (levelPrices.length === 0) {
+                e.preventDefault();
+                alert('Debe agregar al menos un nivel de precio.');
+                return false;
+            }
+
+            // Validar precios de niveles
+            for (let input of levelPrices) {
+                if (!input.value || parseFloat(input.value) <= 0) {
+                    e.preventDefault();
+                    alert('Todos los niveles deben tener un precio válido.');
+                    input.focus();
+                    return false;
+                }
+            }
+            // Todo validado correctamente
+            return true;
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!document.querySelector('input[name="date"]').valueAsDate)
+                document.querySelector('input[name="date"]').valueAsDate = new Date();
+
+            {% if entry %}
+                {% for level in entry.levels %}
+                    addLevel(value = level.description, impact = level.impact);
+                {% endfor %}
+
+                loadWatchlistConditions();
+                {% for condition in entry.conditions %}
+                    document.getElementById(`condition_${condition.id}`).click();
+                {% endfor %}
+            {% else %}
+                addLevel();
+                loadWatchlistConditions();
+            {% endif %}
+        });
+    </script>
+{% endblock %}

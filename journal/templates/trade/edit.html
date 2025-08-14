@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-edit me-2"></i>Editar Transacción</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <!-- Información básica -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Símbolo</label>
+                            <input type="text" name="symbol" class="form-control" value="{{ trade.symbol }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de la Compañía</label>
+                            <input type="text" name="company_name" class="form-control" value="{{ trade.company_name }}">
+                        </div>
+                    </div>
+
+                    <!-- Tipo y cantidades -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Operación</label>
+                            <select name="trade_type" class="form-select" required>
+                                <option value="LONG" {% if trade.trade_type == 'LONG' %}selected{% endif %}>Long (Compra)</option>
+                                <option value="SHORT" {% if trade.trade_type == 'SHORT' %}selected{% endif %}>Short (Venta)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" name="quantity" step="0.01" class="form-control" value="{{ trade.quantity }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Comisión (€)</label>
+                            <input type="number" name="commission" step="0.01" class="form-control" value="{{ trade.commission }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Balance total (€)</label>
+                        <input type="number" name="balance" step="0.01" class="form-control" value="{{ trade.balance }}" required>
+                    </div>
+
+                    <!-- Entrada -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Precio de Entrada</label>
+                            <input type="number" name="entry_price" step="0.01" class="form-control" value="{{ trade.entry_price }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Fecha de Entrada</label>
+                            <input type="date" name="entry_date" class="form-control" value="{{ trade.entry_date.isoformat() }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Hora de Entrada</label>
+                            <input type="time" name="entry_time" class="form-control" value="{{ trade.entry_time }}">
+                        </div>
+                    </div>
+
+                    <!-- Stop/TP -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Stop Loss</label>
+                            <input type="number" name="stop_loss" step="0.01" class="form-control" value="{{ trade.stop_loss or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Take Profit</label>
+                            <input type="number" name="take_profit" step="0.01" class="form-control" value="{{ trade.take_profit or '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Salida -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Precio de Salida</label>
+                            <input type="number" name="exit_price" step="0.01" class="form-control" value="{{ trade.exit_price or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Fecha de Salida</label>
+                            <input type="date" name="exit_date" class="form-control" value="{{ trade.exit_date.isoformat() if trade.exit_date else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Hora de Salida</label>
+                            <input type="time" name="exit_time" class="form-control" value="{{ trade.exit_time or '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Estrategia -->
+                    <div class="mb-3">
+                        <label class="form-label">Estrategia Aplicada</label>
+                        <select name="strategy_id" class="form-select" id="strategy-select">
+                            <option value="">Seleccionar estrategia</option>
+                            {% for strategy in json_strategies %}
+                                <option value="{{ strategy['id'] }}" data-conditions="{{ strategy['scoring'] | tojson }}"
+                                        {% if strategy['id'] == trade.strategy_id %}selected{% endif %}>
+                                    {{ strategy['name'] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Condiciones cumplidas -->
+                    <div id="strategy-conditions" class="mb-3" {% if not trade.conditions %}style="display: none;"{% endif %}>
+                        <label class="form-label">Condiciones Cumplidas</label>
+                        <div class="card border-light">
+                            <div class="card-body">
+                                <div id="conditions-list" class="row"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Archivos nuevos -->
+                    <div class="mb-4">
+                        <label class="form-label">Subir nuevos archivos</label>
+                        <div class="card border-light">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Imágenes</label>
+                                    <input type="file" name="images" class="form-control" multiple accept="image/*">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Videos</label>
+                                    <input type="file" name="videos" class="form-control" multiple accept="video/*">
+                                </div>
+                                <div id="file-preview" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Textos -->
+                    <div class="mb-3">
+                        <label class="form-label">Descripción General</label>
+                        <textarea name="description" class="form-control" rows="3">{{ trade.description or '' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">¿Por qué fue rentable o no?</label>
+                            <textarea name="why_profitable" class="form-control" rows="3">{{ trade.why_profitable or '' }}</textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Factores que influyeron</label>
+                            <textarea name="influencing_factors" class="form-control" rows="3">{{ trade.influencing_factors or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('journal_endpoints.journal') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const strategySelect = document.getElementById('strategy-select');
+    const strategyConditions = document.getElementById('strategy-conditions');
+    const conditionsList = document.getElementById('conditions-list');
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    const filePreview = document.getElementById('file-preview');
+    const selectedConditions = {{ trade.conditions | map(attribute='id') | list | tojson }};
+
+    strategySelect.addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const conditions = JSON.parse(selectedOption.dataset.conditions || '[]');
+        showStrategyConditions(conditions);
+    });
+
+    function showStrategyConditions(conditions) {
+        conditionsList.innerHTML = '';
+        if (conditions.length === 0) {
+            strategyConditions.style.display = 'none';
+            return;
+        }
+
+        conditions.forEach((condition, index) => {
+            const checked = selectedConditions.includes(condition.id) ? 'checked' : '';
+            const conditionDiv = document.createElement('div');
+            conditionDiv.className = 'col-md-6 mb-2';
+            conditionDiv.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                        name="strategy_conditions" value="${condition.id}"
+                        id="condition-${index}" ${checked}>
+                    <label class="form-check-label" for="condition-${index}">
+                        ${condition.name}
+                    </label>
+                    ${condition.description ? `<small class="text-muted d-block">${condition.description}</small>` : ''}
+                </div>`;
+            conditionsList.appendChild(conditionDiv);
+        });
+        strategyConditions.style.display = 'block';
+    }
+
+    // Mostrar condiciones si ya hay estrategia seleccionada
+    const initialOption = strategySelect.options[strategySelect.selectedIndex];
+    if (initialOption && initialOption.dataset.conditions) {
+        showStrategyConditions(JSON.parse(initialOption.dataset.conditions));
+    }
+
+    fileInputs.forEach(input => {
+        input.addEventListener('change', updateFilePreview);
+    });
+
+    function updateFilePreview() {
+        filePreview.innerHTML = '';
+        fileInputs.forEach(input => {
+            if (input.files.length > 0) {
+                const fileType = input.name;
+                const label = fileType === 'images' ? 'Imágenes' : 'Videos';
+                const section = document.createElement('div');
+                section.className = 'mb-3';
+                section.innerHTML = `<strong>${label} seleccionados:</strong>`;
+                const list = document.createElement('ul');
+                list.className = 'list-unstyled mt-2';
+                Array.from(input.files).forEach(file => {
+                    const item = document.createElement('li');
+                    item.className = 'text-muted';
+                    item.innerHTML = `<i class="fas fa-${fileType === 'images' ? 'image' : 'video'} me-2"></i>${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    list.appendChild(item);
+                });
+                section.appendChild(list);
+                filePreview.appendChild(section);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
