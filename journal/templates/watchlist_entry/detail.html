@@ -22,24 +22,24 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2><i class="fas fa-eye me-2"></i>Detalle de Watchlist</h2>
+        <h2><i class="fas fa-eye me-2"></i>Watchlist Details</h2>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('watchlist_endpoints.watchlist') }}">Watchlist</a></li>
+                <li class="breadcrumb-item"><a class="text-decoration-none" href="{{ url_for('watchlist_endpoints.watchlist') }}">Watchlist</a></li>
                 <li class="breadcrumb-item active">{{ entry.symbol }}</li>
             </ol>
         </nav>
     </div>
     <div>
-        <a href="{{ url_for('watchlist_endpoints.edit_watchlist_entry', id=entry.id) }}" class="btn btn-outline-primary me-2">
+        <a href="{{ url_for('watchlist_endpoints.edit_watchlist_entry', id=entry.id) }}" class="btn btn-pill bg-primary me-2">
             <i class="fas fa-edit me-2"></i>Editar
         </a>
         {% if not entry.date_exit %}
-            <button type="button" class="btn btn-outline-danger" onclick="removeFromWatchlist({{ entry.id }}, '{{ entry.symbol }}')">
+            <button type="button" class="btn btn-pill bg-primary" onclick="removeFromWatchlist({{ entry.id }}, '{{ entry.symbol }}')">
                 <i class="fas fa-times me-2"></i>Dar de Baja
             </button>
         {% else %}
-            <button type="button" class="btn btn-outline-success" onclick="reactivateEntry({{ entry.id }}, '{{ entry.symbol }}')">
+            <button type="button" class="btn btn-pill bg-primary" onclick="reactivateEntry({{ entry.id }}, '{{ entry.symbol }}')">
                 <i class="fas fa-undo me-2"></i>Reactivar
             </button>
         {% endif %}
@@ -50,10 +50,10 @@
 <div class="row mb-4">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex align-items-center">
                 <h4 class="mb-0">{{ entry.symbol }}</h4>
                 {% if entry.company_name %}
-                    <h5 class="text-white mb-0">{{ entry.company_name }}</h5>
+                    <h5 class="mb-0 ms-3 me-auto mb-0">{{ entry.company_name }}</h5>
                 {% endif %}
                 <div>
                     {% if entry.date_exit %}
@@ -71,32 +71,32 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="card-body">                
+            <div class="card-body pt-0">                
                 <div class="col">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Fecha de Entrada:</label>
-                                <p>{{ entry.date.strftime('%d/%m/%Y') }}</p>
+                            <div class="d-flex">
+                                <label class="fw-bold">Fecha de Entrada:</label>
+                                <p class="ms-auto mb-0">{{ entry.date.strftime('%d/%m/%Y') }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Watchlist:</label>
-                                {% if entry.strategy %}<p>{{ entry.watchlist.name }}</p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Watchlist:</label>
+                                {% if entry.strategy %}<p class="ms-auto mb-0">{{ entry.watchlist.name }}</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Puntuación:</label>
-                                {% if entry.score %}<p>{{ "%.2f"|format(entry.score * 100) }}%</p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Puntuación:</label>
+                                {% if entry.score %}<p class="ms-auto mb-0">{{ "%.2f"|format(entry.score * 100) }}%</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Hashtags:</label>
+                            <div class="d-flex">
+                                <label class="fw-bold">Hashtags:</label>
                                 {% if hashtags_list %}
-                                <div>
+                                <div class="ms-auto mb-0">
                                     {% for tag in hashtags_list %}
                                         <span class="badge bg-primary me-1 mb-1">{{ tag }}</span>
                                     {% endfor %}
@@ -105,39 +105,39 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">ATR:</label>
-                                {% if entry.atr %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.atr) }}%</span></p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">ATR:</label>
+                                {% if entry.atr %}<p class="ms-auto mb-0">{{ "%.2f"|format(entry.atr) }}%</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Precio:</label>
-                                {% if entry.price %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.price) }}</span></p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Precio:</label>
+                                {% if entry.price %}<p class="ms-auto mb-0">{{ "%.2f"|format(entry.price) }}</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Volumen:</label>
-                                {% if entry.volume %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.volume) }}</span></p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Volumen:</label>
+                                {% if entry.volume %}<p class="ms-auto mb-0">{{ "%.2f"|format(entry.volume) }}</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Avg. Volumen:</label>
-                                {% if entry.avg_volume %}<p><span class="badge bg-info fs-6">{{ "%.2f"|format(entry.avg_volume) }}</span></p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Avg. Volumen:</label>
+                                {% if entry.avg_volume %}<p class="ms-auto mb-0">{{ "%.2f"|format(entry.avg_volume) }}</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Objetivo de Beneficio:</label>
-                                {% if entry.profit_target %}<p>{{ "%.2f"|format(entry.profit_target) }}</p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Objetivo de Beneficio:</label>
+                                {% if entry.profit_target %}<p class="ms-auto mb-0">{{ "%.2f"|format(entry.profit_target) }}</p>{% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">Risk/Reward:</label>
-                                {% if entry.risk_reward %}<p><span class="badge bg-info fs-6">{{ entry.risk_reward }}</span></p>{% endif %}
+                            <div class="d-flex">
+                                <label class="fw-bold">Risk/Reward:</label>
+                                {% if entry.risk_reward %}<p class="ms-auto mb-0">{{ entry.risk_reward }}</p>{% endif %}
                             </div>
                         </div>
                     </div>
@@ -153,7 +153,7 @@
             <div class="card-header">
                 <h6 class="mb-0">Technical Levels</h6>
             </div>
-            <div class="card-body">
+            <div class="card-body pt-0">
                 <div class="row">
                     {% if levels %}
                         {% if entry.price %}
@@ -217,7 +217,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">Descripción</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body pt-0">
                     <p class="card-text">{{ entry.description }}</p>
                 </div>
             </div>
@@ -227,10 +227,10 @@
     {% if entry.negative_action %}
         <div class="col-md-6 mb-3">
             <div class="card h-100">
-                <div class="card-header bg-warning text-dark">
+                <div class="card-header">
                     <h6 class="mb-0">Acción Negativa</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body pt-0">
                     <p class="card-text">{{ entry.negative_action }}</p>
                 </div>
             </div>
@@ -243,7 +243,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">Otras Notas</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body pt-0">
                     <p class="card-text">{{ entry.other_notes }}</p>
                 </div>
             </div>
@@ -265,8 +265,8 @@
                 <p class="text-muted small">Se agregará la fecha de salida al registro.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmRemove">Dar de Baja</button>
+                <button type="button" class="btn btn-pill bg-danger" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-pill bg-success" id="confirmRemove">Dar de Baja</button>
             </div>
         </div>
     </div>
@@ -285,8 +285,8 @@
                 <p class="text-muted small">Se quitará la fecha de salida del registro.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="confirmReactivate">Reactivar</button>
+                <button type="button" class="btn btn-pill bg-danger" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-pill bg-success" id="confirmReactivate">Reactivar</button>
             </div>
         </div>
     </div>
