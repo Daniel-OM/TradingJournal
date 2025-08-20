@@ -5,37 +5,6 @@
 
 {% block style %}
 <style>
-    :root {
-        --tv-dark-bg: #0d1421;
-        --tv-card-bg: #131722;
-        --tv-text-primary: #ffffff;
-        --tv-text-secondary: #b0b0b0;
-        --tv-green: #00c851;
-        --tv-red: #ff4444;
-        --tv-blue: #007cff;
-        --tv-yellow: #ffbb33;
-        --tv-border: #404040;
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background-color: var(--tv-dark-bg);
-        color: var(--tv-text-primary); /* #d1d4dc; */
-        line-height: 1.5;
-    }
-
-    .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
     .header {
         margin-bottom: 30px;
     }
@@ -80,7 +49,7 @@
     }
 
     .filter-group label {
-        color: #868b94;
+        color: rgb(from var(--text-color-secondary) r g b / var(--text-opacity));
         font-size: 12px;
         font-weight: 500;
         margin-bottom: 5px;
@@ -90,10 +59,7 @@
 
     .filter-group select,
     .filter-group input {
-        background: #1e222d;
-        border: 1px solid #2a2e39;
         border-radius: 4px;
-        color: #d1d4dc;
         padding: 8px 12px;
         font-size: 14px;
         transition: all 0.2s;
@@ -102,8 +68,6 @@
     .filter-group select:focus,
     .filter-group input:focus {
         outline: none;
-        border-color: #2962ff;
-        box-shadow: 0 0 0 2px rgba(41, 98, 255, 0.1);
     }
 
     .filter-actions {
@@ -113,48 +77,19 @@
         margin-top: 15px;
     }
 
-    .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-primary {
-        background: #2962ff;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: #1e53e5;
-    }
-
-    .btn-secondary {
-        background: #2a2e39;
-        color: #d1d4dc;
-        border: 1px solid #434651;
-    }
-
-    .btn-secondary:hover {
-        background: #363a45;
-    }
-
     /* Tab Navigation */
     .tab-nav {
         display: flex;
         gap: 2px;
         margin-bottom: 30px;
-        border-bottom: 1px solid #2a2e39;
+        border-bottom: 1px solid rgb(from var(--text-color-primary) r g b / var(--text-opacity));
     }
 
     .tab-btn {
         background: transparent;
         border: none;
         padding: 12px 20px;
-        color: #868b94;
+        color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
@@ -163,12 +98,12 @@
     }
 
     .tab-btn.active {
-        color: #2962ff;
-        border-bottom-color: #2962ff;
+        color: rgb(from var(--primary-color) r g b / var(--text-opacity));
+        border-bottom-color: rgb(from var(--primary-color) r g b / var(--text-opacity));
     }
 
     .tab-btn:hover {
-        color: #d1d4dc;
+        color: rgb(from var(--primary-color) r g b / var(--text-opacity));
     }
 
     /* Stats Grid */
@@ -187,7 +122,7 @@
     }
 
     .stats-card h3 {
-        color: #ffffff;
+        color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
         font-size: 16px;
         font-weight: 600;
         margin-bottom: 15px;
@@ -327,16 +262,12 @@
     }
 
     .tv-tab-content {
-        background-color: var(--tv-card-bg);
-        border: 1px solid var(--tv-border);
         border-top: none;
         border-radius: 0 0 8px 8px;
         padding: 20px;
     }
 
     .nav-tabs {
-        background-color: var(--tv-card-bg);
-        border-bottom: 1px solid var(--tv-border);
         border-radius: 8px 8px 0 0;
     }
 
@@ -439,27 +370,22 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>Performance Analysis</h1>
-            <p class="subtitle">Comprehensive trading performance metrics and analysis</p>
-        </div>
-
-        <!-- Filters -->
-        <div class="filters">
+<div class="row">
+    <!-- Filters -->
+    <div class="col-12 mb-3">
+        <div class="card card-body mb-2">
             <div class="filter-row">
                 <div class="filter-group">
                     <label>Start Date</label>
-                    <input type="date" id="start-date">
+                    <input type="date" id="start-date" class="rounded">
                 </div>
                 <div class="filter-group">
                     <label>End Date</label>
-                    <input type="date" id="end-date">
+                    <input type="date" id="end-date" class="rounded">
                 </div>
                 <div class="filter-group">
                     <label>Strategy</label>
-                    <select id="strategy">
+                    <select id="strategy" class="rounded">
                         <option value="">All Strategies</option>
                         {% for strat in strategies %}
                             <option value="{{ strat.id }}" {% if strat.id == strategy_id %}selected{% endif %}>{{ strat.name }}</option>
@@ -468,11 +394,11 @@
                 </div>
                 <div class="filter-group">
                     <label>Symbol</label>
-                    <input type="text" id="symbol" placeholder="e.g., AAPL">
+                    <input type="text" id="symbol" placeholder="e.g., AAPL" class="rounded">
                 </div>
                 <div class="filter-group">
                     <label>Side</label>
-                    <select id="side">
+                    <select id="side" class="rounded">
                         <option value="BOTH">Both</option>
                         <option value="LONG">Long</option>
                         <option value="SHORT">Short</option>
@@ -480,384 +406,382 @@
                 </div>
                 <div class="filter-group">
                     <label>Limit</label>
-                    <input id="limit" type="number" min="0" step="1" placeholder="e.g., 100">
+                    <input id="limit" type="number" min="0" step="1" placeholder="e.g., 100" class="rounded">
                 </div>
             </div>
             <div class="filter-actions align-items-center">
-                <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                <button class="btn btn-pill bg-primary" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn btn-pill bg-secondary" onclick="resetFilters()">Reset</button>
                 <div class="form-check form-switch ms-auto">
                     <input class="form-check-input" type="checkbox" role="switch" onchange="changeGrossNet()" id="gross-switch">
                     <label class="form-check-label" for="flexSwitchCheckDefault">Gross</label>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="summary-cards">
-            <div class="summary-card">
-                <div class="value positive" id="total-pnl">$0</div>
-                <div class="label">Total P&L </div>
-            </div>
-            <div class="summary-card">
-                <div class="value positive" id="win-rate">0%</div>
-                <div class="label">Win Rate</div>
-            </div>
-            <div class="summary-card">
-                <div class="value positive" id="risk-reward">0</div>
-                <div class="label">Risk/Reward</div>
-            </div>
-            <div class="summary-card">
-                <div class="value" id="total-trades">0</div>
-                <div class="label">Total Trades</div>
-            </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="value positive" id="total-pnl">$0</div>
+            <div class="label">Total P&L </div>
         </div>
-
-        <div class="row g-3 stats-card">
-            <div class="col col-lg-4 col-md-6">
-                <h3>Trading Overview</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Total P&L</span>
-                    <span class="stat-value positive" id="total-pnl-stat">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Win Rate</span>
-                    <span class="stat-value positive" id="win-rate-stat">0%</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Total Trades</span>
-                    <span class="stat-value neutral" id="total-trades-stat">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Winning Trades</span>
-                    <span class="stat-value positive" id="winning-trades">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Losing Trades</span>
-                    <span class="stat-value negative" id="losing-trades">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Scratch Trades</span>
-                    <span class="stat-value neutral" id="scratch-trades">0</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>Average Performance</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Average Trade P&L</span>
-                    <span class="stat-value positive" id="avg-trade">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Win</span>
-                    <span class="stat-value positive" id="avg-win">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Loss</span>
-                    <span class="stat-value negative" id="avg-loss">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Daily P&L</span>
-                    <span class="stat-value positive" id="avg-daily">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average P&L per Share</span>
-                    <span class="stat-value positive" id="avg-share">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Daily Volume</span>
-                    <span class="stat-value" id="avg-volume">$0</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>Best & Worst</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Largest Gain</span>
-                    <span class="stat-value positive" id="largest-gain">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Largest Loss</span>
-                    <span class="stat-value negative" id="largest-loss">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Median Trade P&L</span>
-                    <span class="stat-value positive" id="median">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Max Consecutive Wins</span>
-                    <span class="stat-value positive" id="max-wins">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Max Consecutive Losses</span>
-                    <span class="stat-value negative" id="max-losses">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Current Streak</span>
-                    <span class="stat-value positive" id="current-streak">0</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>P&L Distribution</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Winning P&L</span>
-                    <span class="stat-value positive" id="winning-pnl">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Losing P&L</span>
-                    <span class="stat-value negative" id="losing-pnl">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Trade P&L Std Dev</span>
-                    <span class="stat-value" id="std">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Risk/Reward Ratio</span>
-                    <span class="stat-value" id="risk-reward-stat">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Profit Factor</span>
-                    <span class="stat-value positive" id="profit-factor">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Recovery Rate</span>
-                    <span class="stat-value positive" id="recovery-rate">0%</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>Risk Analysis</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Max Drawdown</span>
-                    <span class="stat-value negative" id="drawdown">0%</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Sharpe Ratio</span>
-                    <span class="stat-value positive" id="sharpe">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">SQN Score</span>
-                    <span class="stat-value positive" id="sqn">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">K-Ratio</span>
-                    <span class="stat-value positive" id="k-ratio">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Kelly %</span>
-                    <span class="stat-value" id="kelly">0%</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">P-Value</span>
-                    <span class="stat-value" id="p-value">0</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>Hold Time Analysis</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Average Hold Time (Overall)</span>
-                    <span class="stat-value" id="hold-overall">0m</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Hold Time (Winners)</span>
-                    <span class="stat-value positive" id="hold-winners">0m</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Hold Time (Losers)</span>
-                    <span class="stat-value negative" id="hold-losers">0m</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average Hold Time (Scratches)</span>
-                    <span class="stat-value neutral" id="hold-scratches">0m</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Hold Time Pattern</span>
-                    <span class="stat-value positive" id="hold-pattern">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Streak Consistency</span>
-                    <span class="stat-value positive" id="streak-consistency">0</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>Trading Costs</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Total Commissions</span>
-                    <span class="stat-value negative" id="total-commissions">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Total Fees</span>
-                    <span class="stat-value negative" id="total-fees">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Total Trading Costs</span>
-                    <span class="stat-value negative" id="total-costs">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Cost per Trade</span>
-                    <span class="stat-value" id="cost-per-trade">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Cost Impact</span>
-                    <span class="stat-value negative" id="cost-impact">0%</span>
-                </div>
-            </div>
-
-            <div class="col col-lg-4 col-md-6">
-                <h3>Execution Quality</h3>
-                <div class="stat-row">
-                    <span class="stat-label">Average MFE (Max Favorable)</span>
-                    <span class="stat-value positive" id="avg-mfe">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Average MAE (Max Adverse)</span>
-                    <span class="stat-value negative" id="avg-mae">$0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">MFE/MAE Ratio</span>
-                    <span class="stat-value positive" id="mfe-mae-ratio">0</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Efficiency Score</span>
-                    <span class="stat-value positive" id="efficiency">0%</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Exit Quality</span>
-                    <span class="stat-value positive" id="exit-quality">0</span>
-                </div>
-            </div>
+    </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="value positive" id="win-rate">0%</div>
+            <div class="label">Win Rate</div>
         </div>
-
-
+    </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="value positive" id="risk-reward">0</div>
+            <div class="label">Risk/Reward</div>
+        </div>
+    </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="value" id="total-trades">0</div>
+            <div class="label">Total Trades</div>
+        </div>
+    </div>
+    
+    <div class="col-12 mb-3">
+        <div class="card">
+            <div class="card-body row m-0">
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Trading Overview</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Total P&L</span>
+                        <span class="stat-value positive" id="total-pnl-stat">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Win Rate</span>
+                        <span class="stat-value positive" id="win-rate-stat">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Trades</span>
+                        <span class="stat-value neutral" id="total-trades-stat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Winning Trades</span>
+                        <span class="stat-value positive" id="winning-trades">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Losing Trades</span>
+                        <span class="stat-value negative" id="losing-trades">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Scratch Trades</span>
+                        <span class="stat-value neutral" id="scratch-trades">0</span>
+                    </div>
+                </div>
         
-    <div class="container-fluid py-4">
-        <div class="row mb-4">
-            <!-- Equity Curve -->
-            <div class="col-lg-8">
-                <div class="tv-card">
-                    <div class="tv-card-header">
-                        <i class="fas fa-chart-area me-2"></i>Equity Curve
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Average Performance</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Trade P&L</span>
+                        <span class="stat-value positive" id="avg-trade">$0</span>
                     </div>
-                    <div class="tv-card-body">
-                        <div class="chart-container">
-                            <canvas id="equityChart"></canvas>
-                        </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Win</span>
+                        <span class="stat-value positive" id="avg-win">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Loss</span>
+                        <span class="stat-value negative" id="avg-loss">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Daily P&L</span>
+                        <span class="stat-value positive" id="avg-daily">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average P&L per Share</span>
+                        <span class="stat-value positive" id="avg-share">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Daily Volume</span>
+                        <span class="stat-value" id="avg-volume">$0</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- P&L Distribution -->
-            <div class="col-lg-4">
-                <div class="tv-card">
-                    <div class="tv-card-header">
-                        <i class="fas fa-chart-bar me-2"></i>P&L Distribution
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Best & Worst</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Largest Gain</span>
+                        <span class="stat-value positive" id="largest-gain">$0</span>
                     </div>
-                    <div class="tv-card-body">
-                        <div class="chart-container small">
-                            <canvas id="pnlDistributionChart"></canvas>
-                        </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Largest Loss</span>
+                        <span class="stat-value negative" id="largest-loss">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Median Trade P&L</span>
+                        <span class="stat-value positive" id="median">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Max Consecutive Wins</span>
+                        <span class="stat-value positive" id="max-wins">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Max Consecutive Losses</span>
+                        <span class="stat-value negative" id="max-losses">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Current Streak</span>
+                        <span class="stat-value positive" id="current-streak">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>P&L Distribution</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Winning P&L</span>
+                        <span class="stat-value positive" id="winning-pnl">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Losing P&L</span>
+                        <span class="stat-value negative" id="losing-pnl">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Trade P&L Std Dev</span>
+                        <span class="stat-value" id="std">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Risk/Reward Ratio</span>
+                        <span class="stat-value" id="risk-reward-stat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Profit Factor</span>
+                        <span class="stat-value positive" id="profit-factor">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Recovery Rate</span>
+                        <span class="stat-value positive" id="recovery-rate">0%</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Risk Analysis</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Max Drawdown</span>
+                        <span class="stat-value negative" id="drawdown">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Sharpe Ratio</span>
+                        <span class="stat-value positive" id="sharpe">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">SQN Score</span>
+                        <span class="stat-value positive" id="sqn">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">K-Ratio</span>
+                        <span class="stat-value positive" id="k-ratio">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Kelly %</span>
+                        <span class="stat-value" id="kelly">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">P-Value</span>
+                        <span class="stat-value" id="p-value">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Hold Time Analysis</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Overall)</span>
+                        <span class="stat-value" id="hold-overall">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Winners)</span>
+                        <span class="stat-value positive" id="hold-winners">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Losers)</span>
+                        <span class="stat-value negative" id="hold-losers">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Scratches)</span>
+                        <span class="stat-value neutral" id="hold-scratches">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Hold Time Pattern</span>
+                        <span class="stat-value positive" id="hold-pattern">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak Consistency</span>
+                        <span class="stat-value positive" id="streak-consistency">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Trading Costs</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Commissions</span>
+                        <span class="stat-value negative" id="total-commissions">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Fees</span>
+                        <span class="stat-value negative" id="total-fees">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Trading Costs</span>
+                        <span class="stat-value negative" id="total-costs">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cost per Trade</span>
+                        <span class="stat-value" id="cost-per-trade">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cost Impact</span>
+                        <span class="stat-value negative" id="cost-impact">0%</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Execution Quality</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Average MFE (Max Favorable)</span>
+                        <span class="stat-value positive" id="avg-mfe">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average MAE (Max Adverse)</span>
+                        <span class="stat-value negative" id="avg-mae">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">MFE/MAE Ratio</span>
+                        <span class="stat-value positive" id="mfe-mae-ratio">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Efficiency Score</span>
+                        <span class="stat-value positive" id="efficiency">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Exit Quality</span>
+                        <span class="stat-value positive" id="exit-quality">0</span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Time Analysis Tabs -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="tv-card">
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#dailyTab" role="tab">
-                                <i class="fas fa-calendar-day me-2"></i>Daily
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#monthlyTab" role="tab">
-                                <i class="fas fa-calendar-alt me-2"></i>Monthly
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#weekdayTab" role="tab">
-                                <i class="fas fa-calendar-week me-2"></i>By Weekday
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#hourlyTab" role="tab">
-                                <i class="fas fa-clock me-2"></i>By Hour
-                            </a>
-                        </li>
-                    </ul>
-                    <div class="tab-content tv-tab-content">
-                        <div class="tab-pane fade" id="dailyTab" role="tabpanel">
-                            <div class="chart-container">
-                                <canvas id="dailyPnlChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="monthlyTab" role="tabpanel">
-                            <div class="chart-container">
-                                <canvas id="monthlyPnlChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="weekdayTab" role="tabpanel">
-                            <div class="chart-container">
-                                <canvas id="weekdayChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade show active" id="hourlyTab" role="tabpanel">
-                            <div class="chart-container">
-                                <canvas id="hourlyChart"></canvas>
-                            </div>
-                        </div>
+    <!-- Equity Curve -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-chart-area me-2"></i>Equity Curve
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- P&L Distribution -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-chart-bar me-2"></i>P&L Distribution
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0 small">
+                    <canvas id="pnlDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Analysis Tabs -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#dailyTab" role="tab">
+                        <i class="fas fa-calendar-day me-2"></i>Daily
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#monthlyTab" role="tab">
+                        <i class="fas fa-calendar-alt me-2"></i>Monthly
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#weekdayTab" role="tab">
+                        <i class="fas fa-calendar-week me-2"></i>By Weekday
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#hourlyTab" role="tab">
+                        <i class="fas fa-clock me-2"></i>By Hour
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content tv-tab-content">
+                <div class="tab-pane fade" id="dailyTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="dailyPnlChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="monthlyTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="monthlyPnlChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="weekdayTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="weekdayChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade show active" id="hourlyTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="hourlyChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Analysis Row -->
-        <div class="row mb-4">
-            <!-- Symbol Performance -->
-            <div class="col-lg-6">
-                <div class="tv-card">
-                    <div class="tv-card-header">
-                        <i class="fas fa-chart-pie me-2"></i>Top Symbols Performance
-                    </div>
-                    <div class="tv-card-body">
-                        <div class="chart-container small">
-                            <canvas id="symbolChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+    <!-- Symbol Performance -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-chart-pie me-2"></i>Top Symbols Performance
             </div>
-
-            <!-- Hold Time Analysis -->
-            <div class="col-lg-6">
-                <div class="tv-card">
-                    <div class="tv-card-header">
-                        <i class="fas fa-stopwatch me-2"></i>Hold Time vs P&L
-                    </div>
-                    <div class="tv-card-body">
-                        <div class="chart-container small">
-                            <canvas id="holdTimeChart"></canvas>
-                        </div>
-                    </div>
+            <div class="card-body">
+                <div class="chart-container mt-0 small">
+                    <canvas id="symbolChart"></canvas>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Size Analysis -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="tv-card">
-                    <div class="tv-card-header">
-                        <i class="fas fa-weight me-2"></i>Position Size Analysis
-                    </div>
-                    <div class="tv-card-body">
-                        <div class="chart-container">
-                            <canvas id="sizeAnalysisChart"></canvas>
-                        </div>
-                    </div>
+    <!-- Hold Time Analysis -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-stopwatch me-2"></i>Hold Time vs P&L
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0 small">
+                    <canvas id="holdTimeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Size Analysis -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-weight me-2"></i>Position Size Analysis
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0">
+                    <canvas id="sizeAnalysisChart"></canvas>
                 </div>
             </div>
         </div>
@@ -870,8 +794,7 @@
         </div>
         <p class="mt-2">Loading charts...</p>
     </div>
-
-    </div>
+</div>
 {% endblock %}
 {% block scripts %}
     <script>

@@ -3,24 +3,9 @@
 
 {% block style %}
 <style>
-    .container {
-        box-shadow: none;
-    }
     
-    .watchlist-card {
-        border: 1px solid #e0e0e0;
-    }
-
-    .watchlist-card:hover {
-        border-color: #007bff;
-    }
-
     .badge.fs-6 {
         font-size: 0.875rem !important;
-    }
-
-    .bg-light {
-        background-color: #f8f9fa !important;
     }
 </style>
 {% endblock %}
@@ -28,23 +13,23 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-eye me-2"></i>Watchlist</h2>
-    <a href="{{ url_for('watchlist_endpoints.add_watchlist_entry') }}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>Añadir Activo
+    <a href="{{ url_for('watchlist_endpoints.add_watchlist_entry') }}" class="btn btn-pill bg-primary">
+        <i class="fas fa-plus me-2"></i>Add Asset
     </a>
 </div>
 
 <!-- Filtros -->
 <div class="card mb-4">
-    <div class="card-body">
+    <div class="card-body pt-3">
         <form method="GET" class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Fecha</label>
+                <label class="form-label">Date</label>
                 <input type="date" name="date" class="form-control" value="{{selected_date if selected_date else ''}}" onchange="this.form.submit()">
             </div>
             <div class="col-md-4">
                 <label class="form-label">Watchlist</label>
                 <select name="watchlist" class="form-select" onchange="this.form.submit()">
-                    <option value="">Todas</option>
+                    <option value="">All</option>
                     {% for watchlist in watchlists %}
                         <option value="{{ watchlist.id }}" {% if watchlist.id|string == watchlist_filter %}selected{% endif %}>
                             {{ watchlist.name }}
@@ -93,26 +78,26 @@
                         <!-- Información destacada -->
                         <div class="mb-3">
                             {% if entry.atr %}
-                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-light rounded">
-                                    <span class="fw-bold text-primary">ATR:</span>
+                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 rounded">
+                                    <span class="fw-bold">ATR:</span>
                                     <span class="badge bg-info fs-6">{{ "%.2f"|format(entry.atr) }}</span>
                                 </div>
                             {% endif %}
                             {% if entry.price %}
-                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-light rounded">
-                                    <span class="fw-bold text-primary">Precio:</span>
+                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 rounded">
+                                    <span class="fw-bold">Price:</span>
                                     <span class="badge bg-info fs-6">{{ "%.2f"|format(entry.price) }}</span>
                                 </div>
                             {% endif %}
                             {% if entry.volume %}
-                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-light rounded">
-                                    <span class="fw-bold text-primary">Volumen:</span>
+                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 rounded">
+                                    <span class="fw-bold">Volume:</span>
                                     <span class="badge bg-info fs-6">{{ "%.2f"|format(entry.volume) }}</span>
                                 </div>
                             {% endif %}
                             {% if entry.avg_volume %}
-                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-light rounded">
-                                    <span class="fw-bold text-primary">Avg. Volumen:</span>
+                                <div class="d-flex justify-content-between align-items-center mb-1 p-1 rounded">
+                                    <span class="fw-bold">Avg. Volume:</span>
                                     <span class="badge bg-info fs-6">{{ "%.2f"|format(entry.avg_volume) }}</span>
                                 </div>
                             {% endif %}
@@ -129,7 +114,7 @@
 
                         <!-- Información adicional -->
                         {% if entry.strategy %}
-                            <p class="mb-2"><strong>Estrategia:</strong> {{ entry.strategy.name }}</p>
+                            <p class="mb-2"><strong>Strategy:</strong> {{ entry.strategy.name }}</p>
                         {% endif %}
                         
                         {% if entry.resistance_levels or entry.support_levels %}
@@ -145,7 +130,7 @@
 
                         {% if entry.description %}
                             <div class="mb-3">
-                                <small class="text-muted">Descripción:</small>
+                                <small class="text-muted">Description:</small>
                                 <p class="small">{{ entry.description[:100] }}{% if entry.description|length > 100 %}...{% endif %}</p>
                             </div>
                         {% endif %}
@@ -160,25 +145,23 @@
                         {% endif %}
 
                         <!-- Botones de acción -->
-                        <div class="mt-auto">
-                            <div class="btn-group w-100" role="group">
+                        <div class="d-flex mt-auto">
+                            <button type="button" 
+                                    class="btn btn-pill bg-primary btn-sm"
+                                    onclick="event.stopPropagation(); window.location.href='{{ url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id) }}';">
+                                <i class="fas fa-info-circle me-1"></i>Details
+                            </button>
+                            {% if not entry.exit_date %}
                                 <button type="button" 
-                                        class="btn btn-outline-primary btn-sm"
-                                        onclick="event.stopPropagation(); window.location.href='{{ url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id) }}';">
-                                    <i class="fas fa-info-circle me-1"></i>Detalles
+                                        class="btn btn-pill bg-danger btn-sm ms-auto"
+                                        onclick="event.stopPropagation(); removeFromWatchlist({{ entry.id }}, '{{ entry.symbol }}');">
+                                    <i class="fas fa-times me-1"></i>Dar de Baja
                                 </button>
-                                {% if not entry.exit_date %}
-                                    <button type="button" 
-                                            class="btn btn-outline-danger btn-sm"
-                                            onclick="event.stopPropagation(); removeFromWatchlist({{ entry.id }}, '{{ entry.symbol }}');">
-                                        <i class="fas fa-times me-1"></i>Dar de Baja
-                                    </button>
-                                {% else %}
-                                    <span class="btn btn-outline-secondary btn-sm disabled">
-                                        <i class="fas fa-check me-1"></i>Inactivo
-                                    </span>
-                                {% endif %}
-                            </div>
+                            {% else %}
+                                <span class="btn btn-outline-secondary btn-sm disabled ms-auto">
+                                    <i class="fas fa-check me-1"></i>Inactive
+                                </span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -207,8 +190,8 @@
                 <p class="text-muted small">Se agregará la fecha de salida al registro.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmRemove">Dar de Baja</button>
+                <button type="button" class="btn btn-pill bg-danger" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-pill bg-success" id="confirmRemove">Dar de Baja</button>
             </div>
         </div>
     </div>

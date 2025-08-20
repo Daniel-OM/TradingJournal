@@ -3,45 +3,9 @@
 
 {% block style %}
 <style>
-    .container {
-        box-shadow: none;
-    }
-    
-    .level-input-group {
-        margin-bottom: 10px;
-    }
-    
-    .add-level-btn {
-        background: #28a745;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: all 0.3s;
-    }
-    
-    .add-level-btn:hover {
-        background: #218838;
-        transform: translateY(-1px);
-    }
-    
-    .btn-remove-level {
-        background: #dc3545;
-        border-color: #dc3545;
-        color: white;
-    }
-    
-    .btn-remove-level:hover {
-        background: #c82333;
-        border-color: #c82333;
-        color: white;
-    }
-
     .conditions-section {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        border: 1px solid rgb(from var(--shadow-base-color) r g b / 0.125);
+        border-radius: var(--border-radius);
         padding: 20px;
         margin: 20px 0;
         display: none;
@@ -58,29 +22,30 @@
     }
 
     .condition-item {
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 6px;
+        border: 1px solid rgb(from var(--shadow-base-color) r g b / 0.125);
+        border-radius: var(--border-radius);
         padding: 12px;
         margin-bottom: 10px;
         transition: all 0.2s;
+        cursor: pointer;
     }
 
     .condition-item:hover {
-        border-color: #007bff;
-        box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+        background-color: rgb(from var(--info-color) r g b / 0.2) !important;
+        border-color: rgb(from var(--info-color) r g b / 0.5);
     }
 
     .condition-item.checked {
-        border-color: #28a745;
-        background: #f8fff9;
+        color:  rgb(from var(--text-color-primary) r g b / var(--text-opacity)) !important;
+        background-color: rgb(from var(--profit-color) r g b / 0.2) !important;
+        border: 1px solid rgb(from var(--profit-color) r g b / 0.5);
     }
 
     .score-display {
-        background: linear-gradient(135deg, #007bff, #0056b3);
-        color: white;
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        color:  rgb(from var(--white-color) r g b / var(--text-opacity)) !important;
         padding: 15px;
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         text-align: center;
         margin-top: 15px;
         font-size: 18px;
@@ -99,9 +64,9 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <h4 class="mb-0">
-                    <i class="fas fa-eye me-2"></i>Agregar a Watchlist
+                    <i class="fas fa-eye me-2"></i>{% if entry %}Edit Watchlist Entry{% else %}Add to Watchlist{% endif %}
                 </h4>
             </div>
             <div class="card-body">
@@ -206,15 +171,15 @@
                     <!-- Sección de Niveles -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">
-                            <i class="fas fa-chart-line me-2"></i>Niveles de Precio
+                            <i class="fas fa-chart-line me-2"></i>Price Levels
                         </label>
                         <div class="levels-container">
                             <div id="levels-list">
                                 <!-- Los niveles se agregarán dinámicamente aquí -->
                             </div>
                             <div class="text-center mt-3">
-                                <button type="button" class="add-level-btn" onclick="addLevel()">
-                                    <i class="fas fa-plus me-1"></i>Agregar Nivel
+                                <button type="button" class="btn btn-pill bg-success" onclick="addLevel()">
+                                    <i class="fas fa-plus me-1"></i>Add Level
                                 </button>
                             </div>
                             <small class="text-muted mt-2 d-block">
@@ -226,12 +191,12 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Descripción - ¿Por qué vigilar este activo?</label>
-                        <textarea name="description" class="form-control" rows="3" value="{{ entry.description if entry else ''}}" placeholder="Ruptura de resistencia clave, alto volumen..."></textarea>
+                        <textarea name="description" class="form-control" rows="3" value="{{ entry.description if entry else ''}}" placeholder="Ruptura de resistencia clave, alto volumen...">{{ entry.description if entry else ''}}</textarea>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Acción de precio que NO nos gustaría</label>
-                        <textarea name="negative_action" class="form-control" rows="2" value="{{ entry.negative_action if entry else ''}}" placeholder="Ruptura por debajo de soporte en 145..."></textarea>
+                        <textarea name="negative_action" class="form-control" rows="2" value="{{ entry.negative_action if entry else ''}}" placeholder="Ruptura por debajo de soporte en 145...">{{ entry.negative_action if entry else ''}}</textarea>
                     </div>
                     
                     <div class="mb-3">
@@ -275,20 +240,89 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Otras Notas Relevantes</label>
-                        <textarea name="other_notes" class="form-control" rows="2" value="{{ entry.other_notes if entry else ''}}" placeholder="Cualquier información adicional..."></textarea>
+                        <textarea name="other_notes" class="form-control" rows="2" value="{{ entry.other_notes if entry else ''}}" placeholder="Cualquier información adicional...">{{ entry.other_notes if entry else ''}}</textarea>
                     </div>
                     
+                    {% if entry %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <div>
+                            <a class="btn btn-pill bg-primary" href="{{ url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id) }}" class="btn bg-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Go back
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-pill bg-danger me-2" onclick="confirmDelete()">
+                                <i class="fas fa-trash me-2"></i>Delete
+                            </button>
+                            <button type="submit" class="btn btn-pill bg-success">
+                                <i class="fas fa-save me-2"></i>Update
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('watchlist_endpoints.watchlist') }}" class="btn btn-secondary me-md-2">Cancelar</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Guardar
+                        <a href="{{ url_for('watchlist_endpoints.watchlist') }}" class="btn bg-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn bg-primary">
+                            <i class="fas fa-save me-2"></i>Save
                         </button>
                     </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        {% if entry %}
+        <!-- Consejos -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">💡 Consejos de Edición</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li class="mb-2">Revisa que los niveles de precio sigan siendo relevantes</li>
+                    <li class="mb-2">Actualiza la descripción si han cambiado las condiciones del mercado</li>
+                    <li class="mb-2">Modifica las condiciones de estrategia si el setup ha evolucionado</li>
+                    <li class="mb-2">Ajusta el ATR si ha pasado tiempo desde la última actualización</li>
+                    <li class="mb-0">Considera si la estrategia aplicable sigue siendo la más adecuada</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if entry %}
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body mt-3">
+                <p class="mb-0">¿Estás seguro de que deseas eliminar este registro de watchlist?</p>
+                <p class="text-muted small mb-0 mt-2">
+                    <strong>{{ entry.symbol }}</strong> - {{ entry.company_name or 'Sin nombre' }}
+                </p>
+                <div class="alert alert-warning rounded mt-3 mb-0">
+                    <i class="fas fa-warning me-2"></i>Esta acción no se puede deshacer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-pill bg-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('watchlist_endpoints.delete_watchlist_entry', id=entry.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-pill bg-danger">
+                        <i class="fas fa-trash me-2"></i>Eliminar Definitivamente
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -303,7 +337,7 @@
             const levelsList = document.getElementById('levels-list');
             
             const levelDiv = document.createElement('div');
-            levelDiv.className = 'level-input-group';
+            levelDiv.className = 'mb-2';
             levelDiv.innerHTML = `
                 <div class="input-group">
                     <input type="number" 
@@ -318,7 +352,7 @@
                         <option value="medium" ${impact == 'medium' || impact == '' ? 'selected' : ''}>Medio</option>
                         <option value="high" ${impact == 'high' ? 'selected' : ''}>Alto</option>
                     </select>
-                    <button type="button" class="btn btn-remove-level" onclick="removeLevel(this)">
+                    <button type="button" class="btn btn-pill bg-danger" onclick="removeLevel(this)">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -328,7 +362,7 @@
         }
 
         function removeLevel(button) {
-            const levelDiv = button.closest('.level-input-group');
+            const levelDiv = button.closest('.mb-2');
             levelDiv.remove();
         }
 
@@ -424,6 +458,11 @@
             }
         }
 
+        function confirmDelete() {
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
         // Validación del formulario
         document.getElementById('watchlistForm').addEventListener('submit', function(e) {
             const watchlistSelect = document.getElementById('watchlistSelect');
@@ -471,12 +510,12 @@
 
             {% if entry %}
                 {% for level in entry.levels %}
-                    addLevel(value = level.description, impact = level.impact);
+                    addLevel(value = "{{level.price}}", impact = "{{level.impact}}");
                 {% endfor %}
 
                 loadWatchlistConditions();
                 {% for condition in entry.conditions %}
-                    document.getElementById(`condition_${condition.id}`).click();
+                    document.getElementById(`condition_{{condition.id}}`).click();
                 {% endfor %}
             {% else %}
                 addLevel();

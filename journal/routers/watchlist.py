@@ -190,13 +190,13 @@ def add_watchlist_entry():
         return redirect(url_for('watchlist_endpoints.watchlist_detail', id=entry.watchlist_id))
     
     watchlists = Watchlist.query.all()
-    entry = json.loads(request.args.get(key='entry', default=None))
+    entry = request.args.get(key='entry', default=None)
     
     return render_template('watchlist_entry/create.html', 
                            watchlist_id=request.args.get('watchlist_id', None), 
                            date=date, watchlists=watchlists, 
                            json_watchlists=[s.to_dict(exclude=['entries']) for s in watchlists], 
-                           entry=WatchlistEntry.from_dict(entry) if entry else None)
+                           entry=WatchlistEntry.from_dict(json.loads(entry)) if entry else None)
 
 @watchlist_bp.route('/entry/<int:id>/detail')
 @login_required
@@ -387,7 +387,7 @@ def edit_watchlist_entry(id):
         abort(403)
     watchlists = Watchlist.query.filter(Watchlist.user_id == current_user.id).all()
     
-    return render_template('watchlist_entry/edit.html', 
+    return render_template('watchlist_entry/create.html', 
                             entry=entry,
                             watchlists=watchlists, 
                             json_watchlists=[s.to_dict(exclude=['entries']) for s in watchlists],
