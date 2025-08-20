@@ -13,7 +13,7 @@
 <div class="header">
     <h1>📈 Calendario de Trading</h1>
     <p>Seguimiento diario de tus operaciones</p>
-    <a href="{{ url_for('journal_endpoints.add_trade') }}" class="btn btn-primary">
+    <a href="{{ url_for('journal_endpoints.add_trade') }}" class="btn bg-primary">
         <i class="fas fa-plus me-2"></i>Añadir Trade
     </a>
 </div>
@@ -25,6 +25,9 @@
 </div>
 
 <div class="calendar">
+    <div class="calendar-headers" id="calendarHeaders">
+        <!-- Calendar will be generated here -->
+    </div>
     <div class="calendar-grid" id="calendarGrid">
         <!-- Calendar will be generated here -->
     </div>
@@ -130,13 +133,15 @@
 
             const calendarGrid = document.getElementById('calendarGrid');
             calendarGrid.innerHTML = '';
+            const calendarHEaders = document.getElementById('calendarHeaders');
+            calendarHEaders.innerHTML = '';
 
             // Add day headers
             dayNames.forEach(day => {
                 const dayHeader = document.createElement('div');
                 dayHeader.className = 'day-header';
                 dayHeader.textContent = day;
-                calendarGrid.appendChild(dayHeader);
+                calendarHEaders.appendChild(dayHeader);
             });
 
             // Generate calendar days
@@ -167,7 +172,7 @@
                 if (dayTrades.length > 0) {
                     const totalPnL = dayTrades.reduce((sum, trade) => sum + trade.pnl, 0);
                     const pnlElement = document.createElement('div');
-                    pnlElement.className = 'profit-loss';
+                    // pnlElement.className = 'profit-loss';
                     
                     if (totalPnL > 0) {
                         pnlElement.classList.add('profit');
@@ -181,7 +186,6 @@
                     }
                     
                     dayCell.appendChild(pnlElement);
-                    dayCell.style.cursor = 'pointer';
                     dayCell.onclick = () => showTradesModal(cellDate, dayTrades);
                 }
                 console.log(dayCell);
