@@ -25,6 +25,7 @@
 
     --text-color-primary: #1f2937;
     --text-color-secondary: #303b4a;
+    --text-color-muted: #8692a2;
     --card-bg-color: #f8fafc;
     --bg-color: #ebebeb;
 
@@ -60,6 +61,7 @@
 
     --text-color-primary: #f8fafc;
     --text-color-secondary: #e7e9eb;
+    --text-color-muted: #818181;
     --card-bg-color: #1f2937;
     --bg-color: #171f29;
     
@@ -168,9 +170,17 @@ div.container {
 }
 
 .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     color:  rgb(from var(--dark-color) r g b / var(--text-opacity));
-    border-radius: var(--border-radius);
-    background-color: var(--card-bg-color);
+    /* border-radius: var(--border-radius); */
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
 
     .modal-header {
         color:  rgb(from var(--dark-color) r g b / var(--text-opacity));
@@ -182,9 +192,22 @@ div.container {
     }
 
     .modal-body {
+        max-height: 500px;
+        padding: 0 20px 20px 20px;
         background-color: var(--card-bg-color);
         border-radius: var(--border-radius);
-        padding-top: 0;
+        animation: slideDn50 0.3s ease;
+        overflow-y: auto;
+    }
+    .modal-content {
+        margin: 5% auto;
+        padding: 0;
+        border-radius: var(--border-radius);
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow: hidden;
+        animation: slideDn50 0.3s ease;
     }
 
     .modal-footer {
@@ -217,6 +240,10 @@ div.container {
         background-color: rgb(from var(--primary-color) r g b / 0.8);
     }
 
+    &:focus {
+        box-shadow: none;
+    }
+
     &.btn-pill {
         border-radius: var(--pill-border-radius);
         padding: 8px 16px;
@@ -236,6 +263,33 @@ div.container {
         &:hover {
             background-color: rgb(from var(--secondary-color) r g b / 0.8);
         }
+    }
+
+    &.btn-none {
+        border: none;
+        background: none;
+
+        &:hover {
+            transform: none;
+            background-color: none;
+            box-shadow: none;
+        }
+        &:focus {
+            box-shadow: none;
+        }
+    }
+}
+.btn-none {
+    border: none;
+    background: none;
+
+    &:hover {
+        transform: none;
+        background-color: none;
+        box-shadow: none;
+    }
+    &:focus {
+        box-shadow: none;
     }
 }
 
@@ -287,6 +341,7 @@ div.container {
     &:hover {
         background-color: rgb(from var(--info-color) r g b / 0.8) !important;
     }
+    i { color: rgb(from var(--white-color) r g b / var(--text-opacity)); }
 }
 
 .bg-success {
@@ -295,6 +350,7 @@ div.container {
     &:hover {
         background-color: rgb(from var(--success-color) r g b / 0.8) !important;
     }
+    i { color: rgb(from var(--white-color) r g b / var(--text-opacity)); }
 }
 
 .bg-warning {
@@ -303,6 +359,7 @@ div.container {
     &:hover {
         background-color: rgb(from var(--warning-color) r g b / 0.8) !important;
     }
+    i { color: rgb(from var(--white-color) r g b / var(--text-opacity)); }
 }
 
 .bg-danger {
@@ -311,6 +368,7 @@ div.container {
     &:hover {
         background-color: rgb(from var(--danger-color) r g b / 0.8) !important;
     }
+    i { color: rgb(from var(--white-color) r g b / var(--text-opacity)); }
 }
 
 .bg-primary {
@@ -319,6 +377,7 @@ div.container {
     &:hover {
         background-color: rgb(from var(--primary-color) r g b / 0.8) !important;
     }
+    i { color: rgb(from var(--white-color) r g b / var(--text-opacity)); }
 }
 
 .bg-secondary {
@@ -359,7 +418,367 @@ div.container {
     }
 }
 
+.text-muted {
+    color:  rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+}
+.text-profit {
+    color:  rgb(from var(--profit-color) r g b / var(--text-opacity)) !important;
+}
+.text-loss {
+    color:  rgb(from var(--loss-color) r g b / var(--text-opacity)) !important;
+}
+.text-breakeven {
+    color: rgb(from var(--text-color-secondary) r g b / var(--text-opacity));
+}
+
 /* Icons ----------------------------------------------------------- */
 i {
+    color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
+
     &.text-primary { color: rgb(from var(--primary-color) r g b / var(--text-opacity)) !important; }
+}
+
+.close {
+    color: rgb(from var(--text-color-primary) r g b / var(--text-opacity)) !important;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover {
+        transform: rotate(90deg);
+    }
+}
+
+
+
+/* Conditions checking -----------------------------------------------------------------------------------------*/
+
+
+.conditions-section {
+    border: 1px solid rgb(from var(--shadow-base-color) r g b / 0.125);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin: 20px 0;
+    display: none;
+
+    &.show {
+        display: block;
+        animation: slideDn10 0.3s ease-in;
+    }
+    
+    .condition-item {
+        border: 1px solid rgb(from var(--shadow-base-color) r g b / 0.125);
+        border-radius: var(--border-radius);
+        padding: 12px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgb(from var(--info-color) r g b / 0.2) !important;
+            border-color: rgb(from var(--info-color) r g b / 0.5);
+        }
+        &.checked {
+            color:  rgb(from var(--text-color-primary) r g b / var(--text-opacity)) !important;
+            background-color: rgb(from var(--profit-color) r g b / 0.2) !important;
+            border: 1px solid rgb(from var(--profit-color) r g b / 0.5);
+        }
+    }
+
+    .score-display {
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        color:  rgb(from var(--white-color) r g b / var(--text-opacity)) !important;
+        padding: 15px;
+        border-radius: var(--border-radius);
+        text-align: center;
+        margin-top: 15px;
+        font-size: 18px;
+        font-weight: bold;
+
+        .score-breakdown {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+    }
+}
+
+/* Selector with input -----------------------------------------------------------------------------------------*/
+
+.combo-input-container {
+    position: relative;
+    flex: 1;
+
+    .combo-input {
+        width: 100%;
+        padding-right: 30px;
+    }
+    
+    .combo-dropdown-btn {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+    }
+    
+    .combo-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+
+        &.show {
+            display: block;
+        }
+    }
+    
+    .combo-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f8f9fa;
+
+        &:hover {
+            background-color: #f8f9fa;
+        }
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+}
+
+
+/* Journal Calendar --------------------------------------------------------------------------------------------*/
+
+.calendar-nav {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    .month-pnl {
+        font-weight: bold;
+        font-size: 1.07rem;
+    }
+    .nav-btn {
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .current-month {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+}
+
+.calendar {
+    padding: 0 30px 30px 30px;
+
+    .calendar-headers {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+
+        .day-header {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        border: 1px solid rgb(from var(--bg-color) r g b / 0.1) !important;
+        border-radius: var(--border-radius);
+        background-color: var(--bg-color);
+        overflow: hidden;
+
+        .day-cell {
+            min-height: 100px;
+            padding: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-bg-color);
+
+            .day-number {
+                font-size: 1.3rem;
+                font-weight: 600;
+                margin-bottom: 5px;
+            }
+
+            &.other-month {
+                color: rgb(from var(--text-color-secondary) r g b / 0.2) !important;
+                background-color: rgb(from var(--bg-color) r g b / 0.1) !important;
+            }
+
+            &:not(.other-month) {
+                &:hover {
+                    background-color: rgb(from var(--bg-color) r g b / 0.1) !important;
+                    transform: scale(1.02);
+                }
+                .profit {
+                    margin-top: auto;
+                    font-weight: bold;
+                    color: rgb(from var(--profit-color) r g b / var(--text-opacity));
+                }
+                .loss {
+                    margin-top: auto;
+                    font-weight: bold;
+                    color: rgb(from var(--loss-color) r g b / var(--text-opacity));
+                }
+                .breakeven {
+                    margin-top: auto;
+                    font-weight: bold;
+                    color: rgb(from var(--text-color-secondary) r g b / var(--text-opacity));
+                }
+            }
+        }
+    }
+    .today {
+        background-color: rgb(from var(--primary-color) r g b / 0.1) !important;
+    }
+}
+
+.summary {
+    background: var(--bg-color);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+
+    .summary-item {
+        flex: 1;
+        
+        .summary-label {
+            font-size: 0.8rem;
+            color: rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .summary-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    }
+}
+
+.trade-item {
+    padding: 15px;
+    margin-bottom: 15px;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+        transform: scale(1.02);
+    }
+    
+    .trade-info {
+        flex: 1;
+    }
+
+    .trade-symbol {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
+    }
+
+    .trade-details {
+        color: rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .trade-pnl {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .trade-actions {
+        display: flex;
+        gap: 10px;
+        margin-left: 15px;
+    }
+}
+
+.no-trades {
+    text-align: center;
+    color: rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+    font-style: italic;
+    padding: 40px;
+}
+
+/* Animations -------------------------------------------------------------------------------------------------- */
+
+.animate-fade-in {
+    animation: slideDn10 0.3s ease-in;
+}
+
+.animate-slide-up-20 {
+    animation: slideUp20 0.6s ease-out;
+}
+
+.animate-slide-up-30 {
+    animation: slideUp30 0.4s ease-out;
+}
+
+@keyframes slideUp20 {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp30 {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDn10 {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDn50 {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }

@@ -20,50 +20,54 @@
         .empty-state {
             text-align: center;
             padding: 40px 20px;
+
+            h3 {
+                font-size: 1.5rem;
+                margin-bottom: 16px;
+            }
+
+            p {
+                margin-bottom: 24px;
+                line-height: 1.6;
+            }
         }
 
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 16px;
+        .watchlist {
+
+            .watchlist-name {
+                color: var(--text-color-primary);
+                font-size: 1.4rem;
+                font-weight: 700;
+                margin-bottom: 4px;
+            }
+
+            .watchlist-description {
+                color: rgb(from var(--text-color-primary) r g b / 0.8);
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }
+
+            .watchlist-level {
+                background: linear-gradient(45deg, #ffd32a, #ff8f00);
+                color: var(--text-color-primary);
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+
+            .last-updated {
+                color: rgb(from var(--text-color-primary) r g b / 0.6);
+                font-size: 0.85rem;
+            }
+
+            .level-day { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
+            .level-swing { background: linear-gradient(45deg, #ffd32a, #ff8f00); }
+            .level-scalp { background: linear-gradient(45deg, #ff6b6b, #ee5a24); }
+            .level-invest { background: linear-gradient(45deg, #8360c3, #2ebf91); }
         }
 
-        .empty-state p {
-            margin-bottom: 24px;
-            line-height: 1.6;
-        }
-
-        .watchlist-name {
-            color: var(--text-color-primary);
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .watchlist-description {
-            color: rgb(from var(--text-color-primary) r g b / 0.8);
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-
-        .watchlist-level {
-            background: linear-gradient(45deg, #ffd32a, #ff8f00);
-            color: var(--text-color-primary);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .last-updated {
-            color: rgb(from var(--text-color-primary) r g b / 0.6);
-            font-size: 0.85rem;
-        }
-
-        .level-day { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
-        .level-swing { background: linear-gradient(45deg, #ffd32a, #ff8f00); }
-        .level-scalp { background: linear-gradient(45deg, #ff6b6b, #ee5a24); }
-        .level-invest { background: linear-gradient(45deg, #8360c3, #2ebf91); }
 
     </style>
 {% endblock %}
@@ -83,7 +87,7 @@
     <div class="row" id="watchlistsGrid">
         {% if watchlists %}
             {% for watchlist in watchlists %}
-            <div class="col col-lg-3 col-md-6 col-sm-12 card" onclick="goToWatchlistDetail({{ watchlist.id }})">
+            <div class="col col-lg-3 col-md-6 col-sm-12 card watchlist" onclick="goToWatchlistDetail({{ watchlist.id }})">
                 <div class="card-header">
                     <div>
                         <div class="watchlist-name">{{watchlist.name}}</div>

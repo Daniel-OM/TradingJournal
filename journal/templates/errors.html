@@ -467,42 +467,12 @@
             justify-content: center;
         }
     }
-
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-slide-up {
-        animation: slideUp 0.4s ease-out;
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
 </style>
 {% endblock %}
 
 {% block content %}
 
-    <div class="main-container animate-fade-in">
+    <div class="main-container animate-slide-up-20">
         <!-- TODO: Chart with the daily errors carried out and the average over the last x days. 
          Also the average quantity of errors per trade. To follow closely the traders improvement. -->
         <!-- Header -->
@@ -527,7 +497,7 @@
         </div>
 
         <!-- Estadísticas Generales -->
-        <div class="stats-grid animate-slide-up">
+        <div class="stats-grid animate-slide-up-30">
             <div class="stat-card danger">
                 <div class="stat-number">{{ total_errors }}</div>
                 <div class="stat-label">Errors Types</div>
@@ -551,7 +521,7 @@
         </div>
 
         <!-- Filtros -->
-        <div class="filter-section animate-slide-up">
+        <div class="filter-section animate-slide-up-30">
             <h5 class="filter-title">
                 <i class="fas fa-filter"></i>
                 Filters and settings
@@ -592,7 +562,7 @@
         </div>
 
         <!-- Lista de Errores -->
-        <div class="row errors-list animate-slide-up">
+        <div class="row errors-list animate-slide-up-30">
             {% for error in errors %}
             <div class="col col-md-6 mb-3">
                 <div class="error-card severity-{{error['severity']}}">
