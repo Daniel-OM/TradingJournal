@@ -1,64 +1,7 @@
 
 {% extends "base.html" %}
 
-{% block style %}
-<style>
-    .conditions-section {
-        border: 1px solid rgb(from var(--shadow-base-color) r g b / 0.125);
-        border-radius: var(--border-radius);
-        padding: 20px;
-        margin: 20px 0;
-        display: none;
-    }
-
-    .conditions-section.show {
-        display: block;
-        animation: fadeIn 0.3s ease-in;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .condition-item {
-        border: 1px solid rgb(from var(--shadow-base-color) r g b / 0.125);
-        border-radius: var(--border-radius);
-        padding: 12px;
-        margin-bottom: 10px;
-        transition: all 0.2s;
-        cursor: pointer;
-    }
-
-    .condition-item:hover {
-        background-color: rgb(from var(--info-color) r g b / 0.2) !important;
-        border-color: rgb(from var(--info-color) r g b / 0.5);
-    }
-
-    .condition-item.checked {
-        color:  rgb(from var(--text-color-primary) r g b / var(--text-opacity)) !important;
-        background-color: rgb(from var(--profit-color) r g b / 0.2) !important;
-        border: 1px solid rgb(from var(--profit-color) r g b / 0.5);
-    }
-
-    .score-display {
-        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-        color:  rgb(from var(--white-color) r g b / var(--text-opacity)) !important;
-        padding: 15px;
-        border-radius: var(--border-radius);
-        text-align: center;
-        margin-top: 15px;
-        font-size: 18px;
-        font-weight: bold;
-    }
-
-    .score-breakdown {
-        font-size: 12px;
-        opacity: 0.9;
-        margin-top: 5px;
-    }
-</style>
-{% endblock %}
+{% block style %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
