@@ -6,7 +6,7 @@
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #06b6d4;
-    --profit-color: #39eb23;
+    --profit-color: #20b26c; /* #39eb23; */
     --loss-color: #eb2323;
     --dark-color: #1f2937;
     --light-color: #f8fafc;
@@ -26,6 +26,7 @@
     --text-color-primary: #1f2937;
     --text-color-secondary: #303b4a;
     --card-bg-color: #f8fafc;
+    --bg-color: #ebebeb;
 
     --text-opacity: 1;
 
@@ -60,6 +61,7 @@
     --text-color-primary: #f8fafc;
     --text-color-secondary: #e7e9eb;
     --card-bg-color: #1f2937;
+    --bg-color: #171f29;
     
     --text-opacity: 1;
 }
@@ -76,7 +78,7 @@ body {
     color:  rgb(from var(--dark-color) r g b / var(--text-opacity));
     /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: var(--card-bg-color);
+    background-color: var(--bg-color);
     color: var(--text-color-primary); /* #d1d4dc; */
     line-height: 1.5;
     
@@ -344,6 +346,16 @@ div.container {
 
     &:hover {
         background-color: rgb(from var(--profit-color) r g b / 0.5);
+    }
+}
+
+.bg-dark {
+    color:  rgb(from var(--dark-color) r g b / var(--text-opacity)) !important;
+    background-color: rgb(from var(--dark-color) r g b / 0.2) !important;
+    border: 1px solid rgb(from var(--dark-color) r g b / 0.5);
+
+    &:hover {
+        background-color: rgb(from var(--dark-color) r g b / 0.5);
     }
 }
 
