@@ -175,10 +175,10 @@
                     
                     if (totalPnL > 0) {
                         pnlElement.classList.add('profit');
-                        pnlElement.textContent = `+$${formatNumber(totalPnL.toFixed(2))}`;
+                        pnlElement.textContent = `${formatNumber(totalPnL.toFixed(2), 'currency', 1, 2, 'compact')}`;
                     } else if (totalPnL < 0) {
                         pnlElement.classList.add('loss');
-                        pnlElement.textContent = `-$${formatNumber(Math.abs(totalPnL).toFixed(2))}`;
+                        pnlElement.textContent = `${formatNumber(Math.abs(totalPnL).toFixed(2), 'currency', 1, 2, 'compact') }`;
                     } else {
                         pnlElement.classList.add('breakeven');
                         pnlElement.textContent = '$0.00';
@@ -198,10 +198,10 @@
             monthPnlElement = document.getElementById('monthlyPnl');
             if (monthPnl > 0) {
                 monthPnlElement.classList.add('text-profit');
-                monthPnlElement.textContent = `+$${formatNumber(monthPnl.toFixed(2))}`;
+                monthPnlElement.textContent = `${formatNumber(monthPnl.toFixed(2), 'currency', 1, 2, 'compact') }`;
             } else if (monthPnl < 0) {
                 monthPnlElement.classList.add('text-loss');
-                monthPnlElement.textContent = `-$${formatNumber(Math.abs(monthPnl).toFixed(2))}`;
+                monthPnlElement.textContent = `${formatNumber(Math.abs(monthPnl).toFixed(2), 'currency', 1, 2, 'compact') }`;
             } else {
                 monthPnlElement.classList.add('text-breakeven');
                 monthPnlElement.textContent = '$0.00';

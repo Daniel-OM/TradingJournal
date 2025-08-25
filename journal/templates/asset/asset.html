@@ -95,12 +95,7 @@
     }
 
     .fade-in {
-        animation: fadeIn 0.5s ease-in;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        animation: slideUp20 0.5s ease-in;
     }
 
     @media (max-width: 768px) {
@@ -163,7 +158,7 @@
                             placeholder="Ingresa el símbolo (ej: AAPL, TSLA, MSFT...)">
                 </div>
                 <div class="col-md-4">
-                    <button class="btn btn-search w-100" onclick="searchStock()">
+                    <button class="btn btn-pill bg-primary btn-search w-100" onclick="searchStock()">
                         <i class="fas fa-search me-2"></i>Buscar
                     </button>
                 </div>
@@ -3947,16 +3942,16 @@
                         <p>${ data.current_price > 0 ? (data.ATR_14 / data.current_price * 100).toFixed(2) : 'undefined'} %</p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Volume:</strong> <p>${ formatNumber(data.volume) }</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Volume:</strong> <p>${ formatNumber(data.volume, 'financial', 1, 2, 'compact') }</p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Avg. Volume:</strong> <p>${ formatNumber(data.avg_volume) }</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Avg. Volume:</strong> <p>${ formatNumber(data.avg_volume, 'financial', 1, 2, 'compact') }</p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Float Shares:</strong> <p>${ formatNumber(data.shares_float) }</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Float Shares:</strong> <p>${ formatNumber(data.shares_float, 'financial', 1, 2, 'compact') }</p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Cap. de Mercado:</strong> <p>${ formatNumber(data.market_cap) }</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Cap. de Mercado:</strong> <p>${ formatNumber(data.market_cap, 'currency', 1, 2, 'compact') }</p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
                     <div class="d-flex justify-content-between ms-4 me-4"><strong>P/E Ratio:</strong> <p>${ data.pe?.toFixed(2) }</p></div>
@@ -3966,13 +3961,13 @@
                 </div>
 
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 30d:</strong> <p>${ data.Perf_Month_Pct } %</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 30d:</strong> <p>${ formatNumber(data.Perf_Month_Pct, 'percentage', 1, 2, 'compact') }</p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 90d:</strong> <p>${ data.Perf_Quarter_Pct } %</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 90d:</strong> <p>${ formatNumber(data.Perf_Quarter_Pct, 'percentage', 1, 2, 'compact') } </p></div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4 justify-content-center">
-                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 180d:</strong> <p>${ data.Perf_Half_Y_Pct } %</p></div>
+                    <div class="d-flex justify-content-between ms-4 me-4"><strong>Performance 180d:</strong> <p>${ formatNumber(data.Perf_Half_Y_Pct, 'percentage', 1, 2, 'compact') } </p></div>
                 </div>
             `;
         }
@@ -4000,14 +3995,14 @@
                     </div>
                     <!-- Columna 2 -->
                     <div class="col-md-6">
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ingresos:</strong> <p>$${formatNumber(fundamentals.Sales)}</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Beneficio neto:</strong> <p>$${formatNumber(fundamentals.Income)}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ingresos:</strong> <p>$${ formatNumber(fundamentals.Sales, 'currency', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Beneficio neto:</strong> <p>$${ formatNumber(fundamentals.Income, 'currency', 1, 2, 'compact') }</p></div>
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>EPS (TTM):</strong> <p>$${fundamentals.eps?.toFixed(2)}</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen bruto:</strong> <p>${fundamentals.grossMargin?.toFixed(4) * 100}%</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen operativo:</strong> <p>${fundamentals.Oper_Margin_Pct?.toFixed(2)}%</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen neto:</strong> <p>${fundamentals.Profit_Margin_Pct?.toFixed(2)}%</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>ROE:</strong> <p>${fundamentals.ROE_Pct?.toFixed(2)}%</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>ROIC:</strong> <p>${fundamentals.ROIC_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen bruto:</strong> <p>${ formatNumber(fundamentals.grossMargin?.toFixed(4) * 100, 'percentage', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen operativo:</strong> <p>${ formatNumber(fundamentals.grossMargin?.toFixed(4) * 100, 'percentage', 1, 2, 'compact') fundamentals.Oper_Margin_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen neto:</strong> <p>${ formatNumber(fundamentals.Profit_Margin_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>ROE:</strong> <p>${ formatNumber(fundamentals.ROE_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>ROIC:</strong> <p>${ formatNumber(fundamentals.ROIC_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
                     </div>
                 </div>
                 <hr>
@@ -4018,8 +4013,8 @@
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>Quick Ratio:</strong> <p>${fundamentals.Quick_Ratio?.toFixed(2)}</p></div>
                     </div>
                     <div class="col-md-6">
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Dividend Yield:</strong> <p>${fundamentals.dividendYield?.toFixed(2)}%</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Payout Ratio:</strong> <p>${fundamentals.Payout_Pct?.toFixed(2)}%</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Dividend Yield:</strong> <p>${ formatNumber(fundamentals.dividendYield?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Payout Ratio:</strong> <p>${ formatNumber(fundamentals.Payout_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>Ex-Dividendo:</strong> <p>${(new Date(fundamentals.Dividend_Ex_Date)).toLocaleDateString()}</p></div>
                     </div>
                 </div>

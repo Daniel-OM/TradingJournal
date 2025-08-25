@@ -206,15 +206,12 @@ class PerformanceMetrics:
             'avg_daily_volume': total_volume / trading_days
         }
 
-    def getStats(self, mode='net'):
+    def getStats(self, mode='net', scratch_percentage:float=0.01):
 
         pnl_values = [(trade.profit_loss + trade.commission) if mode == 'gross' else trade.profit_loss for trade in self.trades]
 
         total_pnl = sum(pnl_values)
         total_quantity = sum([trade.exit_quantity for trade in self.trades if hasattr(trade, 'exit_quantity')])
-        winning_trades = len([p for p in pnl_values if p > 0])
-        losing_trades = len([p for p in pnl_values if p < 0])
-        scratch_trades = len([p for p in pnl_values if p == 0])
         total_trades = len(pnl_values)
         
         winning_pnl = [p for p in pnl_values if p > 0]
@@ -225,6 +222,11 @@ class PerformanceMetrics:
         median_trade_pnl = np.median(pnl_values) if pnl_values else 0
         avg_win = np.mean(winning_pnl) if winning_pnl else 0
         avg_loss = np.mean(losing_pnl) if losing_pnl else 0
+
+        scratch_threshold = abs(avg_trade_pnl) * scratch_percentage
+        winning_trades = len([p for p in pnl_values if p > scratch_threshold])
+        losing_trades = len([p for p in pnl_values if p < -scratch_threshold])
+        scratch_trades = len([p for p in pnl_values if -scratch_threshold < p and p < scratch_threshold])
         
         largest_gain = max(pnl_values) if pnl_values else 0
         largest_loss = min(pnl_values) if pnl_values else 0
