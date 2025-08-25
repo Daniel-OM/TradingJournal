@@ -89,7 +89,7 @@ body {
     overflow: auto;
 }
 
-input, select, textarea {
+input, select, textarea, .input, .select, .textarea {
     background: rgb(from var(--shadow-base-color) r g b / 0.1);
     border-radius: var(--pill-border-radius);
     color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
@@ -224,7 +224,7 @@ div.container {
     background: var(--primary-color);
     color:  rgb(from var(--text-color-primary) r g b / var(--text-opacity)) !important;
     padding: 12px 24px;
-    border: none;
+    border: none !important;
     border-radius: var(--border-radius);
     cursor: pointer;
     font-weight: 600;
@@ -736,6 +736,158 @@ i {
     font-style: italic;
     padding: 40px;
 }
+
+
+/* Performance ------------------------------------------------------------------------------------------------- */
+
+
+.nav-tabs {
+
+    .nav-item .nav-link {
+        color: 1px solid rgb(from var(--text-color-primary) r g b / var(--text-opacity));
+        font-weight: 400;
+        border: none;
+
+        &.active {
+            color:  rgb(from var(--primary-color) r g b / var(--text-opacity)) !important;
+            background-color: transparent;
+            border: none;
+            border-bottom: 1px solid var(--primary-color);
+
+            i {
+                color:  rgb(from var(--primary-color) r g b / var(--text-opacity)) !important;
+            }
+        }
+
+        &:hover {
+            color:  rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+            background-color: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-color-muted);
+
+            i {
+                color:  rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+            }
+        }
+
+        &:focus, &:focus-visible {
+            border: none;
+        }
+
+        i {
+            color: 1px solid rgb(from var(--text-color-primary) r g b / var(--text-opacity));
+        }
+    }
+}
+.tab-content {
+    padding: 20px;
+}
+
+/* Filters */
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+
+        label {
+            color: rgb(from var(--text-color-secondary) r g b / var(--text-opacity));
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+
+            &:focus {
+                outline: none;
+            }
+        }
+    }
+}
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Stats Grid */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: none;
+    /* border-bottom: 1px solid #1e222d; */
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    .stat-label {
+        color: rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
+    }
+}
+/* Summary Cards */
+.summary-value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.summary-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin-top: 20px;
+
+    &.small {
+        height: 300px;
+    }
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+
+/* Trade details ----------------------------------------------------------------------------------------------- */
+
+
+
 
 /* Animations -------------------------------------------------------------------------------------------------- */
 

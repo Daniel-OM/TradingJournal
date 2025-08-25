@@ -11,6 +11,8 @@ from flask import Blueprint, Response, render_template, request, flash, redirect
 from flask_login import login_required, current_user
 from werkzeug.wrappers.response import Response
 
+from journal.models import watchlist
+
 from ..models.watchlist_entry import WatchlistEntry
 
 from ..models.watchlist_entry import WatchlistEntry
@@ -781,9 +783,9 @@ def performance_old():
     
     return render_template('trade/performance.html', stats=stats, strategies=strategies)
 
-@journal_bp.route('/performance')
+@journal_bp.route(rule='/performance')
 @login_required
-def performance():
+def performance() -> str:
     # ===== OBTENER FILTROS =====
     start = request.args.get('start', type=str)
     end = request.args.get('end', type=str)
@@ -810,7 +812,7 @@ def performance():
     # Filtros adicionales
     if strategy_id:
         base_query = base_query.filter(Trade.strategy_id == strategy_id)
-    if asset_symbol:
+    if asset_symbol not in ['None', '', None]:
         base_query = base_query.filter(Trade.symbol == asset_symbol)
     if side in ['LONG', 'SHORT']:
         base_query = base_query.filter(Trade.trade_type == side.upper())
@@ -844,7 +846,7 @@ def performance():
     strategies = Strategy.query.filter(Strategy.user_id == current_user.id).all()
     
     return render_template('trade/performance.html', stats=stats, strategies=strategies, charts=charts, 
-                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol, watchlist_id=watchlist_id, limit=limit, side=side)
+                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol if asset_symbol else '', watchlist_id=watchlist_id, limit=limit, side=side)
 
 def get_balance_data():
     """Obtener datos de balance histórico"""

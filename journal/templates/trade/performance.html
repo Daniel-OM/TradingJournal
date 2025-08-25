@@ -3,355 +3,7 @@
 
 {% block title %}Performance - Trading Journal</title>{% endblock %}
 
-{% block style %}
-<style>
-    /* Filters */
-    .filters {
-        background: #131722;
-        border: 1px solid #2a2e39;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-
-    .filters h3 {
-        color: #ffffff;
-        margin-bottom: 15px;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .filter-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .filter-group label {
-        color: rgb(from var(--text-color-secondary) r g b / var(--text-opacity));
-        font-size: 12px;
-        font-weight: 500;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .filter-group select,
-    .filter-group input {
-        border-radius: 4px;
-        padding: 8px 12px;
-        font-size: 14px;
-        transition: all 0.2s;
-    }
-
-    .filter-group select:focus,
-    .filter-group input:focus {
-        outline: none;
-    }
-
-    .filter-actions {
-        grid-column: 1 / -1;
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    /* Tab Navigation */
-    .tab-nav {
-        display: flex;
-        gap: 2px;
-        margin-bottom: 30px;
-        border-bottom: 1px solid rgb(from var(--text-color-primary) r g b / var(--text-opacity));
-    }
-
-    .tab-btn {
-        background: transparent;
-        border: none;
-        padding: 12px 20px;
-        color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-        color: rgb(from var(--primary-color) r g b / var(--text-opacity));
-        border-bottom-color: rgb(from var(--primary-color) r g b / var(--text-opacity));
-    }
-
-    .tab-btn:hover {
-        color: rgb(from var(--primary-color) r g b / var(--text-opacity));
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .stats-card {
-        background: #131722;
-        border: 1px solid #2a2e39;
-        border-radius: 8px;
-        padding: 20px;
-    }
-
-    .stats-card h3 {
-        color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .stats-card h3::before {
-        content: '';
-        width: 3px;
-        height: 16px;
-        background: #2962ff;
-        border-radius: 2px;
-    }
-
-    .stat-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 0;
-        border-bottom: 1px solid #1e222d;
-    }
-
-    .stat-row:last-child {
-        border-bottom: none;
-    }
-
-    .stat-label {
-        color: #868b94;
-        font-size: 13px;
-        font-weight: 500;
-    }
-
-    .stat-value {
-        font-size: 14px;
-        font-weight: 600;
-        color: #d1d4dc;
-    }
-
-    .stat-value.positive {
-        color: #00c851;
-    }
-
-    .stat-value.negative {
-        color: #ff4444;
-    }
-
-    .stat-value.neutral {
-        color: #ffbb33;
-    }
-
-    .gross-value {
-        font-size: 0.7em;
-    }
-
-    /* Summary Cards */
-    .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
-    }
-
-    .summary-card {
-        background: #131722;
-        border: 1px solid #2a2e39;
-        border-radius: 8px;
-        padding: 20px;
-        text-align: center;
-    }
-
-    .summary-card .value {
-        font-size: 24px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .summary-card .label {
-        color: #868b94;
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Tab Content */
-
-    .tv-card {
-        background-color: var(--tv-card-bg);
-        border: 1px solid var(--tv-border);
-        border-radius: 8px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .tv-card-header {
-        background-color: transparent;
-        border-bottom: 1px solid var(--tv-border);
-        padding: 16px 20px;
-        font-weight: 600;
-        font-size: 16px;
-    }
-
-    .tv-card-body {
-        padding: 20px;
-    }
-
-    .tv-metric {
-        text-align: center;
-        padding: 10px;
-    }
-
-    .tv-metric-value {
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 4px;
-    }
-
-    .tv-metric-label {
-        font-size: 12px;
-        color: var(--tv-text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .tv-positive {
-        color: var(--tv-green);
-    }
-
-    .tv-negative {
-        color: var(--tv-red);
-    }
-
-    .tv-neutral {
-        color: var(--tv-text-secondary);
-    }
-
-    .tv-tab-content {
-        border-top: none;
-        border-radius: 0 0 8px 8px;
-        padding: 20px;
-    }
-
-    .nav-tabs {
-        border-radius: 8px 8px 0 0;
-    }
-
-    .nav-tabs .nav-link {
-        color: var(--tv-text-secondary);
-        background-color: transparent;
-        border: none;
-        border-bottom: 3px solid transparent;
-        border-radius: 0;
-        padding: 12px 20px;
-        font-weight: 500;
-    }
-
-    .nav-tabs .nav-link:hover {
-        color: var(--tv-text-primary);
-        border-color: transparent;
-        background-color: rgba(255,255,255,0.05);
-    }
-
-    .nav-tabs .nav-link.active {
-        color: var(--tv-blue);
-        background-color: transparent;
-        border-bottom-color: var(--tv-blue);
-    }
-
-    .chart-container {
-        position: relative;
-        height: 400px;
-        margin-top: 20px;
-    }
-
-    .chart-container.small {
-        height: 300px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .btn-tv {
-        background-color: var(--tv-blue);
-        border-color: var(--tv-blue);
-        color: white;
-        border-radius: 6px;
-        font-weight: 500;
-    }
-
-    .btn-tv:hover {
-        background-color: #0056cc;
-        border-color: #0056cc;
-        color: white;
-    }
-
-    .loading-spinner {
-        display: none;
-        text-align: center;
-        padding: 40px;
-    }
-
-    .table-dark {
-        background-color: var(--tv-card-bg);
-        color: var(--tv-text-primary);
-    }
-
-    .table-dark td, .table-dark th {
-        border-color: var(--tv-border);
-    }
-
-    .performance-summary {
-        background: linear-gradient(135deg, var(--tv-card-bg) 0%, rgba(0,124,255,0.1) 100%);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .container {
-            padding: 15px;
-        }
-
-        .filter-row {
-            grid-template-columns: 1fr;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .summary-cards {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .tab-nav {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-    }
-</style>
-{% endblock %}
+{% block style %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -406,26 +58,26 @@
 
     <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
         <div class="card card-body">
-            <div class="value positive" id="total-pnl">$0</div>
-            <div class="label">Total P&L </div>
+            <div class="summary-value" id="total-pnl">$0</div>
+            <div class="summary-label">Total P&L </div>
         </div>
     </div>
     <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
         <div class="card card-body">
-            <div class="value positive" id="win-rate">0%</div>
-            <div class="label">Win Rate</div>
+            <div class="summary-value" id="win-rate">0%</div>
+            <div class="summary-label">Win Rate</div>
         </div>
     </div>
     <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
         <div class="card card-body">
-            <div class="value positive" id="risk-reward">0</div>
-            <div class="label">Risk/Reward</div>
+            <div class="summary-value" id="risk-reward">0</div>
+            <div class="summary-label">Risk/Reward</div>
         </div>
     </div>
     <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
         <div class="card card-body">
-            <div class="value" id="total-trades">0</div>
-            <div class="label">Total Trades</div>
+            <div class="summary-value" id="total-trades">0</div>
+            <div class="summary-label">Total Trades</div>
         </div>
     </div>
     
@@ -436,27 +88,27 @@
                     <h3>Trading Overview</h3>
                     <div class="stat-row">
                         <span class="stat-label">Total P&L</span>
-                        <span class="stat-value positive" id="total-pnl-stat">$0</span>
+                        <span class="stat-value" id="total-pnl-stat">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Win Rate</span>
-                        <span class="stat-value positive" id="win-rate-stat">0%</span>
+                        <span class="stat-value" id="win-rate-stat">0%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Total Trades</span>
-                        <span class="stat-value neutral" id="total-trades-stat">0</span>
+                        <span class="stat-value" id="total-trades-stat">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Winning Trades</span>
-                        <span class="stat-value positive" id="winning-trades">0</span>
+                        <span class="stat-value" id="winning-trades">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Losing Trades</span>
-                        <span class="stat-value negative" id="losing-trades">0</span>
+                        <span class="stat-value" id="losing-trades">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Scratch Trades</span>
-                        <span class="stat-value neutral" id="scratch-trades">0</span>
+                        <span class="stat-value" id="scratch-trades">0</span>
                     </div>
                 </div>
         
@@ -464,11 +116,11 @@
                     <h3>Average Performance</h3>
                     <div class="stat-row">
                         <span class="stat-label">Average Trade P&L</span>
-                        <span class="stat-value positive" id="avg-trade">$0</span>
+                        <span class="stat-value" id="avg-trade">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Win</span>
-                        <span class="stat-value positive" id="avg-win">$0</span>
+                        <span class="stat-value" id="avg-win">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Loss</span>
@@ -476,11 +128,11 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Daily P&L</span>
-                        <span class="stat-value positive" id="avg-daily">$0</span>
+                        <span class="stat-value" id="avg-daily">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average P&L per Share</span>
-                        <span class="stat-value positive" id="avg-share">$0</span>
+                        <span class="stat-value" id="avg-share">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Daily Volume</span>
@@ -492,27 +144,27 @@
                     <h3>Best & Worst</h3>
                     <div class="stat-row">
                         <span class="stat-label">Largest Gain</span>
-                        <span class="stat-value positive" id="largest-gain">$0</span>
+                        <span class="stat-value" id="largest-gain">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Largest Loss</span>
-                        <span class="stat-value negative" id="largest-loss">$0</span>
+                        <span class="stat-value" id="largest-loss">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Median Trade P&L</span>
-                        <span class="stat-value positive" id="median">$0</span>
+                        <span class="stat-value" id="median">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Max Consecutive Wins</span>
-                        <span class="stat-value positive" id="max-wins">0</span>
+                        <span class="stat-value" id="max-wins">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Max Consecutive Losses</span>
-                        <span class="stat-value negative" id="max-losses">0</span>
+                        <span class="stat-value" id="max-losses">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Current Streak</span>
-                        <span class="stat-value positive" id="current-streak">0</span>
+                        <span class="stat-value" id="current-streak">0</span>
                     </div>
                 </div>
         
@@ -520,11 +172,11 @@
                     <h3>P&L Distribution</h3>
                     <div class="stat-row">
                         <span class="stat-label">Winning P&L</span>
-                        <span class="stat-value positive" id="winning-pnl">$0</span>
+                        <span class="stat-value" id="winning-pnl">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Losing P&L</span>
-                        <span class="stat-value negative" id="losing-pnl">$0</span>
+                        <span class="stat-value" id="losing-pnl">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Trade P&L Std Dev</span>
@@ -536,11 +188,11 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Profit Factor</span>
-                        <span class="stat-value positive" id="profit-factor">0</span>
+                        <span class="stat-value" id="profit-factor">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Recovery Rate</span>
-                        <span class="stat-value positive" id="recovery-rate">0%</span>
+                        <span class="stat-value" id="recovery-rate">0%</span>
                     </div>
                 </div>
         
@@ -548,19 +200,19 @@
                     <h3>Risk Analysis</h3>
                     <div class="stat-row">
                         <span class="stat-label">Max Drawdown</span>
-                        <span class="stat-value negative" id="drawdown">0%</span>
+                        <span class="stat-value" id="drawdown">0%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Sharpe Ratio</span>
-                        <span class="stat-value positive" id="sharpe">0</span>
+                        <span class="stat-value" id="sharpe">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">SQN Score</span>
-                        <span class="stat-value positive" id="sqn">0</span>
+                        <span class="stat-value" id="sqn">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">K-Ratio</span>
-                        <span class="stat-value positive" id="k-ratio">0</span>
+                        <span class="stat-value" id="k-ratio">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Kelly %</span>
@@ -580,23 +232,23 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Hold Time (Winners)</span>
-                        <span class="stat-value positive" id="hold-winners">0m</span>
+                        <span class="stat-value" id="hold-winners">0m</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Hold Time (Losers)</span>
-                        <span class="stat-value negative" id="hold-losers">0m</span>
+                        <span class="stat-value" id="hold-losers">0m</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average Hold Time (Scratches)</span>
-                        <span class="stat-value neutral" id="hold-scratches">0m</span>
+                        <span class="stat-value" id="hold-scratches">0m</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Hold Time Pattern</span>
-                        <span class="stat-value positive" id="hold-pattern">0</span>
+                        <span class="stat-value" id="hold-pattern">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Streak Consistency</span>
-                        <span class="stat-value positive" id="streak-consistency">0</span>
+                        <span class="stat-value" id="streak-consistency">0</span>
                     </div>
                 </div>
         
@@ -604,15 +256,15 @@
                     <h3>Trading Costs</h3>
                     <div class="stat-row">
                         <span class="stat-label">Total Commissions</span>
-                        <span class="stat-value negative" id="total-commissions">$0</span>
+                        <span class="stat-value" id="total-commissions">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Total Fees</span>
-                        <span class="stat-value negative" id="total-fees">$0</span>
+                        <span class="stat-value" id="total-fees">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Total Trading Costs</span>
-                        <span class="stat-value negative" id="total-costs">$0</span>
+                        <span class="stat-value" id="total-costs">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Cost per Trade</span>
@@ -620,7 +272,7 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Cost Impact</span>
-                        <span class="stat-value negative" id="cost-impact">0%</span>
+                        <span class="stat-value" id="cost-impact">0%</span>
                     </div>
                 </div>
         
@@ -628,7 +280,7 @@
                     <h3>Execution Quality</h3>
                     <div class="stat-row">
                         <span class="stat-label">Average MFE (Max Favorable)</span>
-                        <span class="stat-value positive" id="avg-mfe">$0</span>
+                        <span class="stat-value" id="avg-mfe">$0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Average MAE (Max Adverse)</span>
@@ -636,15 +288,15 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">MFE/MAE Ratio</span>
-                        <span class="stat-value positive" id="mfe-mae-ratio">0</span>
+                        <span class="stat-value" id="mfe-mae-ratio">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Efficiency Score</span>
-                        <span class="stat-value positive" id="efficiency">0%</span>
+                        <span class="stat-value" id="efficiency">0%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Exit Quality</span>
-                        <span class="stat-value positive" id="exit-quality">0</span>
+                        <span class="stat-value" id="exit-quality">0</span>
                     </div>
                 </div>
             </div>
@@ -814,106 +466,67 @@
 
             applyFilters();
         }
-
-        // Format currency values
-        function formatCurrency (value) {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 2
-            }).format(value);
-        }
-
-        // Format percentage values
-        function formatPercentage (value) {
-            return new Intl.NumberFormat('en-US', {
-                style: 'percent',
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 2
-            }).format(value / 100);
-        }
-
-        function formatNumber(n, mode=null, min_decimals=1, max_decimals=2) {
-            if (mode === 'currency') {
-                return new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    minimumFractionDigits: min_decimals,
-                    maximumFractionDigits: max_decimals
-                }).format(n);
-            } else if (mode === 'percentage') {
-                return new Intl.NumberFormat('en-US', {
-                    style: 'percent',
-                    minimumFractionDigits: min_decimals,
-                    maximumFractionDigits: max_decimals
-                }).format(n / 100);
-            } else {
-                return n.toFixed(decimals);
-            }
-
-        }
-
         // Simulate real data population
         async function populateStatsFromBackend (stats, mode='net') {
-            document.getElementById('total-pnl').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.total_pnl) : formatCurrency(stats.gross?.total_pnl)}`;
-            document.getElementById('total-pnl').className = 'value ' + (stats.net?.total_pnl > 0 ? 'positive' : 'negative');
-            document.getElementById('win-rate').innerHTML = `${mode == 'net' ? formatPercentage(stats.net?.win_rate) : formatPercentage(stats.gross?.win_rate)}`;
+            document.getElementById('total-pnl').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.total_pnl : stats.gross?.total_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('total-pnl').className = 'summary-value ' + (stats.net?.total_pnl > 0 ? 'text-profit' : 'text-loss');
+            document.getElementById('win-rate').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.win_rate : stats.gross?.win_rate, 'percentage', 1, 2, 'compact')}`;
             document.getElementById('total-trades').textContent = stats.total_trades;
             document.getElementById('risk-reward').innerHTML = `${mode == 'net' ? stats.net?.risk_reward.toFixed(2) : stats.gross?.risk_reward.toFixed(2)}`;
-            document.getElementById('risk-reward').className = 'value ' + (stats.net?.risk_reward > 1 ? 'positive' : 'negative');
+            document.getElementById('risk-reward').className = 'summary-value ' + (stats.net?.risk_reward > 1 ? 'text-profit' : 'text-loss');
 
             
-            document.getElementById('total-pnl-stat').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.total_pnl) : formatCurrency(stats.gross?.total_pnl)}`;
-            document.getElementById('win-rate-stat').innerHTML = `${mode == 'net' ? formatPercentage(stats.net?.win_rate) : formatPercentage(stats.gross?.win_rate)}`;
+            document.getElementById('total-pnl-stat').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.total_pnl : stats.gross?.total_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('win-rate-stat').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.win_rate : stats.gross?.win_rate, 'percentage', 1, 2, 'compact')}`;
             document.getElementById('total-trades-stat').textContent = stats.total_trades;
 
             document.getElementById('winning-trades').innerHTML = `${mode == 'net' ? stats.net?.winning_trades : stats.gross?.winning_trades}`;
             document.getElementById('losing-trades').innerHTML = `${mode == 'net' ? stats.net?.losing_trades : stats.gross?.losing_trades}`;
             document.getElementById('scratch-trades').innerHTML = `${mode == 'net' ? stats.net?.scratch_trades : stats.gross?.scratch_trades}`;
 
-            document.getElementById('avg-trade').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.avg_trade_pnl) : formatCurrency(stats.gross?.avg_trade_pnl)}`;
-            document.getElementById('avg-share').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.avg_pnl_per_share) : formatCurrency(stats.gross?.avg_pnl_per_share)}`;
-            document.getElementById('median').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.median_trade_pnl) : formatCurrency(stats.gross?.median_trade_pnl)}`;
-            document.getElementById('largest-gain').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.largest_gain) : formatCurrency(stats.gross?.largest_gain)}`;
-            document.getElementById('largest-loss').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.largest_loss) : formatCurrency(stats.gross?.largest_loss)}`;
+            document.getElementById('avg-trade').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_trade_pnl : stats.gross?.avg_trade_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('avg-share').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_pnl_per_share : stats.gross?.avg_pnl_per_share, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('median').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.median_trade_pnl : stats.gross?.median_trade_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('largest-gain').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.largest_gain : stats.gross?.largest_gain, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('largest-loss').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.largest_loss : stats.gross?.largest_loss, 'currency', 1, 2, 'compact')}`;
 
-            document.getElementById('winning-pnl').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.winning_pnl) : formatCurrency(stats.gross?.winning_pnl)}`;
-            document.getElementById('losing-pnl').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.losing_pnl) : formatCurrency(stats.gross?.losing_pnl)}`;
-            document.getElementById('avg-win').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.avg_win) : formatCurrency(stats.gross?.avg_win)}`;
-            document.getElementById('avg-loss').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.avg_loss) : formatCurrency(stats.gross?.avg_loss)}`;
+            document.getElementById('winning-pnl').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.winning_pnl : stats.gross?.winning_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('losing-pnl').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.losing_pnl : stats.gross?.losing_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('avg-win').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_win : stats.gross?.avg_win, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('avg-loss').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_loss : stats.gross?.avg_loss, 'currency', 1, 2, 'compact')}`;
 
             document.getElementById('risk-reward-stat').innerHTML = `${mode == 'net' ? stats.net?.risk_reward.toFixed(2) : stats.gross?.risk_reward.toFixed(2)}`;
             document.getElementById('profit-factor').innerHTML = `${mode == 'net' ? stats.net?.profit_factor.toFixed(2) : stats.gross?.profit_factor.toFixed(2)}`;
             document.getElementById('sharpe').innerHTML = `${mode == 'net' ? stats.net?.sharpe_ratio.toFixed(2) : stats.gross?.sharpe_ratio.toFixed(2)}`;
-            document.getElementById('drawdown').innerHTML = `${mode == 'net' ? formatPercentage(stats.net?.max_drawdown) : formatPercentage(stats.gross?.max_drawdown)}`;
-            document.getElementById('std').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.trade_pnl_std) : formatCurrency(stats.gross?.trade_pnl_std)}`;
+            document.getElementById('drawdown').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.max_drawdown : stats.gross?.max_drawdown, 'percentage', 1, 2, 'compact')}`;
+            document.getElementById('std').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.trade_pnl_std : stats.gross?.trade_pnl_std, 'currency', 1, 2, 'compact')}`;
             document.getElementById('sqn').innerHTML = `${mode == 'net' ? stats.net?.sqn.toFixed(2) : stats.gross?.sqn.toFixed(2)}`;
 
             document.getElementById('k-ratio').innerHTML = `${mode == 'net' ? stats.net?.k_ratio.toFixed(2) : stats.gross?.k_ratio.toFixed(2)}`;
-            document.getElementById('kelly').innerHTML = `${mode == 'net' ? formatPercentage(stats.net?.kelly_percent) : formatPercentage(stats.gross?.kelly_percent)}`;
+            document.getElementById('kelly').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.kelly_percent : stats.gross?.kelly_percent, 'percentage', 1, 2, 'compact')}`;
             document.getElementById('p-value').innerHTML = `${mode == 'net' ? stats.net?.p_value.toFixed(4) : stats.gross?.p_value.toFixed(4)}`;
-            document.getElementById('avg-daily').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.avg_daily_pnl) : formatCurrency(stats.gross?.avg_daily_pnl)}`;
-            document.getElementById('avg-volume').innerHTML = `${mode == 'net' ? formatCurrency(stats.net?.avg_daily_volume) : formatCurrency(stats.gross?.avg_daily_volume)}`;
+            document.getElementById('avg-daily').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_daily_pnl : stats.gross?.avg_daily_pnl, 'currency', 1, 2, 'compact')}`;
+            document.getElementById('avg-volume').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_daily_volume : stats.gross?.avg_daily_volume, 'currency', 1, 2, 'compact')}`;
 
             document.getElementById('max-wins').innerHTML = `${mode == 'net' ? stats.net?.max_consecutive_wins : stats.gross?.max_consecutive_wins}`;
             document.getElementById('max-losses').innerHTML = `${mode == 'net' ? stats.net?.max_consecutive_losses : stats.gross?.max_consecutive_losses}`;
 
             // General Stats Tab
-            document.getElementById('total-commissions').textContent = formatCurrency(stats.total_commissions);
-            document.getElementById('total-fees').textContent = formatCurrency(stats.total_fees);
-            document.getElementById('total-costs').textContent = formatCurrency(stats.total_commissions + stats.total_fees);
-            document.getElementById('cost-per-trade').textContent = formatCurrency((stats.total_commissions + stats.total_fees) / stats.total_trades);
+            document.getElementById('total-commissions').textContent = formatNumber(stats.total_commissions, 'currency', 1, 2, 'compact');
+            document.getElementById('total-fees').textContent = formatNumber(stats.total_fees, 'currency', 1, 2, 'compact');
+            document.getElementById('total-costs').textContent = formatNumber(stats.total_commissions + stats.total_fees, 'currency', 1, 2, 'compact');
+            document.getElementById('cost-per-trade').textContent = formatNumber((stats.total_commissions + stats.total_fees) / stats.total_trades, 'currency', 1, 2, 'compact');
 
             const costImpact = ((stats.gross?.total_pnl - stats.net?.total_pnl) / stats.gross?.total_pnl) * 100;
-            document.getElementById('cost-impact').textContent = formatPercentage(costImpact);
+            document.getElementById('cost-impact').textContent = formatNumber(costImpact, 'percentage', 1, 2, 'compact');
 
             document.getElementById('hold-overall').textContent = stats.avg_hold_time_overall;
             document.getElementById('hold-winners').textContent = stats.avg_hold_time_winners;
             document.getElementById('hold-losers').textContent = stats.avg_hold_time_losers;
             document.getElementById('hold-scratches').textContent = stats.avg_hold_time_scratches;
 
-            document.getElementById('avg-mfe').textContent = formatCurrency(stats.avg_mfe);
-            document.getElementById('avg-mae').textContent = formatCurrency(stats.avg_mae);
+            document.getElementById('avg-mfe').textContent = formatNumber(stats.avg_mfe, 'currency', 1, 2, 'compact');
+            document.getElementById('avg-mae').textContent = formatNumber(stats.avg_mae, 'currency', 1, 2, 'compact');
 
             const mfeMaeRatio = Math.abs(stats.avg_mfe / stats.avg_mae);
             document.getElementById('mfe-mae-ratio').textContent = mfeMaeRatio.toFixed(2);
@@ -931,18 +544,18 @@
             elements.forEach(el => {
                 const text = el.textContent;
                 if (text.includes('-') && !text.includes('ratio') && !text.includes('Ratio')) {
-                    if (!el.classList.contains('negative')) {
-                        el.classList.add('negative');
+                    if (!el.classList.contains('text-loss')) {
+                        el.classList.add('text-loss');
                     }
                 } else if (text.includes('%') || text.includes('$')) {
                     const numValue = parseFloat(text.replace(/[^0-9.-]/g, ''));
                     if (numValue > 0) {
-                        if (!el.classList.contains('positive')) {
-                            el.classList.add('positive');
+                        if (!el.classList.contains('text-profit')) {
+                            el.classList.add('text-profit');
                         }
                     } else if (numValue < 0) {
-                        if (!el.classList.contains('negative')) {
-                            el.classList.add('negative');
+                        if (!el.classList.contains('text-loss')) {
+                            el.classList.add('text-loss');
                         }
                     }
                 }
@@ -971,7 +584,7 @@
             document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
             document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
             document.querySelector(`option[value="${ "{{ side or 'BOTH' }}" }"]`).selected = true;
-            document.getElementById('symbol').value = "{{ asset_symbol }}" || '';
+            document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
             document.getElementById('limit').value = "{{ limit }}" || '';
 
             // Load initial data with sample stats
@@ -1002,7 +615,7 @@
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
+            /* plugins: {
                 legend: {
                     labels: {
                         color: '#b0b0b0',
@@ -1011,15 +624,15 @@
                         }
                     }
                 }
-            },
+            }, */
             scales: {
                 x: {
                     ticks: { color: '#b0b0b0' },
-                    grid: { color: '#404040' }
+                    grid: { color: '#b0b0b0' }
                 },
                 y: {
                     ticks: { color: '#b0b0b0' },
-                    grid: { color: '#404040' }
+                    grid: { color: '#b0b0b0' }
                 }
             }
         };
@@ -1052,7 +665,7 @@
                         label: 'DrawDown',
                         data: data.equity_curve?.drawdown,
                         borderColor: '#ff322d',
-                        backgroundColor: 'rgba(0, 124, 255, 0.1)',
+                        backgroundColor: 'rgba(255, 50, 45, 0.1)',
                         fill: true,
                         tension: 0.1,
                         yAxisID: 'y1'
@@ -1096,7 +709,7 @@
                         label: 'Trades',
                         data: data.pnl_distribution?.counts,
                         backgroundColor: function(context) {
-                            const value = context.parsed.x;
+                            const value = context.parsed?.x;
                             return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
                         }
                     }]
@@ -1117,7 +730,7 @@
                         label: 'Daily P&L',
                         data: data.daily_pnl?.pnl,
                         backgroundColor: function(context) {
-                            const value = context.parsed.y;
+                            const value = context.parsed?.y;
                             return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
                         }
                     }]
@@ -1138,7 +751,7 @@
                         label: 'Monthly P&L',
                         data: data.monthly_pnl?.pnl,
                         backgroundColor: function(context) {
-                            const value = context.parsed.y;
+                            const value = context.parsed?.y;
                             return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
                         }
                     }]
@@ -1159,7 +772,7 @@
                         label: 'Expectancy',
                         data: data.weekday_analysis?.expectancy,
                         backgroundColor: function(context) {
-                            const value = context.parsed.y;
+                            const value = context.parsed?.y;
                             return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
                         }
                     }]
@@ -1180,7 +793,7 @@
                         label: 'Expectancy',
                         data: data.hour_analysis?.expectancy,
                         backgroundColor: function(context) {
-                            const value = context.parsed.y;
+                            const value = context.parsed?.y;
                             return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
                         }
                     }]
@@ -1224,7 +837,7 @@
                         data: data.hold_time_analysis?.hold_times.map((x, i) => ({ x: Math.round(x).toFixed(0) , y: data.hold_time_analysis?.pnl[i] })).sort((a, b) => Number(a.x) - Number(b.x)),
                         backgroundColor: function(context) {
                             const dataPoint = context.raw;
-                            return dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0';
+                            return dataPoint ? dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0' : '#b0b0b0';
                         }
                     }]
                 },
@@ -1265,7 +878,7 @@
                         data: data.size_analysis?.sizes.map((x, i) => ({ x: Math.round(x).toFixed(0) , y: data.size_analysis?.pnl[i] })).sort((a, b) => Number(a.x) - Number(b.x)),
                         backgroundColor: function(context) {
                             const dataPoint = context.raw;
-                            return dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0';
+                            return dataPoint ? dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0' : '#b0b0b0';
                         }
                     }]
                 },
