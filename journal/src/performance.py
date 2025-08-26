@@ -10,7 +10,6 @@ class PerformanceMetrics:
     def __init__(self, trades:list[Trade]):
         self.trades = trades
 
-
     def _normal_cdf(self, x):
         """Aproximación de la función de distribución acumulativa normal estándar"""
         # Aproximación de Abramowitz y Stegun
@@ -208,7 +207,7 @@ class PerformanceMetrics:
 
     def getStats(self, mode='net', scratch_percentage:float=0.01):
 
-        pnl_values = [(trade.profit_loss + trade.commission) if mode == 'gross' else trade.profit_loss for trade in self.trades]
+        pnl_values = [((trade.profit_loss + trade.commission) if mode == 'gross' else trade.profit_loss) for trade in self.trades]
 
         total_pnl = sum(pnl_values)
         total_quantity = sum([trade.exit_quantity for trade in self.trades if hasattr(trade, 'exit_quantity')])
