@@ -887,6 +887,219 @@ i {
 /* Trade details ----------------------------------------------------------------------------------------------- */
 
 
+        .trade-symbol {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+    
+        .trade-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+        .trade-pnl {
+            font-weight: 600;
+            font-size: x-large;
+        }
+    
+        .main-content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+    
+            .left-column {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
+        
+            .right-column {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
+        }    
+    
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            
+            .info-label {
+                font-size: 12px;
+                color: rgb(from var(--text-color-muted) r g b / var(--text-opacity));
+                text-transform: uppercase;
+                font-weight: 500;
+                margin-bottom: 6px;
+                letter-spacing: 0.5px;
+            }
+        
+            .info-value {
+                font-size: 14px;
+                font-weight: 600;
+            }
+        }
+        
+        .hashtags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            
+            .hashtag {
+                padding: 4px 12px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+        }
+        
+        .transaction-item {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            padding: 16px;
+            align-items: center;
+            
+            .transaction-date {
+                font-weight: 600;
+                font-size: 14px;
+            }
+        
+            .transaction-details {
+                font-size: 12px;
+                margin-top: 4px;
+            }
+        
+            .transaction-amount {
+                font-weight: 700;
+                font-size: 14px;
+                text-align: right;
+            }
+        }
+    
+        .scoring-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            padding: 1rem;
+            align-items: center;
+            
+            .scoring-name {
+                font-weight: 600;
+            }
+        
+            .scoring-description {
+                font-size: 12px;
+                color: rgb(from var(--text-color-muted) r g b / var(--text-opacity)) !important;
+            }
+        
+            .scoring-value {
+                font-size: 14px;
+                font-weight: 700;
+                text-align: center;
+            }
+        }
+        .final-score {
+            text-align: center;
+            padding: 16px;
+            
+            .info-label {
+                font-size: 12px;
+                color: rgb(from var(--text-color-muted) r g b / var(--text-opacity));
+                text-transform: uppercase;
+                font-weight: 500;
+                margin-bottom: 6px;
+                letter-spacing: 0.5px;
+            }
+
+            .score {
+                font-size: 2rem;
+                font-weight: bold;
+                margin-top: 8px;
+            }
+        }
+    
+        .error-item {
+            padding: 16px;
+            margin-bottom: 12px;
+            
+    
+            .error-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+            }
+        
+            .error-description {
+                font-weight: 600;
+                font-size: 14px;
+            }
+        
+            .error-meta {
+                font-size: 12px;
+            }
+        
+            .severity-badge {
+                padding: 4px 12px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+        }
+    
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+
+            .media-item {
+                overflow: hidden;
+                transition: transform 0.2s ease;
+                cursor: pointer;
+
+                &:hover {
+                    transform: scale(1.03);
+                }
+
+                img {
+                    width: 100%;
+                    height: 120px;
+                    object-fit: cover;
+                }
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            font-style: italic;
+            padding: 24px;
+            font-size: 14px;
+        }
+    
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+    
+            .trade-symbol {
+                font-size: 2rem;
+            }
+    
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
 
 
 /* Animations -------------------------------------------------------------------------------------------------- */
