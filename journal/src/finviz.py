@@ -18,7 +18,10 @@ locale_actual = locale.getlocale(locale.LC_TIME)
 try:
     locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')  # Unix/Mac
 except:
-    locale.setlocale(locale.LC_TIME, 'English_United States.1252')  # Windows
+    try:
+        locale.setlocale(locale.LC_TIME, 'English_United States.1252')  # Windows
+    except locale.Error:
+        locale.setlocale(locale.LC_TIME, '')
 
 class FinvizError(Exception):
     

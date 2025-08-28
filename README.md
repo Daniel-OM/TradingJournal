@@ -56,6 +56,15 @@ pip install -r requirements.txt
 FLASK_APP=journal.app:app flask run --reload
 ```
 
+# Locale error
+Remember to install the english locale in your system.
+
+In Linux:
+```shell
+sudo locale-gen en_US.UTF-8
+sudo update-locale
+```
+
 # Application execution in production
 
 ## Systemd file for Gunicorn
