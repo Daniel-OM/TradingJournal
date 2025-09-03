@@ -20,5 +20,5 @@ class ProdConfig:
     SECRET_KEY = 'tu_clave_secreta_aqui'
     SQLALCHEMY_DATABASE_URI = f"sqlite:///path/trading_journal.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    APPLICATION_ROOT = '/trading-journal'
-    STATIC_URL_PATH = '/trading-journal/static'
+    APPLICATION_ROOT = '/'
+    STATIC_URL_PATH = '/static'
