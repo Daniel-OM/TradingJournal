@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+
+{% block title %}Watchlist Performance</title>{% endblock %}
+
+{% block style %}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Filters -->
+    <div class="col-12 mb-3">
+        <div class="card card-body mb-2">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Start Date</label>
+                    <input type="date" id="start-date" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>End Date</label>
+                    <input type="date" id="end-date" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>Symbol</label>
+                    <input type="text" id="symbol" placeholder="e.g., AAPL" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>Limit</label>
+                    <input id="limit" type="number" min="0" step="1" placeholder="e.g., 100" class="rounded">
+                </div>
+            </div>
+            <div class="filter-actions align-items-center">
+                <button class="btn btn-pill bg-primary" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn btn-pill bg-secondary" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingState" class="text-center py-5 rounded">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Analyzing performance...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="alert alert-danger d-none rounded" role="alert">
+        <h4 class="alert-heading">Error in the analysis</h4>
+        <p id="errorMessage"></p>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row" id="mainContent">
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="summary-value" id="total-pnl">$0</div>
+            <div class="summary-label">Total P&L </div>
+        </div>
+    </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="summary-value" id="win-rate">0%</div>
+            <div class="summary-label">Win Rate</div>
+        </div>
+    </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="summary-value" id="risk-reward">0</div>
+            <div class="summary-label">Risk/Reward</div>
+        </div>
+    </div>
+    <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
+        <div class="card card-body">
+            <div class="summary-value" id="total-trades">0</div>
+            <div class="summary-label">Total Trades</div>
+        </div>
+    </div>
+    
+    <div class="col-12 mb-3">
+        <div class="card">
+            <div class="card-body row m-0">
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Trading Overview</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Total P&L</span>
+                        <span class="stat-value" id="total-pnl-stat">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Win Rate</span>
+                        <span class="stat-value" id="win-rate-stat">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Trades</span>
+                        <span class="stat-value" id="total-trades-stat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Winning Trades</span>
+                        <span class="stat-value" id="winning-trades">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Losing Trades</span>
+                        <span class="stat-value" id="losing-trades">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Scratch Trades</span>
+                        <span class="stat-value" id="scratch-trades">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Average Performance</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Trade P&L</span>
+                        <span class="stat-value" id="avg-trade">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Win</span>
+                        <span class="stat-value" id="avg-win">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Loss</span>
+                        <span class="stat-value negative" id="avg-loss">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Daily P&L</span>
+                        <span class="stat-value" id="avg-daily">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average P&L per Share</span>
+                        <span class="stat-value" id="avg-share">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Daily Volume</span>
+                        <span class="stat-value" id="avg-volume">$0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Best & Worst</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Largest Gain</span>
+                        <span class="stat-value" id="largest-gain">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Largest Loss</span>
+                        <span class="stat-value" id="largest-loss">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Median Trade P&L</span>
+                        <span class="stat-value" id="median">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Max Consecutive Wins</span>
+                        <span class="stat-value" id="max-wins">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Max Consecutive Losses</span>
+                        <span class="stat-value" id="max-losses">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Current Streak</span>
+                        <span class="stat-value" id="current-streak">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>P&L Distribution</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Winning P&L</span>
+                        <span class="stat-value" id="winning-pnl">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Losing P&L</span>
+                        <span class="stat-value" id="losing-pnl">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Trade P&L Std Dev</span>
+                        <span class="stat-value" id="std">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Risk/Reward Ratio</span>
+                        <span class="stat-value" id="risk-reward-stat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Profit Factor</span>
+                        <span class="stat-value" id="profit-factor">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Recovery Rate</span>
+                        <span class="stat-value" id="recovery-rate">0%</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Risk Analysis</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Max Drawdown</span>
+                        <span class="stat-value" id="drawdown">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Sharpe Ratio</span>
+                        <span class="stat-value" id="sharpe">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">SQN Score</span>
+                        <span class="stat-value" id="sqn">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">K-Ratio</span>
+                        <span class="stat-value" id="k-ratio">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Kelly %</span>
+                        <span class="stat-value" id="kelly">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">P-Value</span>
+                        <span class="stat-value" id="p-value">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Hold Time Analysis</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Overall)</span>
+                        <span class="stat-value" id="hold-overall">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Winners)</span>
+                        <span class="stat-value" id="hold-winners">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Losers)</span>
+                        <span class="stat-value" id="hold-losers">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Hold Time (Scratches)</span>
+                        <span class="stat-value" id="hold-scratches">0m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Hold Time Pattern</span>
+                        <span class="stat-value" id="hold-pattern">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak Consistency</span>
+                        <span class="stat-value" id="streak-consistency">0</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3 d-none">
+                    <h3>Trading Costs</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Commissions</span>
+                        <span class="stat-value" id="total-commissions">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Fees</span>
+                        <span class="stat-value" id="total-fees">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Trading Costs</span>
+                        <span class="stat-value" id="total-costs">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cost per Trade</span>
+                        <span class="stat-value" id="cost-per-trade">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cost Impact</span>
+                        <span class="stat-value" id="cost-impact">0%</span>
+                    </div>
+                </div>
+        
+                <div class="col col-lg-4 col-md-6 mt-3">
+                    <h3>Execution Quality</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Average MFE (Max Favorable)</span>
+                        <span class="stat-value" id="avg-mfe">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average MAE (Max Adverse)</span>
+                        <span class="stat-value negative" id="avg-mae">$0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">MFE/MAE Ratio</span>
+                        <span class="stat-value" id="mfe-mae-ratio">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Efficiency Score</span>
+                        <span class="stat-value" id="efficiency">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Exit Quality</span>
+                        <span class="stat-value" id="exit-quality">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sector Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5 class="mb-3">Performance by Sector</h5></div>
+                <div class="card-body">
+                    <div id="sectorAnalysis" class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Sector</th>
+                                    <th>Avg. Return</th>
+                                    <th>Ocurrencies</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sectorTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equity Curve -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-chart-area me-2"></i>Equity Curve
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- P&L Distribution -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-chart-bar me-2"></i>P&L Distribution
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0 small">
+                    <canvas id="pnlDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Analysis Tabs -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#dailyTab" role="tab">
+                        <i class="fas fa-calendar-day me-2"></i>Daily
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#monthlyTab" role="tab">
+                        <i class="fas fa-calendar-alt me-2"></i>Monthly
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#weekdayTab" role="tab">
+                        <i class="fas fa-calendar-week me-2"></i>By Weekday
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#hourlyTab" role="tab">
+                        <i class="fas fa-clock me-2"></i>By Hour
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content tv-tab-content">
+                <div class="tab-pane fade" id="dailyTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="dailyPnlChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="monthlyTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="monthlyPnlChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="weekdayTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="weekdayChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade show active" id="hourlyTab" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Symbol Performance -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-chart-pie me-2"></i>Top Symbols Performance
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0 small">
+                    <canvas id="symbolChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hold Time Analysis -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-stopwatch me-2"></i>Hold Time vs P&L
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0">
+                    <canvas id="holdTimeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hold Time Analysis -->
+    <div class="col mb-4">
+        <div class="card">
+            <div class="d-block card-header">
+                <i class="fas fa-stopwatch me-2"></i>Execution Optimization
+            </div>
+            <div class="card-body">
+                <div class="chart-container mt-0">
+                    <canvas id="executionOptimizationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/performance.js') }}"></script>
+    <script>
+        // Filter functions
+        function applyFilters () {
+            const filters = {
+                start: document.getElementById('start-date').value,
+                end: document.getElementById('end-date').value,
+                symbol: document.getElementById('symbol').value,
+                limit: document.getElementById('limit').value
+            };
+
+            // En una aplicación real, esto haría una petición al servidor
+            window.location.href = `{{ url_for('watchlist_endpoints.watchlist_performance', id=watchlist.id) }}?start=${filters.start}&end=${filters.end}&symbol=${filters.symbol}&limit=${filters.limit}`;
+        }
+
+        async function resetFilters () {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.getElementById('symbol').value = '';
+            document.getElementById('limit').value = '';
+
+            applyFilters();
+        }
+
+        // Initialize the page
+        let perf_object;
+        const statsData = JSON.parse('{{ stats|tojson|safe }}');
+        const chartsData = JSON.parse('{{ charts|tojson|safe }}');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set default date range (last 30 days)
+            const endDate = new Date("{{ end }}");
+            const startDate = new Date("{{ start}}");
+
+            document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
+            document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
+            document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
+            document.getElementById('limit').value = "{{ limit }}" || '';
+
+            perf_object = new Performance(statsData, chartsData, true, null, null, WatchlistStats, WatchlistCharts);
+
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    applyFilters();
+                }
+            });
+        });
+    </script>
+{% endblock %}

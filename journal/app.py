@@ -6,7 +6,7 @@ from flask_cors import CORS
 from .config import DevConfig, ProdConfig
 from .login import login_manager
 from .models import db, migrate
-from .routers import index_bp, strategy_bp, watchlist_bp, journal_bp, error_bp, user_bp, asset_bp, screener_pages, screener_bp
+from .routers import index_bp, strategy_bp, watchlist_bp, journal_bp, journal_pages, error_bp, user_bp, asset_bp, screener_pages, screener_bp
 
 def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
 
@@ -18,8 +18,10 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
                 instance_path=os.path.join(os.path.abspath(os.path.dirname(__file__)), "instance"))
     
     app.config['SECRET_KEY'] = config_class.SECRET_KEY
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"{config_class.SQLALCHEMY_DATABASE_URI.split('path/')[0]}{os.path.join(app.instance_path, config_class.SQLALCHEMY_DATABASE_URI.split('path/')[1])}"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"{config_class.SQLALCHEMY_DATABASE_URI.split('path/')[0]}{os.path.join(app.instance_path, config_class.SQLALCHEMY_DATABASE_URI.split('path/')[1])}" \
+        if 'sqlite' in config_class.SQLALCHEMY_DATABASE_URI else config_class.SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config_class.SQLALCHEMY_TRACK_MODIFICATIONS
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = config_class.SQLALCHEMY_ENGINE_OPTIONS
     app.config['APPLICATION_ROOT'] = config_class.APPLICATION_ROOT
     app.config['STATIC_URL_PATH'] = config_class.STATIC_URL_PATH
     print('URI: ', app.config['SQLALCHEMY_DATABASE_URI'])
@@ -30,7 +32,8 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
     app.register_blueprint(blueprint=user_bp, url_prefix='/user')
     app.register_blueprint(blueprint=strategy_bp, url_prefix='/strategy')
     app.register_blueprint(blueprint=watchlist_bp, url_prefix='/watchlist')
-    app.register_blueprint(blueprint=journal_bp, url_prefix='/journal')
+    app.register_blueprint(blueprint=journal_pages, url_prefix='/journal')
+    app.register_blueprint(blueprint=journal_bp, url_prefix='/api/journal')
     app.register_blueprint(blueprint=error_bp, url_prefix='/error')
     app.register_blueprint(blueprint=asset_bp, url_prefix='/asset')
     app.register_blueprint(blueprint=screener_pages, url_prefix='/screener')

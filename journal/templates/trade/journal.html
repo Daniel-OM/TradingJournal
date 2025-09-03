@@ -15,7 +15,7 @@
         <div class="current-month" id="currentMonth"></div>
         <button class="nav-btn btn-none ms-3" onclick="changeMonth(1)"><i class="fa-solid fa-greater-than"></i></button>
         
-        <a href="{{ url_for('journal_endpoints.add_trade') }}" class="btn btn-pill bg-primary ms-auto">
+        <a href="{{ url_for('journal_pages.add_trade') }}" class="btn btn-pill bg-primary ms-auto">
             <i class="fas fa-plus me-2"></i>Añadir Trade
         </a>
     </div>
@@ -589,17 +589,17 @@
         function goToTradeDetails(tradeId) {
             // Simulate navigation to trade details page
             // alert(`Navegando a los detalles del trade ID: ${tradeId}`);
-            window.location.href = `{{ url_for('journal_endpoints.get_trade', id=0) }}`.replace('0', tradeId);
+            window.location.href = `{{ url_for('journal_pages.get_trade', id=0) }}`.replace('0', tradeId);
         }
 
         function editTrade(tradeId) {
             // alert(`Editando trade ID: ${tradeId}`);
-            window.location.href = `{{ url_for('journal_endpoints.edit_trade', trade_id=0) }}`.replace('0', tradeId);
+            window.location.href = `{{ url_for('journal_pages.edit_trade', trade_id=0) }}`.replace('0', tradeId);
         }
         
         async function deleteTrade(tradeId) {
             if (confirm('¿Estás seguro de que quieres borrar este trade?')) {
-                const url = `{{ url_for('journal_endpoints.delete_trade', trade_id=0) }}`.replace('0', tradeId);
+                const url = `{{ url_for('journal_pages.delete_trade', trade_id=0) }}`.replace('0', tradeId);
                 try {
                     const response = await fetch(url, {
                         method: 'POST',

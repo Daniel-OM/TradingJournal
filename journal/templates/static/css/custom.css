@@ -193,6 +193,11 @@ div.container {
     }
 }
 
+.table {
+    background-color: var(--card-bg-color);
+    color: rgb(from var(--text-color-primary) r g b / var(--text-opacity));
+}
+
 .modal {
     display: none;
     position: fixed;

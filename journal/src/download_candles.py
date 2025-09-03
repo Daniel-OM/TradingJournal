@@ -19,6 +19,8 @@ from yahoofinance import YahooTicker
 
 db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'instance', 'trading_journal.db'))
 engine = create_engine(f'sqlite:///{db_path}')
+
+engine = create_engine(f"postgresql://trading_journal_admin:[*OnEmAdE#jOUrnAl3680]@onemade.es:5432/trading_journal")
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -31,6 +33,9 @@ def getTradesCandles():
         today = trade.exit_date or date.today()
         one_year_ago = trade.entry_date - timedelta(days=365)
         week_ago = trade.entry_date - timedelta(days=5)
+        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+            week_ago = week_ago + timedelta(days=1)
+            
         symbol = trade.symbol
         # Descargar velas con Yahoo Finance
         yf = YahooTicker(symbol)
@@ -144,6 +149,8 @@ if __name__ == '__main__':
             today = trade.exit_date or date.today()
             one_year_ago = trade.entry_date - timedelta(days=365)
             week_ago = trade.entry_date - timedelta(days=5)
+            while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+                week_ago = week_ago + timedelta(days=1)
             symbol = trade.symbol
             # Descargar velas con Yahoo Finance
             yf = YahooTicker(symbol)
