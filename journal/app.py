@@ -1,5 +1,7 @@
 import os
 from flask import Flask, send_from_directory, abort
+from flask_compress import Compress
+from flask_cors import CORS
 
 from .config import DevConfig, ProdConfig
 from .login import login_manager
@@ -16,9 +18,9 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
                 instance_path=os.path.join(os.path.abspath(os.path.dirname(__file__)), "instance"))
     
     app.config['SECRET_KEY'] = config_class.SECRET_KEY
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'{config_class.SQLALCHEMY_DATABASE_URI.split('path/')[0]}{os.path.join(app.instance_path, config_class.SQLALCHEMY_DATABASE_URI.split('path/')[1])}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"{config_class.SQLALCHEMY_DATABASE_URI.split('path/')[0]}{os.path.join(app.instance_path, config_class.SQLALCHEMY_DATABASE_URI.split('path/')[1])}"
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config_class.SQLALCHEMY_TRACK_MODIFICATIONS
-    # app.config['APPLICATION_ROOT'] = config_class.APPLICATION_ROOT
+    app.config['APPLICATION_ROOT'] = config_class.APPLICATION_ROOT
     app.config['STATIC_URL_PATH'] = config_class.STATIC_URL_PATH
     print('URI: ', app.config['SQLALCHEMY_DATABASE_URI'])
 
@@ -36,10 +38,10 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
     db.init_app(app=app)
     migrate.init_app(app=app, db=db)
     login_manager.init_app(app=app)
-    # compress = Compress()
-    # compress.init_app(app)
-    # cors = CORS()
-    # cors.init_app(app=app, supports_credentials=True)
+    compress = Compress()
+    compress.init_app(app)
+    cors = CORS()
+    cors.init_app(app=app, supports_credentials=True)
 
     with app.app_context():
         db.create_all()

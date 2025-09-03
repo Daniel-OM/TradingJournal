@@ -26,5 +26,6 @@ class Candle(Model):
             'close': float(self.close),
             'volume': float(self.volume),
             'session': self.session,
+            'timeframe': self.timeframe,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
