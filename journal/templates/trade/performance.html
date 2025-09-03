@@ -53,13 +53,30 @@
                 <button class="btn btn-pill bg-primary" onclick="applyFilters()">Apply Filters</button>
                 <button class="btn btn-pill bg-secondary" onclick="resetFilters()">Reset</button>
                 <div class="form-check form-switch ms-auto">
-                    <input class="form-check-input" type="checkbox" role="switch" onchange="changeGrossNet()" id="gross-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="gross-switch">
                     <label class="form-check-label" for="flexSwitchCheckDefault">Gross</label>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Loading Spinner -->
+    <div id="loadingState" class="text-center py-5 rounded">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Analyzing performance...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="alert alert-danger d-none rounded" role="alert">
+        <h4 class="alert-heading">Error in the analysis</h4>
+        <p id="errorMessage"></p>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row" id="mainContent">
     <div class="col col-lg-3 col-md-4 col-sm-6 mb-3">
         <div class="card card-body">
             <div class="summary-value" id="total-pnl">$0</div>
@@ -402,12 +419,28 @@
     <!-- Hold Time Analysis -->
     <div class="col-lg-6 mb-4">
         <div class="card">
-            <div class="d-block card-header">
-                <i class="fas fa-stopwatch me-2"></i>Hold Time vs P&L
-            </div>
-            <div class="card-body">
-                <div class="chart-container mt-0 small">
-                    <canvas id="holdTimeChart"></canvas>
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#holdTime_pnl" role="tab">
+                        <i class="fas fa-stopwatch me-2"></i>Hold Time vs P&L
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tradeSpeed" role="tab">
+                        <i class="fas fa-gauge-high me-2"></i>Trade Speed
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content tv-tab-content">
+                <div class="tab-pane fade show active" id="holdTime_pnl" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="holdTimeChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="tradeSpeed" role="tabpanel">
+                    <div class="chart-container mt-0">
+                        <canvas id="tradeSpeedChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -426,25 +459,11 @@
             </div>
         </div>
     </div>
-
-    <!-- Loading Spinner -->
-    <div class="loading-spinner" id="loadingSpinner">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2">Loading charts...</p>
-    </div>
 </div>
 {% endblock %}
 {% block scripts %}
+    <script src="{{ url_for('static', filename='js/performance.js') }}"></script>
     <script>
-        
-        // Sample data structure that matches the backend stats
-        const statsData = JSON.parse('{{ stats|tojson|safe }}');
-
-
-        // Tab functionality
-
         // Filter functions
         function applyFilters () {
             const filters = {
@@ -457,7 +476,7 @@
             };
 
             // En una aplicación real, esto haría una petición al servidor
-            window.location.href = `{{ url_for('journal_endpoints.performance') }}?start=${filters.start}&end=${filters.end}&strategy=${filters.strategy}&symbol=${filters.symbol}&side=${filters.side}&limit=${filters.limit}`;
+            window.location.href = `{{ url_for('journal_pages.performance') }}?start=${filters.start}&end=${filters.end}&strategy=${filters.strategy}&symbol=${filters.symbol}&side=${filters.side}&limit=${filters.limit}`;
         }
 
         async function resetFilters () {
@@ -470,116 +489,12 @@
 
             applyFilters();
         }
-        // Simulate real data population
-        async function populateStatsFromBackend (stats, mode='net') {
-            document.getElementById('total-pnl').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.total_pnl : stats.gross?.total_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('total-pnl').className = 'summary-value ' + (stats.net?.total_pnl > 0 ? 'text-profit' : 'text-loss');
-            document.getElementById('win-rate').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.win_rate : stats.gross?.win_rate, 'percentage', 1, 2, 'compact')}`;
-            document.getElementById('total-trades').textContent = stats.total_trades;
-            document.getElementById('risk-reward').innerHTML = `${mode == 'net' ? stats.net?.risk_reward.toFixed(2) : stats.gross?.risk_reward.toFixed(2)}`;
-            document.getElementById('risk-reward').className = 'summary-value ' + (stats.net?.risk_reward > 1 ? 'text-profit' : 'text-loss');
-
-            
-            document.getElementById('total-pnl-stat').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.total_pnl : stats.gross?.total_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('win-rate-stat').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.win_rate : stats.gross?.win_rate, 'percentage', 1, 2, 'compact')}`;
-            document.getElementById('total-trades-stat').textContent = stats.total_trades;
-
-            document.getElementById('winning-trades').innerHTML = `${mode == 'net' ? stats.net?.winning_trades : stats.gross?.winning_trades}`;
-            document.getElementById('losing-trades').innerHTML = `${mode == 'net' ? stats.net?.losing_trades : stats.gross?.losing_trades}`;
-            document.getElementById('scratch-trades').innerHTML = `${mode == 'net' ? stats.net?.scratch_trades : stats.gross?.scratch_trades}`;
-
-            document.getElementById('avg-trade').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_trade_pnl : stats.gross?.avg_trade_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('avg-share').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_pnl_per_share : stats.gross?.avg_pnl_per_share, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('median').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.median_trade_pnl : stats.gross?.median_trade_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('largest-gain').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.largest_gain : stats.gross?.largest_gain, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('largest-loss').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.largest_loss : stats.gross?.largest_loss, 'currency', 1, 2, 'compact')}`;
-
-            document.getElementById('winning-pnl').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.winning_pnl : stats.gross?.winning_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('losing-pnl').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.losing_pnl : stats.gross?.losing_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('avg-win').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_win : stats.gross?.avg_win, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('avg-loss').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_loss : stats.gross?.avg_loss, 'currency', 1, 2, 'compact')}`;
-
-            document.getElementById('risk-reward-stat').innerHTML = `${mode == 'net' ? stats.net?.risk_reward.toFixed(2) : stats.gross?.risk_reward.toFixed(2)}`;
-            document.getElementById('profit-factor').innerHTML = `${mode == 'net' ? stats.net?.profit_factor.toFixed(2) : stats.gross?.profit_factor.toFixed(2)}`;
-            document.getElementById('sharpe').innerHTML = `${mode == 'net' ? stats.net?.sharpe_ratio.toFixed(2) : stats.gross?.sharpe_ratio.toFixed(2)}`;
-            document.getElementById('drawdown').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.max_drawdown : stats.gross?.max_drawdown, 'percentage', 1, 2, 'compact')}`;
-            document.getElementById('std').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.trade_pnl_std : stats.gross?.trade_pnl_std, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('sqn').innerHTML = `${mode == 'net' ? stats.net?.sqn.toFixed(2) : stats.gross?.sqn.toFixed(2)}`;
-
-            document.getElementById('k-ratio').innerHTML = `${mode == 'net' ? stats.net?.k_ratio.toFixed(2) : stats.gross?.k_ratio.toFixed(2)}`;
-            document.getElementById('kelly').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.kelly_percent : stats.gross?.kelly_percent, 'percentage', 1, 2, 'compact')}`;
-            document.getElementById('p-value').innerHTML = `${mode == 'net' ? stats.net?.p_value.toFixed(4) : stats.gross?.p_value.toFixed(4)}`;
-            document.getElementById('avg-daily').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_daily_pnl : stats.gross?.avg_daily_pnl, 'currency', 1, 2, 'compact')}`;
-            document.getElementById('avg-volume').innerHTML = `${formatNumber(mode == 'net' ? stats.net?.avg_daily_volume : stats.gross?.avg_daily_volume, 'currency', 1, 2, 'compact')}`;
-
-            document.getElementById('max-wins').innerHTML = `${mode == 'net' ? stats.net?.max_consecutive_wins : stats.gross?.max_consecutive_wins}`;
-            document.getElementById('max-losses').innerHTML = `${mode == 'net' ? stats.net?.max_consecutive_losses : stats.gross?.max_consecutive_losses}`;
-
-            // General Stats Tab
-            document.getElementById('total-commissions').textContent = formatNumber(stats.total_commissions, 'currency', 1, 2, 'compact');
-            document.getElementById('total-fees').textContent = formatNumber(stats.total_fees, 'currency', 1, 2, 'compact');
-            document.getElementById('total-costs').textContent = formatNumber(stats.total_commissions + stats.total_fees, 'currency', 1, 2, 'compact');
-            document.getElementById('cost-per-trade').textContent = formatNumber((stats.total_commissions + stats.total_fees) / stats.total_trades, 'currency', 1, 2, 'compact');
-
-            const costImpact = ((stats.gross?.total_pnl - stats.net?.total_pnl) / stats.gross?.total_pnl) * 100;
-            document.getElementById('cost-impact').textContent = formatNumber(costImpact, 'percentage', 1, 2, 'compact');
-
-            document.getElementById('hold-overall').textContent = stats.avg_hold_time_overall;
-            document.getElementById('hold-winners').textContent = stats.avg_hold_time_winners;
-            document.getElementById('hold-losers').textContent = stats.avg_hold_time_losers;
-            document.getElementById('hold-scratches').textContent = stats.avg_hold_time_scratches;
-
-            document.getElementById('avg-mfe').textContent = formatNumber(stats.avg_mfe, 'currency', 1, 2, 'compact');
-            document.getElementById('avg-mae').textContent = formatNumber(stats.avg_mae, 'currency', 1, 2, 'compact');
-
-            const mfeMaeRatio = Math.abs(stats.avg_mfe / stats.avg_mae);
-            document.getElementById('mfe-mae-ratio').textContent = mfeMaeRatio.toFixed(2);
-
-            document.getElementById('max-wins').innerHTML = `${mode == 'net' ? stats.net?.max_consecutive_wins : stats.gross?.max_consecutive_wins}`;
-            document.getElementById('max-losses').innerHTML = `${mode == 'net' ? stats.net?.max_consecutive_losses : stats.gross?.max_consecutive_losses}`;
-
-            // Apply color classes based on values
-            applyColorClasses();
-        }
-
-        async function applyColorClasses () {
-            // Apply positive/negative classes to values
-            const elements = document.querySelectorAll('.stat-value');
-            elements.forEach(el => {
-                const text = el.textContent;
-                if (text.includes('-') && !text.includes('ratio') && !text.includes('Ratio')) {
-                    if (!el.classList.contains('text-loss')) {
-                        el.classList.add('text-loss');
-                    }
-                } else if (text.includes('%') || text.includes('$')) {
-                    const numValue = parseFloat(text.replace(/[^0-9.-]/g, ''));
-                    if (numValue > 0) {
-                        if (!el.classList.contains('text-profit')) {
-                            el.classList.add('text-profit');
-                        }
-                    } else if (numValue < 0) {
-                        if (!el.classList.contains('text-loss')) {
-                            el.classList.add('text-loss');
-                        }
-                    }
-                }
-            });
-        }
-
-        async function changeGrossNet() {
-            console.log('Gross/Net toggle changed');
-            if (document.getElementById('gross-switch').checked) {
-                // Switch to gross mode
-                populateStatsFromBackend(statsData, 'gross');
-                initializeCharts('gross');
-            } else {
-                // Switch to net mode
-                populateStatsFromBackend(statsData, 'net');
-                initializeCharts('net');
-            }
-        }
 
         // Initialize the page
+        let perf_object;
+        const statsData = JSON.parse('{{ stats|tojson|safe }}');
+        const chartsData = JSON.parse('{{ charts|tojson|safe }}');
+
         document.addEventListener('DOMContentLoaded', function () {
             // Set default date range (last 30 days)
             const endDate = new Date("{{ end }}");
@@ -591,8 +506,11 @@
             document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
             document.getElementById('limit').value = "{{ limit }}" || '';
 
-            // Load initial data with sample stats
-            populateStatsFromBackend(statsData);
+            perf_object = new Performance(statsData, chartsData, document.getElementById('gross-switch').checked, null, null, TradeStats, TradeCharts);
+            // Event listeners
+            document.getElementById('gross-switch').addEventListener('change', () => {
+                perf_object.changeGrossNet(document.getElementById('gross-switch').checked);
+            });
 
             // Add keyboard shortcuts
             document.addEventListener('keydown', function (e) {
@@ -601,326 +519,5 @@
                 }
             });
         });
-        
-
-
-
-        const chartsData = JSON.parse('{{ charts|tojson|safe }}');
-
-        // Chart instances
-        let charts = {};
-        
-        // Chart.js default config
-        Chart.defaults.color = '#b0b0b0';
-        Chart.defaults.backgroundColor = '#2d2d2d';
-        Chart.defaults.borderColor = '#404040';
-
-        // Global chart options
-        const commonOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            /* plugins: {
-                legend: {
-                    labels: {
-                        color: '#b0b0b0',
-                        font: {
-                            size: 12
-                        }
-                    }
-                }
-            }, */
-            scales: {
-                x: {
-                    ticks: { color: '#b0b0b0' },
-                    grid: { color: '#b0b0b0' }
-                },
-                y: {
-                    ticks: { color: '#b0b0b0' },
-                    grid: { color: '#b0b0b0' }
-                }
-            }
-        };
-
-
-        async function initializeCharts(mode='net') {
-
-            const data = mode == 'gross' ? chartsData.gross : chartsData.net;
-
-            showLoading(true);
-
-            // Equity Curve
-            if (charts.equity) {
-                charts.equity.destroy();
-            }
-            const equityCtx = document.getElementById('equityChart').getContext('2d');
-            charts.equity = new Chart(equityCtx, {
-                type: 'line',
-                data: {
-                    labels: data.equity_curve?.dates,
-                    datasets: [{
-                        label: 'Cumulative P&L',
-                        data: data.equity_curve?.equity,
-                        borderColor: '#007cff',
-                        backgroundColor: 'rgba(0, 124, 255, 0.1)',
-                        fill: true,
-                        tension: 0.1,
-                        yAxisID: 'y'
-                    }, {
-                        label: 'DrawDown',
-                        data: data.equity_curve?.drawdown,
-                        borderColor: '#ff322d',
-                        backgroundColor: 'rgba(255, 50, 45, 0.1)',
-                        fill: true,
-                        tension: 0.1,
-                        yAxisID: 'y1'
-                    }]
-                },
-                options: {
-                    ...commonOptions,
-                    scales: {
-                        ...commonOptions.scales,
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            ticks: { color: '#b0b0b0' },
-                            grid: { drawOnChartArea: false }
-                        }
-                    },
-                    plugins: {
-                        ...commonOptions.plugins,
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `P&L: $${context.parsed.y.toFixed(2)}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // P&L Distribution
-            if (charts.pnlDist) {
-                charts.pnlDist.destroy();
-            }
-            const pnlDistCtx = document.getElementById('pnlDistributionChart').getContext('2d');
-            charts.pnlDist = new Chart(pnlDistCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.pnl_distribution?.bins,
-                    datasets: [{
-                        label: 'Trades',
-                        data: data.pnl_distribution?.counts,
-                        backgroundColor: function(context) {
-                            const value = context.parsed?.x;
-                            return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: commonOptions
-            });
-
-            // Daily P&L
-            if (charts.daily) {
-                charts.daily.destroy();
-            }
-            const dailyCtx = document.getElementById('dailyPnlChart').getContext('2d');
-            charts.daily = new Chart(dailyCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.daily_pnl?.dates,
-                    datasets: [{
-                        label: 'Daily P&L',
-                        data: data.daily_pnl?.pnl,
-                        backgroundColor: function(context) {
-                            const value = context.parsed?.y;
-                            return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: commonOptions
-            });
-
-            // Monthly P&L
-            if (charts.monthly) {
-                charts.monthly.destroy();
-            }
-            const monthlyCtx = document.getElementById('monthlyPnlChart').getContext('2d');
-            charts.monthly = new Chart(monthlyCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.monthly_pnl?.months,
-                    datasets: [{
-                        label: 'Monthly P&L',
-                        data: data.monthly_pnl?.pnl,
-                        backgroundColor: function(context) {
-                            const value = context.parsed?.y;
-                            return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: commonOptions
-            });
-
-            // Weekday Analysis
-            if (charts.weekday) {
-                charts.weekday.destroy();
-            }
-            const weekdayCtx = document.getElementById('weekdayChart').getContext('2d');
-            charts.weekday = new Chart(weekdayCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.weekday_analysis?.days,
-                    datasets: [{
-                        label: 'Expectancy',
-                        data: data.weekday_analysis?.expectancy,
-                        backgroundColor: function(context) {
-                            const value = context.parsed?.y;
-                            return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: commonOptions
-            });
-
-            // Hourly Analysis
-            if (charts.hourly) {
-                charts.hourly.destroy();
-            }
-            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-            charts.hourly = new Chart(hourlyCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.hour_analysis?.hours.map(h => new Date(`1970-01-01 ${h}:00+00:00`).toLocaleString([], { hour: '2-digit', minute: '2-digit' })),
-                    datasets: [{
-                        label: 'Expectancy',
-                        data: data.hour_analysis?.expectancy,
-                        backgroundColor: function(context) {
-                            const value = context.parsed?.y;
-                            return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: commonOptions
-            });
-
-            // Symbol Performance
-            if (charts.symbol) {
-                charts.symbol.destroy();
-            }
-            const symbolCtx = document.getElementById('symbolChart').getContext('2d');
-            charts.symbol = new Chart(symbolCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: data.symbol_performance?.symbols,
-                    datasets: [{
-                        data: data.symbol_performance?.expectancy,
-                        backgroundColor: [
-                            '#007cff', '#00c851', '#ff4444', '#ffbb33', '#9c27b0',
-                            '#e91e63', '#795548', '#607d8b', '#ff9800', '#4caf50'
-                        ]
-                    }]
-                },
-                options: {
-                    ...commonOptions,
-                    scales: {} // Remove scales for doughnut chart
-                }
-            });
-
-            // Hold Time Analysis
-            if (charts.holdTime) {
-                charts.holdTime.destroy();
-            }
-            const holdTimeCtx = document.getElementById('holdTimeChart').getContext('2d');
-            charts.holdTime = new Chart(holdTimeCtx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Trades', // TODO: Scatter without string x axis
-                        data: data.hold_time_analysis?.hold_times.map((x, i) => ({ x: Math.round(x).toFixed(0) , y: data.hold_time_analysis?.pnl[i] })).sort((a, b) => Number(a.x) - Number(b.x)),
-                        backgroundColor: function(context) {
-                            const dataPoint = context.raw;
-                            return dataPoint ? dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: {
-                    ...commonOptions,
-                    scales: {
-                        ...commonOptions.scales,
-                        x: {
-                            ...commonOptions.scales.x,
-                            title: {
-                                display: true,
-                                text: 'Hold Time (hours)',
-                                color: '#b0b0b0'
-                            }
-                        },
-                        y: {
-                            ...commonOptions.scales.y,
-                            title: {
-                                display: true,
-                                text: 'P&L ($)',
-                                color: '#b0b0b0'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Size Analysis
-            if (charts.size) {
-                charts.size.destroy();
-            }
-            const sizeCtx = document.getElementById('sizeAnalysisChart').getContext('2d');
-            charts.size = new Chart(sizeCtx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Trades', // TODO: Scatter without string x axis
-                        data: data.size_analysis?.sizes.map((x, i) => ({ x: Math.round(x).toFixed(0) , y: data.size_analysis?.pnl[i] })).sort((a, b) => Number(a.x) - Number(b.x)),
-                        backgroundColor: function(context) {
-                            const dataPoint = context.raw;
-                            return dataPoint ? dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0' : '#b0b0b0';
-                        }
-                    }]
-                },
-                options: {
-                    ...commonOptions,
-                    scales: {
-                        ...commonOptions.scales,
-                        x: {
-                            ...commonOptions.scales.x,
-                            title: {
-                                display: true,
-                                text: 'Position Size',
-                                color: '#b0b0b0'
-                            }
-                        },
-                        y: {
-                            ...commonOptions.scales.y,
-                            title: {
-                                display: true,
-                                text: 'P&L ($)',
-                                color: '#b0b0b0'
-                            }
-                        }
-                    }
-                }
-            });
-        
-            showLoading(false);
-        }
-
-        function showLoading(show) {
-            document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
-        }
-
-        // Initialize charts when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCharts('net');
-        });
-
     </script>
 {% endblock %}

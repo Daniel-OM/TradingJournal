@@ -605,7 +605,7 @@ class YahooTicker(YahooBase):
             
             # prices.index = prices.index.tz_localize(tz).tz_convert('UTC')
             if 'tradingPeriods' in data['chart']['result'][0]['meta']:
-                prices = self._parseSessions(prices_df=prices, trading_periods=data['chart']['result'][0]['meta']['tradingPeriods'])
+                prices: pd.DataFrame = self._parseSessions(prices_df=prices, trading_periods=data['chart']['result'][0]['meta']['tradingPeriods'])
             else:
                 prices['session'] = np.where(prices.index.time < dt.datetime.fromtimestamp(sessions['regular']['start']+sessions['regular']['gmtoffset']).time(), 'PRE', 
                                 np.where(dt.datetime.fromtimestamp(sessions['regular']['end']+sessions['regular']['gmtoffset']).time() < prices.index.time, 'POST', 'REG'))
