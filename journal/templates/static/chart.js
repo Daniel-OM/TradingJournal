@@ -1,4 +1,4 @@
-// TODO: Plot volume as histogram on bottom and transactions overlay
+
 class TradingChart {
     constructor(element, dailyData = null, intradayData = null, transactionData = null, options = {}, replay = false) {
         this.theme = {
@@ -156,7 +156,7 @@ class TradingChart {
                 `;
         if (daily) {
             txt += `
-            <h4 class="">Daily Chart</h4>
+            <h4 class="mt-2">Daily Chart</h4>
             ${buttons ? buttonElement('daily') : ''}
             <canvas id="dailyChart" width="800" height="300"></canvas>
             <div class="loading-spinner" id="dailySpinner">
@@ -166,7 +166,7 @@ class TradingChart {
         }
         if (intraday) {
             txt += `
-            <h4 class="">Intraday Chart (1m)</h4>
+            <h4 class="mt-2">Intraday Chart (1m)</h4>
             ${buttons ? buttonElement('intraday') : ''}
             <canvas id="intradayChart" width="800" height="300"></canvas>
             <div class="loading-spinner" id="intradaySpinner">
@@ -611,7 +611,7 @@ class TradingChart {
     }
 
     reset() {
-        this.currentTime = new Date(document.getElementById('startTime').value);
+        this.currentTime = document.getElementById('startTime') ? new Date(document.getElementById('startTime').value) : null;
         this.intradayData = []; //.slice(0, 60);
         this.transactions = [];
         this.drawCharts();
