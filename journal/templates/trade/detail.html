@@ -487,7 +487,12 @@
             chart.drawCharts();
         } else {
             // Crear nuevo chart
-            chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, { startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time });
+            chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, { 
+                startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time, 
+                'background': 'transparent',
+                'gridColor': 'rgba(0, 0, 0, 0.1)',
+                'textColor': 'var(--text-color-primary)'
+            }, false); // TODO: Fix the charts so that replay is available
         }
     }
 
