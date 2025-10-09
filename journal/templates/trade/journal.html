@@ -95,7 +95,7 @@
                 tradingData = {};
                 trades.forEach(trade => {
                     // TODO: Usar el exit date es lo correcto?
-                    const dateKey = trade.exit_date; // Asegúrate que tu to_dict() devuelva exit_date en formato 'YYYY-MM-DD'
+                    const dateKey = trade.exit_date;
                     if (!tradingData[dateKey]) tradingData[dateKey] = [];
                     tradingData[dateKey].push({
                         id: trade.id,
@@ -106,7 +106,7 @@
                         quantity: trade.quantity,
                         pnl: trade.profit_loss,
                         equity: trade.equity,
-                        time: trade.exit_time // o la propiedad de hora que uses
+                        time: trade.exit_time
                     });
                 });
                 generateCalendar();

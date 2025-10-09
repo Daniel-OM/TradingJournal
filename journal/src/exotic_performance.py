@@ -207,8 +207,6 @@ def equity_curve(trade:Trade, initial_balance: float = 0):
 
     return equity_points
 
-# TODO: Add all the candles needed for the charts of the trades already registered
-
 db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'instance', 'trading_journal.db'))
 engine = create_engine(f'sqlite:///{db_path}')
 SessionMaker = sessionmaker(bind=engine)
