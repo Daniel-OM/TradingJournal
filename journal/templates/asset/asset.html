@@ -18,31 +18,31 @@
     .news-item {
         background: rgba(255, 255, 255, 0.05);
         border-radius: 12px;
-        padding: 1.5rem;
+        padding: 1rem 1.5rem 1rem 1.5rem !important;
         margin-bottom: 1rem;
         border-left: 4px solid #667eea;
         transition: all 0.3s ease;
-    }
 
-    .news-item:hover {
-        background: rgba(255, 255, 255, 0.1);
-        transform: translateX(5px);
-    }
+        &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
 
-    .news-title {
-        color: var(--text-primary);
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        text-decoration: none;
-    }
+        .news-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-decoration: none;
 
-    .news-title:hover {
-        color: #667eea;
-    }
+            &:hover {
+                color: #667eea;
+            }
+        }
 
-    .news-meta {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
+        .news-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
     }
 
     .loading-spinner {
@@ -73,43 +73,34 @@
 
     .nav-tabs {
         border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-    }
 
-    .nav-tabs .nav-link {
-        color: var(--text-secondary);
-        border: none;
-        padding: 1rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
+        .nav-link {
+            color: var(--text-secondary);
+            border: none;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
 
-    .nav-tabs .nav-link:hover {
-        color: var(--text-primary);
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .nav-tabs .nav-link.active {
-        color: #667eea;
-        background: rgba(102, 126, 234, 0.1);
-        border-bottom: 3px solid #667eea;
+            &:hover {
+                color: var(--text-primary);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            &.active {
+                color: #667eea;
+                background: rgba(102, 126, 234, 0.1);
+                border-bottom: 3px solid #667eea;
+            }
+        }
     }
 
     .fade-in {
         animation: slideUp20 0.5s ease-in;
     }
 
-    @media (max-width: 768px) {
-        .stock-header {
-            text-align: center;
-        }
-        
+    @media (max-width: 768px) {        
         .price-container {
             text-align: center;
             margin-top: 1rem;
-        }
-        
-        .metrics-grid {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         }
     }
 
@@ -120,27 +111,6 @@
         margin-right: 1rem;
         border: 2px solid rgba(255, 255, 255, 0.1);
     }
-
-    .fundamentals-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-top: 2rem;
-    }
-
-    .fundamental-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 1.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .fundamental-title {
-        color: #667eea;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-    }
 </style>
 {% endblock %}
 
@@ -150,7 +120,7 @@
     <div class="justify-content-center">
         <div class="card card-body">
             <p class="text-center text-secondary mb-4">
-                Encuentra información detallada sobre cualquier acción del mercado
+                Find detail information about any market stock
             </p>
             <div class="row g-3">
                 <div class="col-md-8">
@@ -159,7 +129,7 @@
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-pill bg-primary btn-search w-100" onclick="searchStock()">
-                        <i class="fas fa-search me-2"></i>Buscar
+                        <i class="fas fa-search me-2"></i>Search
                     </button>
                 </div>
             </div>
@@ -170,15 +140,15 @@
     <div id="loadingSpinner" class="container">
         <div class="loading-spinner">
             <div class="spinner-border" role="status">
-                <span class="visually-hidden">Cargando...</span>
+                <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3">Obteniendo datos del mercado...</p>
+            <p class="mt-3">Getting market data...</p>
         </div>
 
         <!-- Error Message -->
         <div class="error-message" id="errorMessage">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            <span id="errorText">Error al obtener los datos</span>
+            <span id="errorText">Error while getting market data</span>
         </div>
     </div>
 
@@ -186,46 +156,47 @@
     <div id="resultsContainer" style="display: none;">
         <!-- Stock Header -->
         <div class="card fade-in mt-4" id="stockHeader">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="row">
-                        <img id="companyLogo" class="company-logo" src="" alt="Logo" style="display: none;">
-                        <div class="col">
-                            <div class="d-flex align-items-center justify-content-center">
-                                <a id="website" href="#" class="stock-title text-decoration-none" target="_blank"><h2 id="stockTitle" class="me-2">-</h2></a>
-                                (<p id="exchange" class="text-muted mb-0"></p>)
-                            </div>
-                            <p id="stockSector" class="text-muted m-0"></p>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="row">
+                    <img id="companyLogo" class="company-logo" src="" alt="Logo" style="display: none;">
+                    <div class="col">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <a id="website" href="#" class="stock-title text-decoration-none" target="_blank"><h2 id="stockTitle" class="me-2">-</h2></a>
+                            (<p id="exchange" class="text-muted mb-0"></p>)
                         </div>
+                        <p id="stockSector" class="text-muted m-0"></p>
                     </div>
-                    <div class="price-container">
-                        <h3 class="current-price" id="currentPrice">-</h3>
-                        <div class="price-change" id="priceChange">
-                            <span>-</span>
-                        </div>
+                </div>
+                <div class="price-container">
+                    <h3 class="current-price" id="currentPrice">-</h3>
+                    <div class="price-change" id="priceChange">
+                        <span>-</span>
                     </div>
                 </div>
             </div>
             
-            <div class="card-body row" id="keyMetrics">
+            <div class="card-body pt-3">
                 <!-- Métricas principales se llenarán dinámicamente -->
+                 <div class="row" id="keyMetrics">
+
+                 </div>
             </div>
 
             <!-- Navigation Tabs -->
             <ul class="nav nav-tabs border-bottom" id="stockTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
-                        <i class="fas fa-chart-line me-2"></i>Resumen
+                        <i class="fas fa-chart-line me-2"></i>Summary
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button">
-                        <i class="fas fa-newspaper me-2"></i>Noticias
+                        <i class="fas fa-newspaper me-2"></i>News
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button">
-                        <i class="fas fa-chart-bar me-2"></i>Gráficos
+                        <i class="fas fa-chart-bar me-2"></i>Charts
                     </button>
                 </li>
             </ul>
@@ -241,7 +212,7 @@
 
                 <!-- News Tab -->
                 <div class="tab-pane fade mt-3" id="news">
-                    <div id="newsContainer" class="col ms-5 me-5">
+                    <div id="newsContainer" class="col ms-3 me-3">
                         <!-- Noticias -->
                     </div>
                 </div>
@@ -251,8 +222,8 @@
                 </div>
             </div>
 
-            <div class="card-footer d-flex text-muted">
-                <p class="mb-0" id="headquartersData"></p>
+            <div class="card-footer d-flex pb-3">
+                <p class="text-muted mb-0" id="headquartersData"></p>
                 <button class="btn bg-primary ms-auto ml-0" onclick="addToWatchlist()">
                     <i class="fas fa-plus me-2"></i>Add To Watchlist
                 </button>
@@ -3869,7 +3840,7 @@
         function searchStock() {
             const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
             if (!symbol) {
-                showError('Por favor ingresa un símbolo válido');
+                showError('Please insert a valid symbol');
                 return;
             }
 
@@ -3927,7 +3898,7 @@
             
             // Update chart
             // updateChart(data.candles);
-            initializeChart();
+            initializeChart(data.candles);
 
             // Show results
             document.getElementById('resultsContainer').style.display = 'block';
@@ -3975,7 +3946,7 @@
         function updateFundamentals(fundamentals) {
             const fundamentalsGrid = document.getElementById('fundamentalsGrid');
             let txt = `
-            <div class="card-body ms-4 me-4">
+            <div class="card-body">
                 <div class="row">
                     <div class="col">
                         <h6><i class="fas fa-building me-2"></i>Descripción</h6>
@@ -3995,12 +3966,12 @@
                     </div>
                     <!-- Columna 2 -->
                     <div class="col-md-6">
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ingresos:</strong> <p>$${ formatNumber(fundamentals.Sales, 'currency', 1, 2, 'compact') }</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Beneficio neto:</strong> <p>$${ formatNumber(fundamentals.Income, 'currency', 1, 2, 'compact') }</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>EPS (TTM):</strong> <p>$${fundamentals.eps?.toFixed(2)}</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen bruto:</strong> <p>${ formatNumber(fundamentals.grossMargin?.toFixed(4) * 100, 'percentage', 1, 2, 'compact') }</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen operativo:</strong> <p>${ formatNumber(fundamentals.grossMargin?.toFixed(4) * 100, 'percentage', 1, 2, 'compact') fundamentals.Oper_Margin_Pct?.toFixed(2)}%</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Margen neto:</strong> <p>${ formatNumber(fundamentals.Profit_Margin_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Income:</strong> <p>${ formatNumber(fundamentals.Sales, 'currency', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Net profit:</strong> <p>${ formatNumber(fundamentals.Income, 'currency', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>EPS (TTM):</strong> <p>${ formatNumber(fundamentals.eps, 'currency', 1, 2, 'compact')}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Gross margin:</strong> <p>${ formatNumber(fundamentals.grossMargin?.toFixed(4) * 100, 'percentage', 1, 2, 'compact') }</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Operating margin:</strong> <p>${ formatNumber(fundamentals.Oper_Margin_Pct?.toFixed(4) * 100, 'percentage', 1, 2, 'compact')}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Net margin:</strong> <p>${ formatNumber(fundamentals.Profit_Margin_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>ROE:</strong> <p>${ formatNumber(fundamentals.ROE_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>ROIC:</strong> <p>${ formatNumber(fundamentals.ROIC_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
                     </div>
@@ -4015,7 +3986,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>Dividend Yield:</strong> <p>${ formatNumber(fundamentals.dividendYield?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
                         <div class="d-flex justify-content-between ms-4 me-4"><strong>Payout Ratio:</strong> <p>${ formatNumber(fundamentals.Payout_Pct?.toFixed(2), 'percentage', 1, 2, 'compact') }</p></div>
-                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ex-Dividendo:</strong> <p>${(new Date(fundamentals.Dividend_Ex_Date)).toLocaleDateString()}</p></div>
+                        <div class="d-flex justify-content-between ms-4 me-4"><strong>Ex-Dividend:</strong> <p>${(new Date(fundamentals.Dividend_Ex_Date)).toLocaleDateString()}</p></div>
                     </div>
                 </div>
             </div>
@@ -4044,7 +4015,7 @@
                 currentChart.destroy();
             }
 
-            const labels = candles.map((candle, index) => `Día ${candle.date}`);
+            const labels = candles.map((candle, index) => `Day ${candle.date}`);
             const prices = candles.map((candle, index) => candle.close);
             
             currentChart = new Chart(ctx, {
@@ -4052,7 +4023,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Precio',
+                        label: 'Price',
                         data: prices,
                         borderColor: '#667eea',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -4105,10 +4076,10 @@
         }
 
 
-        function initializeChart () {
+        function initializeChart (candleData=null) {
             if (chart) {
                 // Si ya existe un chart, actualizarlo con nuevos datos
-                if (candleData) {
+                if (candleData) { // TODO: candleData is the same as window.asset.data.candles? remove one of them
                     chart.loadData(window.asset.data.candles);
                 } else {
                     chart.generateData();
@@ -4117,7 +4088,11 @@
                 chart.drawCharts();
             } else {
                 // Crear nuevo chart
-                chart = new TradingChart(document.getElementById('charts'), window.asset.data.candles, null, null, null, false);
+                chart = new TradingChart(document.getElementById('charts'), window.asset.data.candles, null, null, {
+                    'background': 'transparent',
+                    'gridColor': 'rgba(0, 0, 0, 0.1)',
+                    'textColor': 'var(--text-color-primary)'
+                }, false);
             }
         }
 
@@ -4153,7 +4128,7 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Símbolo no encontrado o error del servidor');
+                    throw new Error('Symbol not found or server error.');
                 }
                 return response.json();
             })
@@ -4164,7 +4139,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                showError('Error al obtener los datos: ' + error.message);
+                showError('Error while getting the data: ' + error.message);
                 hideLoading();
             });
         }
@@ -4250,16 +4225,14 @@
         function setupSearchSuggestions() {
             const input = document.getElementById('symbolInput');
             const suggestionsDiv = document.createElement('div');
-            suggestionsDiv.className = 'search-suggestions';
+            suggestionsDiv.className = 'search-suggestions rounded';
             suggestionsDiv.style.cssText = `
                 position: absolute;
                 top: 100%;
                 left: 0;
                 right: 0;
-                background: var(--card-bg);
-                border-radius: 0 0 15px 15px;
+                background: var(--card-bg-color);
                 border: 1px solid rgba(255, 255, 255, 0.2);
-                border-top: none;
                 max-height: 200px;
                 overflow-y: auto;
                 z-index: 1000;
@@ -4295,6 +4268,11 @@
 
             document.addEventListener('click', function(e) {
                 if (!input.parentElement.contains(e.target)) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+            document.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
                     suggestionsDiv.style.display = 'none';
                 }
             });
