@@ -125,7 +125,7 @@
             <div class="row g-3">
                 <div class="col-md-8">
                     <input type="text" id="symbolInput" class="form-control search-input rounded-pill" 
-                            placeholder="Ingresa el símbolo (ej: AAPL, TSLA, MSFT...)">
+                            placeholder="Ingresa el símbolo (ej: AAPL, TSLA, MSFT...)"{% if symbol %} value="{{ symbol }}"{% endif %}>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-pill bg-primary btn-search w-100" onclick="searchStock()">
@@ -3870,7 +3870,7 @@
         function displayStockData(data) {
             // Update header
             document.getElementById('stockTitle').textContent = `${data.symbol} - ${data.companyStandardName}`;
-            document.getElementById('website').href = data.website;
+            document.getElementById('website').href = data.website.length > 0 ? data.website : data.Web;
             document.getElementById('exchange').textContent = data.exchange;
             document.getElementById('stockSector').textContent = `${data.industry} (${data.sector})`;
             document.getElementById('currentPrice').textContent = `$${data.current_price.toFixed(2)}`;
@@ -4361,10 +4361,16 @@
             // Update market status every minute
             updateMarketStatus();
             setInterval(updateMarketStatus, 60000);
+
+            {% if symbol %} 
+                searchStock();
+            {% endif %}
         });
 
         // Exportar funciones para uso global si es necesario
         window.TradingChart = TradingChart;
         window.initializeChart = initializeChart;
+
+
     </script>
 {% endblock %}
