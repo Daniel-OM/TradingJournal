@@ -11,15 +11,15 @@ The main goal of this app is to **maximize a trader’s potential** by offering 
 - 📈 **Trade Logging**: Record all trades with essential details like entry/exit, size, strategy, notes, and outcome.
 - 🔍 **Watchlists**: Keep a daily record of market watchlists and setups before the trading day.
 - ⚠️ **Mistake Tracker**: Log behavioral or execution errors to identify weaknesses and improve decision-making.
-- 📊 **Review & Analytics** (optional/future): Visualize statistics and performance trends over time.
-- 🔐 **User Authentication** (if implemented): Protect journal entries with login functionality.
+- 📊 **Review & Analytics**: Visualize statistics and performance trends over time.
+- 🔐 **User Authentication**: Protect journal entries with login functionality.
 
 ## 🛠️ Technologies Used
 
 - **Flask** – Python micro-framework for backend development.
 - **Jinja2** – Template engine for dynamic HTML rendering.
 - **SQLite / PostgreSQL** – Database for storing user data and journal entries.
-- **Bootstrap** – For responsive front-end design (optional).
+- **Bootstrap** – For responsive front-end design.
 
 ## 🙌 Contribution
 

@@ -1,11 +1,15 @@
 
 import json
 from datetime import date, datetime, timedelta
+import asyncio
+from copy import deepcopy
+
+from sqlalchemy import func, or_
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required, current_user
 
-from ..models import db, Watchlist, WatchlistEntry, WatchlistCondition, Candle
-from ..src.yahoofinance import YahooTicker
+from ..models import db, Watchlist, WatchlistEntry, WatchlistCondition
+from ..src.performance import WatchlistPerformance
 from .utils import download_candles
 
 watchlist_bp = Blueprint(name='watchlist_endpoints', import_name=__name__)
@@ -21,7 +25,6 @@ def watchlist():
 @watchlist_bp.route('/<int:id>')
 @login_required
 def watchlist_detail(id):
-    print(request.args)
     selected_date = datetime.strptime(request.args.get('date', date.today().strftime('%Y-%m-%d')), '%Y-%m-%d')
     watchlist_filter = request.args.get('watchlist', str(id))
     hashtag_filter = request.args.get('hashtag', '')
@@ -43,6 +46,70 @@ def watchlist_detail(id):
     return render_template('watchlist/detail.html', entries=entries, watchlists=watchlists, 
                          selected_date=selected_date.strftime('%Y-%m-%d'), 
                          watchlist_filter=watchlist_filter, hashtag_filter=hashtag_filter)
+
+@watchlist_bp.route('/<int:id>/performance')
+@login_required
+def watchlist_performance(id):
+    start = request.args.get('start', type=str)
+    end = request.args.get('end', type=str)
+    asset_symbol = request.args.get('symbol', type=str)
+    atr = request.args.get('atr', type=int)
+    limit = request.args.get('limit', type=int)
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    
+    # ===== CONSTRUIR QUERY BASE =====
+    watchlist = Watchlist.query.filter(Watchlist.id == id, Watchlist.user_id == current_user.id).first_or_404()
+    base_query = WatchlistEntry.query.join(Watchlist, Watchlist.id == WatchlistEntry.watchlist_id) \
+                                    .filter(WatchlistEntry.watchlist_id == id, Watchlist.user_id == current_user.id)
+    
+    # Filtros adicionales
+    if asset_symbol not in ['None', '', None]:
+        base_query = base_query.filter(WatchlistEntry.symbol == asset_symbol)
+    if atr:
+        base_query = base_query.filter(WatchlistEntry.atr == atr)
+    
+    # Filtros de fecha
+    start = (datetime.today() - timedelta(days=90)).strftime('%Y-%m-%d') if not start else start
+    start_date = datetime.strptime(start, '%Y-%m-%d').date()
+    base_query = base_query.filter(WatchlistEntry.date >= start_date)
+
+    if end:
+        end_date = datetime.strptime(end, '%Y-%m-%d').date()
+        base_query = base_query.filter(or_(WatchlistEntry.date_exit <= end_date, WatchlistEntry.date_exit == None))
+    else:
+        end = base_query.with_entities(func.max(WatchlistEntry.date_exit)).scalar()
+        if end is not None: 
+            end = end.strftime('%Y-%m-%d')
+    
+    # Aplicar límite
+    if limit:
+        base_query = base_query.limit(limit)
+    
+    # ===== OBTENER DATOS =====
+    all_entries = base_query.order_by(WatchlistEntry.date).distinct().all()
+
+    # ===== CALCULAR ESTADÍSTICAS =====
+    stats_object = WatchlistPerformance(data=all_entries)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    gross_stats, gross_charts = loop.run_until_complete(
+        asyncio.gather(
+            deepcopy(stats_object).getStats(gross=True),
+            deepcopy(stats_object).getCharts(gross=True)
+        )
+    )
+    loop.close()
+
+    stats = { 'net': gross_stats, 'gross': gross_stats }
+    charts = { 'net': gross_charts, 'gross': gross_charts }
+    
+    return render_template('watchlist/performance.html', stats=stats, charts=charts, watchlist=watchlist,
+                           start=start, end=end, asset_symbol=asset_symbol if asset_symbol else '', limit=limit)
+
+
+
 
 @watchlist_bp.route('/config', methods=['GET', 'POST'])
 @login_required
@@ -130,6 +197,53 @@ def watchlist_configuration():
 
     watchlists = Watchlist.query.all()
     return render_template('watchlist/create.html', date=date, watchlists=watchlists, json_watchlists=[s.to_dict() for s in watchlists])
+
+@watchlist_bp.route('/<int:id>/update', methods=['POST'])
+@login_required
+def update_watchlist(id):
+    """Actualizar un registro de la watchlist"""
+    try:
+        entry: WatchlistEntry = WatchlistEntry.query.get_or_404(id)
+
+        if entry.watchlist.user_id != current_user.id:
+            abort(403)
+        
+        # Actualizar campos del formulario
+        entry.symbol = request.form.get('symbol', '').upper()
+        entry.company_name = request.form.get('company_name', '')
+        entry.score = float(request.form.get('score', 0.0))
+        entry.atr = float(request.form.get('atr')) if request.form.get('atr') else None
+        entry.price = float(request.form.get('price')) if request.form.get('price') else None
+        entry.volume = float(request.form.get('volume')) if request.form.get('volume') else None
+        entry.avg_volume = float(request.form.get('avg_volume')) if request.form.get('avg_volume') else None
+        entry.market_cap = float(request.form.get('market_cap')) if request.form.get('market_cap') else None
+        entry.float_shares = float(request.form.get('float_shares')) if request.form.get('float_shares') else None
+        entry.per = float(request.form.get('per')) if request.form.get('per') else None
+        entry.eps = float(request.form.get('eps')) if request.form.get('eps') else None
+        entry.exchange = request.form['exchange'] if request.form.get('exchange') else None
+        entry.sector = request.form['sector'] if request.form.get('sector') else None
+        entry.industry = request.form['industry'] if request.form.get('industry') else None
+        entry.country = request.form['country'] if request.form.get('country') else None
+        entry.description = request.form.get('description', '')
+        entry.negative_action = request.form.get('negative_action', '')
+        entry.hashtags = request.form.get('hashtags', '')
+        entry.risk_reward = request.form.get('risk_reward', '')
+        entry.profit_target = float(request.form.get('profit_target')) if request.form.get('profit_target') else None
+        entry.other_notes = request.form.get('other_notes', '')
+        entry.strategy_id = int(request.form.get('strategy_id')) if request.form.get('strategy_id') else None
+        
+        db.session.commit()
+        
+        flash(f'Registro de {entry.symbol} actualizado exitosamente', 'success')
+        return redirect(url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id))
+        
+    except ValueError as e:
+        flash(f'Error en los datos ingresados: {str(e)}', 'error')
+        return redirect(url_for('watchlist_endpoints.edit_watchlist_entry', id=id))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar el registro: {str(e)}', 'error')
+        return redirect(url_for('watchlist_endpoints.edit_watchlist_entry', id=id))
 
 @watchlist_bp.route('/entry/add', methods=['GET', 'POST'])
 @login_required
@@ -397,53 +511,6 @@ def edit_watchlist_entry(id):
     # except Exception as e:
     #     flash(f'Error al cargar el registro para edición: {str(e)}', 'error')
     #     return redirect(url_for('watchlist_endpoints.watchlist'))
-
-@watchlist_bp.route('/update/<int:id>', methods=['POST'])
-@login_required
-def update_watchlist(id):
-    """Actualizar un registro de la watchlist"""
-    try:
-        entry: WatchlistEntry = WatchlistEntry.query.get_or_404(id)
-
-        if entry.watchlist.user_id != current_user.id:
-            abort(403)
-        
-        # Actualizar campos del formulario
-        entry.symbol = request.form.get('symbol', '').upper()
-        entry.company_name = request.form.get('company_name', '')
-        entry.score = float(request.form.get('score', 0.0))
-        entry.atr = float(request.form.get('atr')) if request.form.get('atr') else None
-        entry.price = float(request.form.get('price')) if request.form.get('price') else None
-        entry.volume = float(request.form.get('volume')) if request.form.get('volume') else None
-        entry.avg_volume = float(request.form.get('avg_volume')) if request.form.get('avg_volume') else None
-        entry.market_cap = float(request.form.get('market_cap')) if request.form.get('market_cap') else None
-        entry.float_shares = float(request.form.get('float_shares')) if request.form.get('float_shares') else None
-        entry.per = float(request.form.get('per')) if request.form.get('per') else None
-        entry.eps = float(request.form.get('eps')) if request.form.get('eps') else None
-        entry.exchange = request.form['exchange'] if request.form.get('exchange') else None
-        entry.sector = request.form['sector'] if request.form.get('sector') else None
-        entry.industry = request.form['industry'] if request.form.get('industry') else None
-        entry.country = request.form['country'] if request.form.get('country') else None
-        entry.description = request.form.get('description', '')
-        entry.negative_action = request.form.get('negative_action', '')
-        entry.hashtags = request.form.get('hashtags', '')
-        entry.risk_reward = request.form.get('risk_reward', '')
-        entry.profit_target = float(request.form.get('profit_target')) if request.form.get('profit_target') else None
-        entry.other_notes = request.form.get('other_notes', '')
-        entry.strategy_id = int(request.form.get('strategy_id')) if request.form.get('strategy_id') else None
-        
-        db.session.commit()
-        
-        flash(f'Registro de {entry.symbol} actualizado exitosamente', 'success')
-        return redirect(url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id))
-        
-    except ValueError as e:
-        flash(f'Error en los datos ingresados: {str(e)}', 'error')
-        return redirect(url_for('watchlist_endpoints.edit_watchlist_entry', id=id))
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error al actualizar el registro: {str(e)}', 'error')
-        return redirect(url_for('watchlist_endpoints.edit_watchlist_entry', id=id))
 
 # Función auxiliar para obtener estadísticas de la watchlist
 def get_watchlist_stats():

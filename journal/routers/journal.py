@@ -2,16 +2,16 @@
 import os
 from datetime import date, datetime, timedelta, time
 from collections import defaultdict
+import asyncio
+from copy import deepcopy
 
 import numpy as np
 
 from werkzeug.datastructures.file_storage import FileStorage
-from sqlalchemy import desc, func, case, extract, and_
+from sqlalchemy import desc, func, case, extract, and_, or_
 from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required, current_user
 from werkzeug.wrappers.response import Response
-
-from journal.models import watchlist
 
 from ..models.watchlist_entry import WatchlistEntry
 
@@ -19,12 +19,12 @@ from ..models.watchlist_entry import WatchlistEntry
 
 from ..config import UPLOAD_FOLDER
 from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
-from ..src.performance import PerformanceMetrics, PerformanceCharts
+from ..src.performance import TradePerformance
 from .utils import save_uploaded_files, calculate_max_drawdown, download_candles, localToUtc
 
-journal_bp = Blueprint(name='journal_endpoints', import_name=__name__)
+journal_pages = Blueprint(name='journal_pages', import_name=__name__)
 
-@journal_bp.route('/')
+@journal_pages.route('/')
 @login_required
 def journal() -> str:
     # Obtener datos del calendario
@@ -43,17 +43,89 @@ def journal() -> str:
     
     return render_template(template_name_or_list='trade/journal.html', calendar_data=calendar_data, 
                          trades=trades, selected_date=selected_date)
-
-@journal_bp.route(rule='/trades/<date>/month')
+    
+@journal_pages.route(rule='/performance')
 @login_required
-def month_trades(date) -> Response:
-    date: datetime = datetime.strptime(date, '%Y-%m-%d')
-    start = datetime(date.year, date.month, 1).date()
-    end = datetime(date.year, date.month+1, 1).date()
-    trades: list = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
-    return jsonify([t.to_dict(equity=True) for t in trades])
+def performance() -> str:
+    # ===== OBTENER FILTROS =====
+    start = request.args.get('start', type=str)
+    end = request.args.get('end', type=str)
+    strategy_id = request.args.get('strategy', type=int)
+    asset_symbol = request.args.get('symbol', type=str)
+    watchlist_id = request.args.get('watchlist', type=int)
+    limit = request.args.get('limit', type=int)
+    side = request.args.get('side', type=str)  # LONG or SHORT
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    
+    # ===== CONSTRUIR QUERY BASE =====
+    base_query = Trade.query.filter(Trade.user_id == current_user.id)
+    
+    # Filtro por watchlist
+    if watchlist_id:
+        base_query = base_query.join(
+            WatchlistEntry,
+            and_(
+                Trade.symbol == WatchlistEntry.symbol,
+                Trade.entry_date >= WatchlistEntry.date,
+                Trade.entry_date <= WatchlistEntry.date_exit
+            )
+        ).filter(WatchlistEntry.watchlist_id == watchlist_id)
+    
+    # Filtros adicionales
+    if strategy_id:
+        base_query = base_query.filter(Trade.strategy_id == strategy_id)
+    if asset_symbol not in ['None', '', None]:
+        base_query = base_query.filter(Trade.symbol == asset_symbol)
+    if side in ['LONG', 'SHORT']:
+        base_query = base_query.filter(Trade.trade_type == side.upper())
+    
+    # Filtros de fecha
+    start = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d') if not start else start
+    start_date = datetime.strptime(start, '%Y-%m-%d').date()
+    base_query = base_query.filter(Trade.entry_date >= start_date)
 
-@journal_bp.route(rule='/trade/<int:id>')
+    if end:
+        end_date = datetime.strptime(end, '%Y-%m-%d').date()
+        base_query = base_query.filter(or_(Trade.entry_date <= end_date, Trade.entry_date == None)) # TODO: And if it is a swing trade?
+    else:
+        temp = base_query.with_entities(func.max(Trade.entry_date)).scalar()
+        if temp:
+            end = temp.strftime('%Y-%m-%d')
+        else:
+            end = date.today()
+    
+    # Aplicar límite
+    if limit:
+        base_query = base_query.limit(limit)
+    
+    # Get data
+    all_trades = base_query.order_by(Trade.entry_date).distinct().all()
+
+    # Calculate statistics and charts data
+    stats_object = TradePerformance(data=all_trades)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    net_stats, gross_stats, net_charts, gross_charts = loop.run_until_complete(
+        asyncio.gather(
+            deepcopy(stats_object).getStats(gross=False),
+            deepcopy(stats_object).getStats(gross=True),
+            deepcopy(stats_object).getCharts(gross=False),
+            deepcopy(stats_object).getCharts(gross=True)
+        )
+    )
+    loop.close()
+        
+    stats = { 'net': net_stats, 'gross': gross_stats }
+    charts = { 'net': net_charts, 'gross': gross_charts }
+    
+    strategies = Strategy.query.filter(Strategy.user_id == current_user.id).all()
+    
+    return render_template('trade/performance.html', stats=stats, strategies=strategies, charts=charts, 
+                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol if asset_symbol else '', watchlist_id=watchlist_id, limit=limit, side=side)
+
+@journal_pages.route(rule='/trade/<int:id>')
 @login_required
 def get_trade(id) -> str:
     trade: Trade = Trade.query.get_or_404(id)
@@ -95,11 +167,11 @@ def get_trade(id) -> str:
     daily = Candle.query.filter(Candle.symbol == trade.symbol, 
                                 Candle.date >= datetime.combine(one_year_ago, time(0, 0, 0)), 
                                 Candle.date <= datetime.combine(today, time(23, 59, 59)), 
-                                Candle.timeframe == '1d').all()
+                                Candle.timeframe == '1d').distinct().order_by(Candle.date.asc()).all()
     intraday = Candle.query.filter(Candle.symbol == symbol, 
                                    Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), 
                                    Candle.date <= datetime.combine(today, time(23, 59, 59)), 
-                                   Candle.timeframe == '1m').all()
+                                   Candle.timeframe == '1m').distinct().order_by(Candle.date.asc()).all()
 
     trade_data = {
         "id": trade.id,
@@ -156,12 +228,11 @@ def get_trade(id) -> str:
 
     return render_template('trade/detail.html', trade_data=trade_data)
 
-@journal_bp.route(rule='/add', methods=['GET', 'POST'])
+@journal_pages.route(rule='/add', methods=['GET', 'POST'])
 @login_required
 def add_trade() -> Response | str:
 
     if request.method == 'POST':
-        #TODO: Candles and transactions must be in UTC for correct manipulation.
         symbol = request.form['symbol']
 
         # try:
@@ -230,10 +301,11 @@ def add_trade() -> Response | str:
         for i in range(len(condition_id)):
             trade.add_condition(condition_id=condition_id[i], value=condition_value[i])
     
-        # TODO: Test the candles download
-        today = date.today()
+        today = trade.entry_date or date.today()
         one_year_ago = today - timedelta(days=365)
         week_ago = today - timedelta(days=5)
+        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+            week_ago = week_ago + timedelta(days=1)
         # Descargar velas con Yahoo Finance
         download_candles(db=db,
                          symbol=symbol,
@@ -244,7 +316,7 @@ def add_trade() -> Response | str:
         
         db.session.commit()
         flash('Trade registrado exitosamente!', 'success')
-        return redirect(url_for('journal_endpoints.journal'))
+        return redirect(url_for('journal_pages.journal'))
         
         # except Exception as e:
         #     db.session.rollback()
@@ -256,7 +328,7 @@ def add_trade() -> Response | str:
     
     return render_template('trade/create.html', strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
-@journal_bp.route('/edit/<int:trade_id>', methods=['GET', 'POST'])
+@journal_pages.route('/edit/<int:trade_id>', methods=['GET', 'POST'])
 @login_required
 def edit_trade(trade_id):
     trade: Trade = Trade.query.get_or_404(trade_id)
@@ -274,7 +346,7 @@ def edit_trade(trade_id):
             trade.entry_time = request.form.get('entry_time', '')
             trade.quantity = float(request.form['quantity'])
             trade.trade_type = request.form['trade_type']
-            trade.description = request.form.get('description', '')
+            trade.description = request.form.get('description', '').replace('\n', ' ').replace('\r', ' ').replace('\t', '    ')
             trade.why_profitable = request.form.get('why_profitable', '')
             trade.influencing_factors = request.form.get('influencing_factors', '')
             trade.strategy_id = request.form.get('strategy_id') if request.form.get('strategy_id') else None
@@ -340,7 +412,7 @@ def edit_trade(trade_id):
 
             db.session.commit()
             flash('Trade actualizado correctamente', 'success')
-            return redirect(url_for('journal_endpoints.journal'))
+            return redirect(url_for('journal_pages.journal'))
 
         except Exception as e:
             db.session.rollback()
@@ -351,7 +423,7 @@ def edit_trade(trade_id):
 
     return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict() for strat in strategies], date=date)
 
-@journal_bp.route('/delete/<int:trade_id>', methods=['POST'])
+@journal_pages.route('/delete/<int:trade_id>', methods=['POST'])
 @login_required
 def delete_trade(trade_id):
     trade: Trade = Trade.query.get_or_404(trade_id)
@@ -374,7 +446,259 @@ def delete_trade(trade_id):
         db.session.rollback()
         flash(f'Error al eliminar el trade: {str(e)}', 'error')
 
-    return redirect(url_for('journal_endpoints.journal'))
+    return redirect(url_for('journal_pages.journal'))
+
+
+journal_bp = Blueprint(name='journal_endpoints', import_name=__name__)
+
+@journal_bp.route('/')
+@login_required
+def journal_api() -> str:
+    # Obtener datos del calendario
+    balances: list[AccountBalance] = AccountBalance.query.filter(AccountBalance.user_id==current_user.id).order_by(AccountBalance.date).all()
+    calendar_data: dict = {}
+    for balance in balances:
+        calendar_data[balance.date.strftime('%Y-%m-%d')] = {
+            'return': balance.daily_return,
+            'balance': balance.balance
+        }
+    
+    selected_date: str | None = request.args.get('date')
+    trades: list[Trade] = []
+    if selected_date:
+        trades = Trade.query.filter(Trade.exit_date == selected_date, Trade.user_id==current_user.id).all()
+    
+    return render_template(template_name_or_list='trade/journal.html', calendar_data=calendar_data, 
+                         trades=trades, selected_date=selected_date)
+
+@journal_bp.route(rule='/trades/<date>/month')
+@login_required
+def month_trades(date) -> Response:
+    date: datetime = datetime.strptime(date, '%Y-%m-%d')
+    start = datetime(date.year, date.month, 1).date()
+    end = datetime(date.year, date.month+1, 1).date()
+    trades: list = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
+    return jsonify([t.to_dict(equity=True) for t in trades])
+
+@journal_bp.route(rule='/add', methods=['GET', 'POST'])
+@login_required
+def add_trade_api() -> Response | str:
+
+    if request.method == 'POST':
+        symbol = request.form['symbol']
+
+        # try:
+        # Crear el trade básico primero
+        trade = Trade(
+            symbol=symbol,
+            company_name=request.form.get('company_name', ''),
+            balance=request.form.get('balance', 0.0),
+            trade_type=request.form['trade_type'],
+            description=request.form.get('description', ''),
+            why_profitable=request.form.get('why_profitable', ''),
+            influencing_factors=request.form.get('influencing_factors', ''),
+            strategy_id=request.form.get('strategy_id') if request.form.get('strategy_id') else None,
+            stop_loss=float(request.form['stop_loss']) if request.form.get('stop_loss') else None,
+            take_profit=float(request.form['take_profit']) if request.form.get('take_profit') else None,
+            hashtags=request.form.get('hashtags', ''),
+            user_id=current_user.id
+        )
+        
+        db.session.add(trade)
+        db.session.flush([trade])
+
+        transaction_date: list[str] = request.form.getlist('transaction_date')
+        transaction_time: list[str] = request.form.getlist('transaction_time')
+        transaction_timezone: list[str] = request.form.getlist('transaction_timezone')
+        transaction_price: list[str] = request.form.getlist('transaction_price')
+        transaction_type: list[str] = request.form.getlist('transaction_type')
+        transaction_quantity: list[str] = request.form.getlist('transaction_quantity')
+        transaction_commission: list[str] = request.form.getlist('transaction_commission')
+        for i in range(len(transaction_date)):
+            trade.add_transaction(date=datetime.strptime(transaction_date[i], '%Y-%m-%d').date(), 
+                                  price=float(transaction_price[i]), 
+                                time=localToUtc(date=transaction_date[i], time=transaction_time[i], tz=transaction_timezone[i] if len(transaction_timezone) > 0 else 'Europe/Madrid', mode='time') if len(transaction_timezone) > 0 else transaction_time[i], 
+                                quantity=float(transaction_quantity[i]), 
+                                commission=float(transaction_commission[i]), type=transaction_type[i])
+
+        error_id: list[str] = request.form.getlist('error_id')
+        error_descriptions: list[str] = request.form.getlist('error_description')
+        error_category: list[str] = request.form.getlist('error_category')
+        error_severity: list[str] = request.form.getlist('error_severity')
+        for i in range(len(error_id)):
+            print(dict(id=error_id[i], description=error_descriptions[i], impact_level=error_severity[i], category=error_category[i]))
+            trade.add_error(id=error_id[i], description=error_descriptions[i], user_id=current_user.id, impact_level=error_severity[i], category=error_category[i])
+        
+        # Guardar archivos multimedia
+        images: list[FileStorage] = request.files.getlist('images')
+        videos: list[FileStorage] = request.files.getlist('videos')
+        
+        if images and any(img.filename for img in images):
+            for path in save_uploaded_files(images, 'images', trade.id):
+                db.session.add(Media(
+                    url=path,
+                    trade_id=trade.id
+                ))
+        
+        if videos and any(vid.filename for vid in videos):
+            for path in save_uploaded_files(videos, 'videos', trade.id):
+                db.session.add(Media(
+                    url=path,
+                    trade_id=trade.id
+                ))
+        
+        # Guardar condiciones de estrategia cumplidas
+        condition_id = request.form.getlist('condition_id')
+        condition_value = request.form.getlist('condition_value')
+        for i in range(len(condition_id)):
+            trade.add_condition(condition_id=condition_id[i], value=condition_value[i])
+    
+        today = trade.entry_date or date.today()
+        one_year_ago = today - timedelta(days=365)
+        week_ago = today - timedelta(days=5)
+        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+            week_ago = week_ago + timedelta(days=1)
+        # Descargar velas con Yahoo Finance
+        download_candles(db=db,
+                         symbol=symbol,
+                         config=[
+                             {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                             {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                         ])
+        
+        db.session.commit()
+        flash('Trade registrado exitosamente!', 'success')
+        return redirect(url_for('journal_pages.journal'))
+        
+        # except Exception as e:
+        #     db.session.rollback()
+        #     flash(f'Error al registrar el trade: {str(e)}', 'error')
+    
+    # GET request - mostrar formulario
+    strategies = Strategy.query.all()
+    errors = Error.query.filter_by(is_active=True).all()
+    
+    return render_template('trade/create.html', strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
+
+@journal_bp.route('/edit/<int:trade_id>', methods=['GET', 'POST'])
+@login_required
+def edit_trade_api(trade_id):
+    trade: Trade = Trade.query.get_or_404(trade_id)
+
+    if trade.user_id != current_user.id:
+        abort(403)
+    
+    if request.method == 'POST':
+        try:
+            trade_exit_date = trade.exit_date
+            trade.entry_date = datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date()
+            trade.symbol = request.form['symbol'].upper()
+            trade.company_name = request.form.get('company_name', '')
+            trade.entry_price = float(request.form['entry_price'])
+            trade.entry_time = request.form.get('entry_time', '')
+            trade.quantity = float(request.form['quantity'])
+            trade.trade_type = request.form['trade_type']
+            trade.description = request.form.get('description', '').replace('\n', ' ').replace('\r', ' ').replace('\t', '    ')
+            trade.why_profitable = request.form.get('why_profitable', '')
+            trade.influencing_factors = request.form.get('influencing_factors', '')
+            trade.strategy_id = request.form.get('strategy_id') if request.form.get('strategy_id') else None
+            trade.stop_loss = float(request.form['stop_loss']) if request.form.get('stop_loss') else None
+            trade.take_profit = float(request.form['take_profit']) if request.form.get('take_profit') else None
+            trade.hashtags = request.form.get('hashtags', '')
+
+            # Si hay datos de salida, actualizar y recalcular PnL
+            if request.form.get('exit_price'):
+                trade.exit_price = float(request.form['exit_price'])
+                trade.exit_time = request.form.get('exit_time', '')
+                trade.exit_date = datetime.strptime(request.form['exit_date'], '%Y-%m-%d').date()
+
+                if trade.trade_type == 'LONG':
+                    trade.profit_loss = (trade.exit_price - trade.entry_price) * trade.quantity - trade.commission
+                else:
+                    trade.profit_loss = (trade.entry_price - trade.exit_price) * trade.quantity - trade.commission
+            
+            error_descriptions = request.form.getlist('error_description')
+            error_category = request.form.getlist('error_category')
+            error_severity = request.form.getlist('error_severity')
+            trade.remove_errors()
+            for i in range(len(error_descriptions)):
+                trade.add_error(description=error_descriptions[i], user_id=trade.user_id, impact_level=error_severity[i], category=error_category[i])
+            
+            # Actualizar archivos multimedia si se subieron nuevos
+            images = request.files.getlist('images')
+            videos = request.files.getlist('videos')
+            
+            if images and any(img.filename for img in images):
+                for path in save_uploaded_files(images, 'images', trade.id):
+                    db.session.add(Media(
+                        url=path,
+                        trade_id=trade.id
+                    ))
+            
+            if videos and any(vid.filename for vid in videos):
+                for path in save_uploaded_files(videos, 'videos', trade.id):
+                    db.session.add(Media(
+                        url=path,
+                        trade_id=trade.id
+                    ))
+
+            # Actualizar condiciones estratégicas (borrar y volver a insertar)
+            condition_id = request.form.getlist('condition_id')
+            condition_value = request.form.getlist('condition_value')
+            trade.remove_conditions()
+            for i in range(len(condition_id)):
+                trade.add_condition(condition_id=condition_id[i], value=condition_value[i])
+        
+
+            # Descargar velas con Yahoo Finance
+            today = trade.exit_date if trade.exit_date else date.today()
+            one_year_ago = trade.entry_date - timedelta(days=365)
+            week_ago = trade.entry_date - timedelta(days=5)
+            symbol = trade.symbol
+            download_candles(db=db,
+                            symbol=symbol,
+                            config=[
+                                {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                            ])
+
+            db.session.commit()
+            flash('Trade actualizado correctamente', 'success')
+            return redirect(url_for('journal_pages.journal'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar el trade: {str(e)}', 'error')
+
+    strategies = Strategy.query.all()
+    errors = Error.query.filter_by(is_active=True).all()
+
+    return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict() for strat in strategies], date=date)
+
+@journal_bp.route('/delete/<int:trade_id>', methods=['POST'])
+@login_required
+def delete_trade_api(trade_id):
+    trade: Trade = Trade.query.get_or_404(trade_id)
+
+    if trade.user_id != current_user.id:
+        abort(403)
+
+    try:
+        db.session.delete(trade)
+        db.session.commit()
+
+        # Eliminar archivos multimedia del sistema
+        trade_path = os.path.join(UPLOAD_FOLDER, str(trade.id))
+        if os.path.exists(trade_path):
+            import shutil
+            shutil.rmtree(trade_path)
+
+        flash('Trade eliminado correctamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar el trade: {str(e)}', 'error')
+
+    return redirect(url_for('journal_pages.journal'))
 
 @journal_bp.route('/complete-performance')
 @login_required
@@ -666,7 +990,7 @@ def globalPerformance():
 
 @journal_bp.route(rule='/performance')
 @login_required
-def performance() -> str:
+def performance_api() -> str:
     # ===== OBTENER FILTROS =====
     start = request.args.get('start', type=str)
     end = request.args.get('end', type=str)
@@ -707,7 +1031,7 @@ def performance() -> str:
 
     if end:
         end_date = datetime.strptime(end, '%Y-%m-%d').date()
-        base_query = base_query.filter(Trade.entry_date <= end_date)
+        base_query = base_query.filter(or_(Trade.entry_date <= end_date, Trade.entry_date == None)) # TODO: And if it is a swing trade?
     else:
         end = base_query.with_entities(func.max(Trade.entry_date)).scalar().strftime('%Y-%m-%d')
     
@@ -715,21 +1039,28 @@ def performance() -> str:
     if limit:
         base_query = base_query.limit(limit)
     
-    # ===== OBTENER DATOS =====
+    # Get data
     all_trades = base_query.order_by(Trade.entry_date).distinct().all()
 
-    # ===== CALCULAR ESTADÍSTICAS =====
-    stats = PerformanceMetrics(trades=all_trades).getComplete()
+    # Calculate statistics and charts data
+    stats_object = TradePerformance(data=all_trades)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    net_stats, gross_stats, net_charts, gross_charts = loop.run_until_complete(
+        asyncio.gather(
+            deepcopy(stats_object).getStats(gross=False),
+            deepcopy(stats_object).getStats(gross=True),
+            deepcopy(stats_object).getCharts(gross=False),
+            deepcopy(stats_object).getCharts(gross=True)
+        )
+    )
+    loop.close()
+        
+    stats = { 'net': net_stats, 'gross': gross_stats }
+    charts = { 'net': net_charts, 'gross': gross_charts }
     
-    charts = {
-        'net': PerformanceCharts(trades=all_trades, mode='net').getAll(),
-        'gross': PerformanceCharts(trades=all_trades, mode='gross').getAll(),
-    }
-    # ===== OBTENER DATOS ADICIONALES =====
-    strategies = Strategy.query.filter(Strategy.user_id == current_user.id).all()
-    
-    return render_template('trade/performance.html', stats=stats, strategies=strategies, charts=charts, 
-                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol if asset_symbol else '', watchlist_id=watchlist_id, limit=limit, side=side)
+    return jsonify(stats=stats, charts=charts)
 
 def get_balance_data():
     """Obtener datos de balance histórico"""

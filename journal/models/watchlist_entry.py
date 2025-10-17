@@ -1,10 +1,11 @@
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from sqlalchemy import and_
 
 from .base import Model, db
 from .watchlist_condition import WatchlistCondition
 from .level import Level, watchlist_levels
+from .candle import Candle
 
 watchlist_scoring = db.Table('watchlist_scoring',
     db.Column('watchlist_entry_id', db.Integer, db.ForeignKey('watchlist_entry.id'), primary_key=True),
@@ -193,3 +194,21 @@ class WatchlistEntry(Model):
     
     def delete_watchlist(self):
         self.date_exit = date.today()
+
+    def getCandles(self, timeframe='1m') -> list[Candle]:
+        
+        start_datetime = datetime.combine(self.date, datetime.strptime('00:00:00', '%H:%M:%S').time())
+        end_datetime = datetime.combine(self.date_exit or datetime.now().date(), datetime.strptime('23:59:59', '%H:%M:%S').time())
+
+        candles = Candle.query.filter(
+            Candle.symbol == self.symbol,
+            Candle.date >= start_datetime,
+            Candle.date <= end_datetime,
+            Candle.timeframe == timeframe
+        ).distinct().order_by(Candle.date.asc()).all()
+
+        if not candles:
+            print(f'No candles data between {start_datetime} and {end_datetime} for {self.symbol}')
+            return []
+        
+        return candles

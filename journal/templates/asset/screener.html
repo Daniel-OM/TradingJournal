@@ -644,8 +644,8 @@
                             </thead>
                             <tbody id="topGainersTableBody">`;
             JSON.parse(data['data']).forEach(item => {
-                txt += `<tr>
-                    <th scope="row" onclick="showStockDetails('${item.ticker}')">${item.ticker}</th>
+                txt += `<tr onclick="showStockDetails('${item.ticker}')" style="cursor: pointer;">
+                    <th scope="row">${item.ticker}</th>
                     <td>${item.company}</td>
                     <td>${item.sector}</td>
                     <td>${item.industry}</td>

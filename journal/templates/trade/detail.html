@@ -183,7 +183,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='chart.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart.js') }}"></script>
 <script>
     // Sample trade data - replace with real data from your backend
     const tradeData = JSON.parse('{{ trade_data|tojson }}');
@@ -385,12 +385,12 @@
     }
 
     function editTrade () {
-        window.location.href = `{{ url_for('journal_endpoints.edit_trade', trade_id=0) }}`.replace('0', tradeData.id);
+        window.location.href = `{{ url_for('journal_pages.edit_trade', trade_id=0) }}`.replace('0', tradeData.id);
     }
 
     async function deleteTrade () {
         if (confirm('¿Estás seguro de que quieres borrar este trade?')) {
-            const url = `{{ url_for('journal_endpoints.delete_trade', trade_id=0) }}`.replace('0', tradeData.id);
+            const url = `{{ url_for('journal_pages.delete_trade', trade_id=0) }}`.replace('0', tradeData.id);
             try {
                 const response = await fetch(url, {
                     method: 'POST',
