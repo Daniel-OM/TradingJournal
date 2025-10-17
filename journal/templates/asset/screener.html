@@ -1,0 +1,770 @@
+
+{% extends "base.html" %}
+
+{% block title %}Stock Screener{% endblock %}
+
+{% block style %}
+<link href="{{ url_for('static', filename='css/chart.css') }}" rel="stylesheet">
+<style>
+
+    .chart-container {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .news-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1rem 1.5rem 1rem 1.5rem !important;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .news-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-decoration: none;
+
+            &:hover {
+                color: #667eea;
+            }
+        }
+
+        .news-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+    }
+
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 3rem;
+    }
+
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-color: #667eea;
+        border-right-color: transparent;
+    }
+
+    .error-message {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        display: none;
+    }
+
+    .tab-content {
+        margin-top: 2rem;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+
+        .nav-link {
+            color: var(--text-secondary);
+            border: none;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+
+            &:hover {
+                color: var(--text-primary);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            &.active {
+                color: #667eea;
+                background: rgba(102, 126, 234, 0.1);
+                border-bottom: 3px solid #667eea;
+            }
+        }
+    }
+
+    .fade-in {
+        animation: slideUp20 0.5s ease-in;
+    }
+
+    @media (max-width: 768px) {        
+        .price-container {
+            text-align: center;
+            margin-top: 1rem;
+        }
+    }
+
+    .company-logo {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        margin-right: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Stock Header -->
+    <div class="card fade-in mt-4">
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs border-bottom" id="tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="top_gainers-tab" data-bs-toggle="tab" data-bs-target="#top_gainers" type="button">
+                    <i class="fas fa-chart-line me-2"></i>Top Gainers
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="new_highs-tab" data-bs-toggle="tab" data-bs-target="#new_highs" type="button">
+                    <i class="fas fa-newspaper me-2"></i>New Highs
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="overbought-tab" data-bs-toggle="tab" data-bs-target="#overbought" type="button">
+                    <i class="fas fa-chart-bar me-2"></i>Overbought
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="unusual_volume-tab" data-bs-toggle="tab" data-bs-target="#unusual_volume" type="button">
+                    <i class="fas fa-chart-bar me-2"></i>Unusual Volume
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="top_losers-tab" data-bs-toggle="tab" data-bs-target="#top_losers" type="button">
+                    <i class="fas fa-chart-bar me-2"></i>Top Losers
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="new_lows-tab" data-bs-toggle="tab" data-bs-target="#new_lows" type="button">
+                    <i class="fas fa-chart-bar me-2"></i>New Lows
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="oversold-tab" data-bs-toggle="tab" data-bs-target="#oversold" type="button">
+                    <i class="fas fa-chart-bar me-2"></i>Oversold
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="container">
+            <div class="loading-spinner">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Getting market data...</p>
+            </div>
+        
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span id="errorText">Error while getting market data</span>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content mt-0" id="tabContent">
+            <div class="tab-pane fade show active" id="top_gainers">
+            </div>
+
+            <div class="tab-pane fade mt-3" id="new_highs">
+            </div>
+
+            <div class="tab-pane fade" id="overbought">
+            </div>
+            
+            <div class="tab-pane fade" id="unusual_volume">
+            </div>
+            
+            <div class="tab-pane fade" id="top_losers">
+            </div>
+            
+            <div class="tab-pane fade" id="new_lows">
+            </div>
+            
+            <div class="tab-pane fade" id="oversold">
+            </div>
+        </div>
+
+        <div class="card-footer d-flex pb-3">
+            <p class="text-muted mb-0" id="headquartersData"></p>
+            <button class="btn bg-primary ms-auto ml-0" onclick="addToWatchlist()">
+                <i class="fas fa-plus me-2"></i>Add To Watchlist
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modals %}
+
+<!-- Modal para detalles del error -->
+<div class="modal fade" id="watchlistModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-analytics me-2"></i>
+                    Choose Watchlist
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="watchlistOptions"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn bg-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn bg-primary" onclick="addToWatchlist()">
+                    <i class="fas fa-plus me-1"></i>Add
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
+    
+    <script>
+        let currentChart = null;
+        let chart;
+
+        function updateChart(candles) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            const labels = candles.map((candle, index) => `Day ${candle.date}`);
+            const prices = candles.map((candle, index) => candle.close);
+            
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Price',
+                        data: prices,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#a0a6b8'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#a0a6b8',
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+
+        function initializeChart (candleData=null) {
+            if (chart) {
+                // Si ya existe un chart, actualizarlo con nuevos datos
+                if (candleData) { // TODO: candleData is the same as window.asset.data.candles? remove one of them
+                    chart.loadData(window.asset.data.candles);
+                } else {
+                    chart.generateData();
+                }
+                chart.reset();
+                chart.drawCharts();
+            } else {
+                // Crear nuevo chart
+                chart = new TradingChart(document.getElementById('charts'), window.asset.data.candles, null, null, {
+                    'background': 'transparent',
+                    'gridColor': 'rgba(0, 0, 0, 0.1)',
+                    'textColor': 'var(--text-color-primary)'
+                }, false);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('errorMessage').style.display = 'none';
+            }, 5000);
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function showLoading () {
+            document.getElementById('tabContent').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+
+        function hideLoading () {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('tabContent').style.display = 'block';
+        }
+
+        class ApiCalls {
+            getTopGainers (callback) {
+                fetch("{{ url_for('screener_endpoints.get_top_gainers') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getNewHighs (callback) {
+                fetch("{{ url_for('screener_endpoints.get_new_highs') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getOverbought (callback) {
+                fetch("{{ url_for('screener_endpoints.get_overbought') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getUnusualVolume (callback) {
+                fetch("{{ url_for('screener_endpoints.get_unusual_volume') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getTopLosers (callback) {
+                fetch("{{ url_for('screener_endpoints.get_top_losers') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getNewLows (callback) {
+                fetch("{{ url_for('screener_endpoints.get_new_lows') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getOversold (callback) {
+                fetch("{{ url_for('screener_endpoints.get_oversold') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getHotSectors (callback) {
+                fetch("{{ url_for('screener_endpoints.get_hot_sectors') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getHotIndustries (callback) {
+                fetch("{{ url_for('screener_endpoints.get_hot_industries') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getEarningsCalendar (callback) {
+                fetch("{{ url_for('screener_endpoints.get_earnings_calendar') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+
+            getPremarketScreener (callback) {
+                fetch("{{ url_for('screener_endpoints.get_premarket_data') }}", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Screener not found or server error.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        callback(data['data']);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error while getting the data: ' + error.message);
+                        hideLoading();
+                    });
+            }
+        }
+
+        function populateScreenerTable(data, id) {
+            const tableBody = document.getElementById(id);
+            tableBody.innerHTML = '';
+
+            let txt = `
+                    <div class="col">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Symbol</th>
+                                    <th scope="col">Company</th>
+                                    <th scope="col">Sector</th>
+                                    <th scope="col">Industry</th>
+                                    <th scope="col">Country</th>
+                                    <th scope="col">MCap</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">% Change</th>
+                                    <th scope="col">Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topGainersTableBody">`;
+            JSON.parse(data['data']).forEach(item => {
+                txt += `<tr>
+                    <th scope="row" onclick="showStockDetails('${item.ticker}')">${item.ticker}</th>
+                    <td>${item.company}</td>
+                    <td>${item.sector}</td>
+                    <td>${item.industry}</td>
+                    <td>${item.country}</td>
+                    <td>${item.market_cap}</td>
+                    <td>${item.price}</td>
+                    <td>${item.change * 100}</td>
+                    <td>${item.volume}</td>
+                </tr>`;
+            });
+            txt += `
+                        </tbody>
+                    </table>
+                </div>`;
+            tableBody.innerHTML = txt;
+        }
+
+        document.getElementById('top_gainers-tab').addEventListener('click', function() {
+            showLoading();
+            const api = new ApiCalls();
+            api.getTopGainers(function(data) {
+                populateScreenerTable(data, 'top_gainers');
+                hideLoading();
+            });
+        });
+        document.getElementById('new_highs-tab').addEventListener('click', function() {
+            showLoading();
+            const api = new ApiCalls();
+            api.getNewHighs(function(data) {
+                populateScreenerTable(data, 'new_highs');
+                hideLoading();
+            });
+        });
+        document.getElementById('overbought-tab').addEventListener('click', function() {
+            showLoading();
+            const api = new ApiCalls();
+            api.getOverbought(function(data) {
+                populateScreenerTable(data, 'overbought');
+                hideLoading();
+            });
+        });
+        document.getElementById('unusual_volume-tab').addEventListener('click', function() {
+            showLoading();
+            const api = new ApiCalls();
+            api.getUnusualVolume(function(data) {
+                populateScreenerTable(data, 'unusual_volume');
+                hideLoading();
+            });
+        });
+        document.getElementById('top_losers-tab').addEventListener('click', function () {
+            showLoading();
+            const api = new ApiCalls();
+            api.getTopLosers(function (data) {
+                populateScreenerTable(data, 'top_losers');
+                hideLoading();
+            });
+        });
+        document.getElementById('new_lows-tab').addEventListener('click', function () {
+            showLoading();
+            const api = new ApiCalls();
+            api.getNewLows(function (data) {
+                populateScreenerTable(data, 'new_lows');
+                hideLoading();
+            });
+        });
+        document.getElementById('oversold-tab').addEventListener('click', function () {
+            showLoading();
+            const api = new ApiCalls();
+            api.getOversold(function (data) {
+                populateScreenerTable(data, 'oversold');
+                hideLoading();
+            });
+        });
+
+        function showStockDetails(symbol) {
+            window.location.href = `{{ url_for('asset_endpoints.asset') }}?symbol=${symbol}`;
+        }
+            
+        // Additional features
+        function openWatchlistModal() {
+            showLoading('watchlistModal');
+            document.getElementById('watchlistOptions').innerHTML = `
+                <select class="form-select" id="watchlistSelect">
+                    <option value="" disabled selected>Selecciona una lista de seguimiento</option>
+                    <option value="default">Lista de seguimiento por defecto</option>
+                    <option value="personal">Lista de seguimiento personal</option>
+                </select>
+            `;
+            // Traer la lista de watchlists para añadir este activo y sus datos a la watchlist
+            new bootstrap.Modal(document.getElementById('watchlistModal')).show();
+            hideLoading('watchlistModal');
+
+        }
+
+        function addToWatchlist() {
+            // Add to watchlist functionality
+            const data = window.asset['data'];
+            const entry = {
+                'symbol': data.symbol,
+                'company_name': data.companyStandardName,
+                'atr': data.current_price != 0 ? data.ATR_14 / data.current_price : 0,
+                'volume': data.volume,
+                'avg_volume': data.avg_volume,
+                'market_cap': data.market_cap,
+                'float_shares': data.shares_float,
+                'per': data.peRatio,
+                'eps': data.eps,
+                'exchange': data.exchange,
+                'sector': data.sector,
+                'industry': data.industry,
+                'country': data.country,
+                'price': data.current_price,
+            };
+            window.location.href = `{{ url_for('watchlist_endpoints.add_watchlist_entry') }}?entry=${JSON.stringify(entry)}`;
+        }
+
+        // Initialize lazy loading
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('top_gainers-tab').click();
+        });
+    </script>
+{% endblock %}

@@ -168,7 +168,7 @@ def errors():
                          min_count=min_count,
                          severity=severity)
 
-@error_bp.route('/api/error-details')
+@error_bp.route('/api/details')
 @login_required
 def error_details():
     error_description = request.args.get('error')
@@ -202,7 +202,7 @@ def error_details():
         'trend_data': [{'date': day.date.strftime('%Y-%m-%d'), 'count': day.count} for day in trend_data]
     })
 
-@error_bp.route('/api/error-trades')
+@error_bp.route('/api/trades')
 @login_required
 def error_trades():
     error_description = request.args.get('error')
@@ -237,7 +237,7 @@ def error_trades():
     
     return jsonify({'trades': trades_data})
 
-@error_bp.route('/api/export-errors')
+@error_bp.route('/api/export')
 @login_required
 def export_errors():
     """Exportar datos de errores a CSV"""
@@ -285,14 +285,14 @@ def export_errors():
     )
 
 # Ruta para gestionar errores (agregar, editar, eliminar)
-@error_bp.route('/manage-errors')
+@error_bp.route('/manage')
 @login_required
 def manage_errors():
     """Página para gestionar errores únicos"""
     errors = Error.query.filter_by(is_active=True, user_id=current_user.id).order_by(Error.description).all()
     return render_template('manage_errors.html', errors=errors)
 
-@error_bp.route('/api/create-error', methods=['POST'])
+@error_bp.route('/api/create', methods=['POST'])
 @login_required
 def create_error():
     """Crear un nuevo error único"""
@@ -315,7 +315,7 @@ def create_error():
     
     return jsonify({'success': True, 'error_id': error.id})
 
-@error_bp.route('/api/update-error/<int:error_id>', methods=['PUT'])
+@error_bp.route('/api/update/<int:error_id>', methods=['PUT'])
 @login_required
 def update_error(error_id):
     """Actualizar un error existente"""
@@ -332,7 +332,7 @@ def update_error(error_id):
     db.session.commit()
     return jsonify({'success': True})
 
-@error_bp.route('/api/delete-error/<int:error_id>', methods=['DELETE'])
+@error_bp.route('/api/delete/<int:error_id>', methods=['DELETE'])
 @login_required
 def delete_error(error_id):
     """Desactivar un error (soft delete)"""

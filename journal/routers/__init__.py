@@ -6,5 +6,6 @@ from .watchlist import watchlist_bp
 from .journal import journal_bp
 from .error import error_bp
 from .asset import asset_bp
+from .screener import screener_bp, screener_pages
 
 from .utils import *
