@@ -1,6 +1,7 @@
 
 import datetime as dt
 from random import choice
+from warnings import filters
 
 import certifi
 import numpy as np
@@ -106,7 +107,7 @@ class FinvizBase:
 
     # URLs and endpoints used
     BASE_URL: str = 'https://finviz.com'
-    SCREENER_EP: str = '/screener.ashx?v=111&ft=4&o=-change&f='
+    SCREENER_EP: str = '/screener.ashx?v=111&ft=4&o=-change'
     TICKER_EP: str = '/quote.ashx?ty=c&p=d&b=1&t='
     GROUPS_EP: str = '/groups.ashx?v=140&o=-change'
 
@@ -240,24 +241,34 @@ class FinvizScraper(FinvizBase):
         else:
             return pd.DataFrame()
     
-    def _getPages(self, filters:list=None) -> pd.DataFrame:
+    def _getPages(self, filters:list=None, signal:str=None) -> pd.DataFrame:
 
         filters: list = self.filters if filters == None else filters
         complete_data: list = []
         
         # Defining the url and connecting to obtain html 
-        self.tempurl: str = f"{self.BASE_URL}{self.SCREENER_EP}{','.join(self.filters)}"
+        self.tempurl: str = f"{self.BASE_URL}{self.SCREENER_EP}"
+        if filters is not None:
+            self.tempurl += f"&f={','.join(filters)}"
+        if signal is not None:
+            self.tempurl += f"&s={signal}"
+            
         self.soup: BeautifulSoup = self._request(self.tempurl)
         complete_data.append(self._getTable())
-        page = self.soup.find('td', {'id': 'screener_pagination'})
+        paging = self.soup.find('td', {'id': 'screener_pagination'})
         
-        if page:
-            n = float(page.find('a', {'class': 'is-selected'}).get_text()) - 1
+        if paging:
+            pages = paging.find_all('a', {'class': 'screener-pages'})
+            last_page = None
+            for page in pages[::-1]:
+                if 'is-next' not in page['class']:
+                    last_page = page
+                    break
+                
+            n: int = int(last_page.get_text())
             if n > 0:
                 for i in range(1,n):
-                    self.tempurl: str = f"{self.BASE_URL}{self.SCREENER_EP}\
-                                        {','.join(self.filters)}&r={i*2}1"
-                    self.soup: BeautifulSoup = self._request(self.tempurl)
+                    self.soup: BeautifulSoup = self._request(f"{self.tempurl}&r={i*2}1")
                     complete_data.append(self._getTable())
                     
             return pd.concat(complete_data)
@@ -267,7 +278,9 @@ class FinvizScraper(FinvizBase):
     def screener(self,exchange:list=['nyse','nasd','amex'],
                   filters:list=['cap_smallunder','sh_avgvol_o500','sh_outstanding_u50',
                                 'sh_price_u10','sh_relvol_o3'],
-                  minpctchange:float=None, justsymbols:bool=False) -> pd.DataFrame:
+                  signal:str=None,
+                  minpctchange:float=None, justsymbols:bool=False,
+                  df:bool=True) -> pd.DataFrame:
       
         '''
         Function to get data from Finviz Screener based on some filters.
@@ -292,22 +305,16 @@ class FinvizScraper(FinvizBase):
             DataFrame containing the screener.
         '''
 
-        # Variables
-        self.minpctchange = minpctchange
-        self.justsymbols = justsymbols
-        
-        minpctchange = self.minpctchange if minpctchange == None else minpctchange
-        
         # Getting data
-        if len(exchange) == 0:
-            self.filters: list = filters
-            self.screener_df: pd.DataFrame = self._getPages(filters=filters)
+        self.filters: list = filters if filters is not None else []
+        if exchange is None or len(exchange) == 0:
+            self.screener_df: pd.DataFrame = self._getPages(filters=self.filters, signal=signal)
 
         else:
             temp_data: list = []
             for ex in exchange:
-                self.filters: list = ['exch_'+ex]+filters
-                temp: pd.DataFrame = self._getPages(filters=['exch_'+ex]+filters)
+                self.filters.append('exch_'+ex)
+                temp: pd.DataFrame = self._getPages(filters=self.filters, signal=signal)
                 temp['Exchange'] = ex
                 temp_data.append(temp.copy())
                             
@@ -320,7 +327,15 @@ class FinvizScraper(FinvizBase):
         self.screener_df['Price'] = self.screener_df['Price'].astype(float)
         self.screener_df['Change'] = self.screener_df['Change'].apply(lambda x: self._toNumeric(x.replace('%', ''))/100)
         self.screener_df['Volume'] = self.screener_df['Volume'].str.replace(',','').astype(float)
-        self.screener_df: pd.DateFrame = self.screener_df[self.screener_df['Change'] >= minpctchange/100]
+        if minpctchange is not None:
+            self.screener_df: pd.DataFrame = self.screener_df[self.screener_df['Change'] >= minpctchange/100]
+
+        if justsymbols:
+            return self.screener_df['Ticker'].to_list()
+        elif not df:
+            self.screener_df.fillna(value='null', inplace=True)
+            self.screener_df.columns = [c.lower().replace(' ', '_').replace('/', '_') for c in self.screener_df.columns]
+            return self.screener_df.to_dict('records')
         
         return self.screener_df
 
@@ -792,13 +807,54 @@ class FinvizTicker(FinvizBase):
             }
         }
 
+class FinvizScreenerConfig:
 
+    exchange: list[str] = ['nasd','nyse','amex']
+    filters: list[str] = []
+    signal: str = None
+    minpctchange: float = None
+    justsymbols: bool = False
+
+    def __init__(self, exchange: list[str] = None, filters: list[str] = None, signal: str = None, minpctchange: float = None, justsymbols: bool = False) -> None:
+        self.exchange = exchange
+        self.filters = filters
+        self.signal = signal
+        self.minpctchange = minpctchange
+        self.justsymbols = justsymbols
+
+    def to_dict(self) -> dict:
+        return self.__dict__
 
 if __name__ == '__main__':
 
     if True:
-        fv = FinvizTicker('AAPL')
-        info = fv.info()
+        fv = FinvizScraper(random_headers=True)
+
+        screeners: list[FinvizScreenerConfig] = [
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_topgainers', minpctchange=None, justsymbols=False),
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_newhigh', minpctchange=None, justsymbols=False),
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_overbought', minpctchange=None, justsymbols=False),
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_unusualvolume', minpctchange=None, justsymbols=False),
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_toplosers', minpctchange=None, justsymbols=False),
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_newlow', minpctchange=None, justsymbols=False),
+            FinvizScreenerConfig(exchange=['nasd','nyse','amex'], filters=None, signal='ta_oversold', minpctchange=None, justsymbols=False),
+        ]
+        results = {}
+        for screener in screeners:
+            results[screener.signal] = {
+                'config': screener,
+                'name': screener.signal.replace('ta_', '').capitalize(),
+                'data': fv.screener(
+                    exchange=screener.exchange,
+                    filters=screener.filters,
+                    signal=screener.signal,
+                    minpctchange=screener.minpctchange,
+                    justsymbols=screener.justsymbols
+                )
+            }
+        
+        # fv = FinvizTicker('AAPL')
+        # info = fv.info()
     else:
         fv = FinvizScraper()
         if False:
