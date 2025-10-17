@@ -44,8 +44,8 @@ asset_bp = Blueprint(name='asset_endpoints', import_name=__name__)
 @asset_bp.route('/')
 @login_required
 def asset() -> str:
-
-    return render_template(template_name_or_list='asset/asset.html')
+    symbol = request.args.get('symbol', None)
+    return render_template(template_name_or_list='asset/asset.html', symbol=symbol)
 
 @asset_bp.route('/api/<string:symbol>')
 @login_required
@@ -139,7 +139,6 @@ def get_stock_fundamentals(symbol):
     """
     try:
         symbol = symbol.upper()
-        logger.info(f"Fetching fundamentals for {symbol}")
         
         benzinga = Benzinga(symbol)
         finviz = FinvizTicker(symbol)
@@ -230,7 +229,6 @@ def get_stock_news(symbol):
     """
     try:
         symbol = symbol.upper()
-        logger.info(f"Fetching news for {symbol}")
         
         benzinga = Benzinga(symbol)
         finviz = FinvizTicker(symbol)
@@ -290,7 +288,6 @@ def get_stock_earnings(symbol):
     """
     try:
         symbol = symbol.upper()
-        logger.info(f"Fetching earnings for {symbol}")
         
         benzinga = Benzinga(symbol)
         
@@ -327,7 +324,6 @@ def get_stock_ownership(symbol):
     """
     try:
         symbol = symbol.upper()
-        logger.info(f"Fetching ownership data for {symbol}")
         
         benzinga = Benzinga(symbol)
         finviz = FinvizTicker(symbol)
@@ -356,181 +352,3 @@ def get_stock_ownership(symbol):
         
     except Exception as e:
         return handle_error(e, symbol)
-
-@asset_bp.route('/api/screener')
-@login_required
-def stock_screener():
-    """
-    Endpoint para el screener de acciones usando Finviz
-    """
-    try:
-        # Obtener parámetros de filtro
-        exchange = request.args.getlist('exchange') or ['nyse', 'nasd']
-        min_price = float(request.args.get('min_price', 1))
-        max_price = float(request.args.get('max_price', 1000))
-        min_volume = int(request.args.get('min_volume', 100000))
-        min_market_cap = request.args.get('min_market_cap', 'small')
-        
-        logger.info(f"Running screener with filters")
-        
-        # Configurar filtros para Finviz
-        filters = []
-        
-        # Filtros de precio
-        if min_price > 1:
-            filters.append(f'sh_price_o{min_price}')
-        if max_price < 1000:
-            filters.append(f'sh_price_u{max_price}')
-            
-        # Filtro de volumen
-        if min_volume > 0:
-            volume_filter = 'sh_avgvol_o'
-            if min_volume >= 1000000:
-                filters.append(f'{volume_filter}{min_volume//1000000}M')
-            elif min_volume >= 1000:
-                filters.append(f'{volume_filter}{min_volume//1000}k')
-                
-        # Filtro de market cap
-        if min_market_cap:
-            cap_filters = {
-                'micro': 'cap_micro',
-                'small': 'cap_small',
-                'mid': 'cap_mid',
-                'large': 'cap_large'
-            }
-            if min_market_cap in cap_filters:
-                filters.append(cap_filters[min_market_cap])
-        
-        scraper = FinvizScraper()
-        results = scraper.screener(
-            exchange=exchange,
-            filters=filters,
-            minpctchange=-100,  # Sin límite de cambio
-            justsymbols=False
-        )
-        
-        # Convertir DataFrame a formato JSON
-        if not results.empty:
-            screener_results = results.to_dict('records')
-        else:
-            screener_results = []
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'results': screener_results[:100],  # Limitar a 100 resultados
-                'total_found': len(screener_results),
-                'filters_applied': {
-                    'exchange': exchange,
-                    'min_price': min_price,
-                    'max_price': max_price,
-                    'min_volume': min_volume,
-                    'min_market_cap': min_market_cap
-                }
-            },
-            'error': None
-        })
-        
-    except Exception as e:
-        return handle_error(e)
-
-@asset_bp.route('/api/sectors/hot')
-@login_required
-def get_hot_sectors():
-    """
-    Obtiene sectores con mejor rendimiento
-    """
-    try:
-        logger.info("Fetching hot sectors")
-        
-        scraper = FinvizScraper()
-        hot_sectors = scraper.hotSectors(column='%Week', df=False)
-        
-        return jsonify({
-            'success': True,
-            'data': hot_sectors[:20],  # Top 20 sectores
-            'error': None
-        })
-        
-    except Exception as e:
-        return handle_error(e)
-
-@asset_bp.route('/api/industries/hot')
-@login_required
-def get_hot_industries():
-    """
-    Obtiene industrias con mejor rendimiento
-    """
-    try:
-        logger.info("Fetching hot industries")
-        
-        scraper = FinvizScraper()
-        hot_industries = scraper.hotIndustry(column='%Week', df=False)
-        
-        return jsonify({
-            'success': True,
-            'data': hot_industries[:20],  # Top 20 industrias
-            'error': None
-        })
-        
-    except Exception as e:
-        return handle_error(e)
-
-@asset_bp.route('/api/earnings/calendar')
-@login_required
-def get_earnings_calendar():
-    """
-    Obtiene el calendario de earnings
-    """
-    try:
-        date_from = request.args.get('date_from')
-        date_to = request.args.get('date_to')
-        
-        logger.info(f"Fetching earnings calendar from {date_from} to {date_to}")
-        
-        benzinga = Benzinga()
-        
-        if date_from and date_to:
-            earnings_calendar = benzinga.earningsHistoric(
-                date_from=date_from,
-                date_to=date_to,
-                df=False
-            )
-        else:
-            earnings_calendar = benzinga.earningsCalendar(df=False)
-        
-        return jsonify({
-            'success': True,
-            'data': earnings_calendar,
-            'error': None
-        })
-        
-    except Exception as e:
-        return handle_error(e)
-
-@asset_bp.route('/api/premarket')
-@login_required
-def get_premarket_data():
-    """
-    Obtiene datos pre-mercado
-    """
-    try:
-        logger.info("Fetching premarket data")
-        
-        benzinga = Benzinga()
-        gainers, losers, earnings = benzinga.premarketData()
-        
-        premarket_data = {
-            'gainers': gainers.to_dict('records') if not gainers.empty else [],
-            'losers': losers.to_dict('records') if not losers.empty else [],
-            'earnings_today': earnings.to_dict('records') if not earnings.empty else []
-        }
-        
-        return jsonify({
-            'success': True,
-            'data': premarket_data,
-            'error': None
-        })
-        
-    except Exception as e:
-        return handle_error(e)
