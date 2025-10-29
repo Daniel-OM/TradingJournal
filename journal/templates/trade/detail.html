@@ -201,7 +201,7 @@
         const pnlPercent = ((tradeData.profit_loss / (tradeData.entry_price * tradeData.quantity)) * 100).toFixed(2); // TODO: Calculate the return correctly and with last asset price
         const tradePnl = document.getElementById('tradePnl');
         tradePnl.textContent = `${tradeData.profit_loss >= 0 ? '+' : ''}$${tradeData.profit_loss.toFixed(2)} (${pnlPercent}%)`;
-        const pnlParent = tradePnl.parentElement
+        const pnlParent = tradePnl.parentElement;
         pnlParent.classList.add(tradeData.profit_loss > 0 ? 'bg-success' : tradeData.profit_loss < 0 ? 'bg-danger' : 'bg-warning');
         const pnlGranParent = pnlParent.parentElement;
         pnlGranParent.classList.add(tradeData.profit_loss > 0 ? 'bg-success' : tradeData.profit_loss < 0 ? 'bg-danger' : 'bg-warning');
@@ -328,7 +328,7 @@
         tradeData.errors.forEach(error => {
             const errorItem = document.createElement('div');
             errorItem.className = 'card shadow-none error-item';
-            const severityClass = error.severity == 'low' ? 'bg-info' : error.severity == 'medium' ? 'bg-warning' : 'bg-danger' ;
+            const severityClass = error.severity == 'low' ? 'bg-info' : error.severity == 'medium' ? 'bg-warning' : 'bg-danger';
             errorItem.innerHTML = `
                     <div class="error-header">
                         <div class="error-description">${error.description}</div>
@@ -487,11 +487,8 @@
             chart.drawCharts();
         } else {
             // Crear nuevo chart
-            chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, { 
-                startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time, 
-                'background': 'transparent',
-                'gridColor': 'rgba(0, 0, 0, 0.1)',
-                'textColor': 'var(--text-color-primary)'
+            chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, {
+                startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time,
             }, false, 'trace'); // TODO: Fix the charts so that replay is available
         }
     }

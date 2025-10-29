@@ -6,7 +6,7 @@ from flask_cors import CORS
 from .config import DevConfig, ProdConfig
 from .login import login_manager
 from .models import db, migrate
-from .routers import index_bp, strategy_bp, watchlist_bp, journal_bp, journal_pages, error_bp, user_bp, asset_bp, screener_pages, screener_bp
+from .routers import index_bp, strategy_bp, watchlist_bp, journal_bp, journal_pages, error_bp, user_bp, asset_pages, asset_bp, screener_pages, screener_bp, ai_bp
 
 def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
 
@@ -35,9 +35,11 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
     app.register_blueprint(blueprint=journal_pages, url_prefix='/journal')
     app.register_blueprint(blueprint=journal_bp, url_prefix='/api/journal')
     app.register_blueprint(blueprint=error_bp, url_prefix='/error')
-    app.register_blueprint(blueprint=asset_bp, url_prefix='/asset')
+    app.register_blueprint(blueprint=asset_pages, url_prefix='/asset')
+    app.register_blueprint(blueprint=asset_bp, url_prefix='/api/asset')
     app.register_blueprint(blueprint=screener_pages, url_prefix='/screener')
     app.register_blueprint(blueprint=screener_bp, url_prefix='/api/screener')
+    app.register_blueprint(blueprint=ai_bp, url_prefix='/api/ai')
 
 
     db.init_app(app=app)

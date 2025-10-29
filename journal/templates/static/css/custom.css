@@ -320,6 +320,14 @@ div.container {
             box-shadow: none;
         }
     }
+
+    &.btn-transparent {
+        background: rgb(from var(--dark-color) r g b / 0.1);
+    }
+
+    &.active {
+        background: rgb(from var(--primary-color) r g b / 0.2);
+    } 
 }
 .btn-none {
     border: none;

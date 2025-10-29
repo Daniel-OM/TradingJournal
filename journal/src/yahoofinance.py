@@ -4,7 +4,9 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 # import requests
+from urllib.parse import urljoin, urlsplit
 from curl_cffi import requests, BrowserTypeLiteral, CurlHttpVersion
+from bs4 import BeautifulSoup
 
 timeframes: list[str] = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "ytd", "max"]
 
@@ -19,7 +21,7 @@ class YahooBase:
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Content-Type': 'application/json',
-        'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+        'Cookie': '', #'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
         'Host': base_url.split('//')[-1],
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
@@ -28,7 +30,14 @@ class YahooBase:
         'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"Windows"',
-        'x-crumb': 'e4rJKMRoY0B',
+        'x-crumb': '', #'e4rJKMRoY0B',
+    }
+    DEFAULT_HEADERS: dict[str, str] = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "*/*",
     }
 
     def __init__(self, verify:bool=True, impersonate:BrowserTypeLiteral='chrome', wait:bool=True, verbose:bool=False) -> None:
@@ -38,54 +47,462 @@ class YahooBase:
         self.verbose: bool = verbose
         self._last_time = None
         self.session = requests.Session()
-        self.getCrumb(init=False)
+        self.session.headers.update({
+            "User-Agent": self.headers["User-Agent"],
+            "Accept-Language": self.headers["Accept-Language"]
+        })
+        # Inicializar crumb/cookies (no forzamos init=True para evitar usar valores hardcodeados)
+        self.crumb: str = None
+        self.cookie: str = None
+        try:
+            self.getCrumb(force=True)
+        except Exception:
+            if self.verbose:
+                print("Warning: initial getCrumb failed")
 
-    def _get(self, url:str, params:dict[str, str]=None, headers:dict[str, str]=None) -> requests.Response:
+    def _sleep_if_needed(self):
         if self.wait:
             wait = randint(5, 20)/10 - (dt.datetime.now() - self._last_time).total_seconds() if self._last_time is not None else 0
-            if self.verbose: print('Waiting GET: ', wait)
+            if self.verbose: print('Waiting: ', wait)
             if wait > 0: time.sleep(wait)
+
+    def _get(self, url:str, params:dict[str, str]=None, headers:dict[str, str]=None, timeout:int=300) -> requests.Response:
+        
+        self._sleep_if_needed()
+        hdrs = {**self.session.headers}
+        if headers:
+            hdrs.update(headers)
+        # usamos session.get para mantener cookies
+        self.r: requests.Response = self.session.get(url=url, params=params, headers=hdrs, http_version=CurlHttpVersion.V1_1, timeout=timeout, impersonate=self.impersonate, verify=self.verify, allow_redirects=True)
+        if self.r.status_code == 401:
+            self.getCrumb(force=True)
+            if 'x-crumb' in hdrs: hdrs['x-crumb'] = self.crumb
+            if 'crumb' in hdrs: hdrs['crumb'] = self.crumb
+            if params is not None and 'crumb' in params: params['crumb'] = self.crumb
+            self.r: requests.Response = self.session.get(url=url, params=params, headers=hdrs, http_version=CurlHttpVersion.V1_1, timeout=timeout, impersonate=self.impersonate, verify=self.verify, allow_redirects=True)
             
-        self.r: requests.Response = self.session.get(url=url, params=params, headers=headers, http_version=CurlHttpVersion.V1_1, timeout=300, impersonate=self.impersonate, verify=self.verify)
+        self._last_time: dt.datetime = dt.datetime.now()
+        return self.r
+    
+    def _post(self, url:str, params:dict[str, str]=None, data:dict[str, str]=None, headers:dict[str, str]=None, timeout:int=300) -> requests.Response:
+        
+        self._sleep_if_needed()
+        hdrs = {**self.session.headers}
+        if headers:
+            hdrs.update(headers)
+        # IMPORTANTE: usar self.session.post para que las cookies se mantengan en la sesión
+        self.r: requests.Response = self.session.post(url=url, params=params, data=data, headers=hdrs, http_version=CurlHttpVersion.V1_1, timeout=timeout, impersonate=self.impersonate, verify=self.verify, allow_redirects=True)
+        if self.r.status_code == 401:
+            self.getCrumb(force=True)
+            if 'x-crumb' in hdrs: hdrs['x-crumb'] = self.crumb
+            if 'crumb' in hdrs: hdrs['crumb'] = self.crumb
+            if params is not None and 'crumb' in params: params['crumb'] = self.crumb
+            if data is not None and 'crumb' in data: data['crumb'] = self.crumb
+            self.r: requests.Response = self.session.post(url=url, params=params, data=data, headers=hdrs, http_version=CurlHttpVersion.V1_1, timeout=timeout, impersonate=self.impersonate, verify=self.verify, allow_redirects=True)
+
+        self._last_time: dt.datetime = dt.datetime.now()
+        return self.r
+
+    def _get_cookie_basic(self, timeout: int = 20) -> bool:
+        """
+        Strategy 'basic': visit fc.yahoo.com to get initial cookies set by server.
+        Returns True if any yahoo cookies were added to session.
+        """
+        try:
+            if self.verbose: print("Trying basic cookie fetch (https://fc.yahoo.com)")
+            resp = self._get(url="https://fc.yahoo.com", headers=self.DEFAULT_HEADERS, timeout=timeout)
+        except Exception as e:
+            if self.verbose: print(f"Basic cookie: request failed: {e}")
+            return False
+
+        # check session cookies for yahoo domains
+        cookie_jar: requests.Cookies = self.session.cookies
+        y_keys: list = [k for k in cookie_jar.get_dict().keys() if 'yahoo' in k or 'A1' in k or 'GUC' in k or 'A3' in k]
+        # sometimes cookie names not include 'yahoo' so simply check for known cookie names:
+        known: bool = any(name in cookie_jar.get_dict() for name in ("A1", "A3", "GUC", "GUC-pref"))
+        has: bool = len(y_keys) > 0 or known
+        if self.verbose: print(f"Basic cookie: found keys {cookie_jar.get_dict().keys()}; result={has}")
+        
+        return has
+
+    def _is_consent_url(self, url: str) -> bool:
+        try:
+            hostname: str = urlsplit(url=url).hostname or ""
+            return hostname.endswith("consent.yahoo.com")
+        except Exception:
+            return False
+
+    def _accept_consent_form(self, consent_resp: requests.Response, timeout: int = 20) -> requests.Response:
+        """
+        Parse the consent page HTML, fill the form fields and POST them back to accept cookies.
+        Returns the final response after following the form action.
+        """
+        soup = BeautifulSoup(markup=consent_resp.text, features="html.parser")
+        form = soup.find(name="form")
+        if not form:
+            if self.verbose: print("No form found on consent page")
+            return consent_resp
+
+        action = form.get("action") or consent_resp.url
+        action = urljoin(base=consent_resp.url, url=action)
+        data: dict = {}
+        for inp in form.find_all("input"):
+            name = inp.get("name")
+            if not name:
+                continue
+            typ = (inp.get("type") or "text").lower()
+            val = inp.get("value") or ""
+            if typ in ("checkbox", "radio"):
+                if "agree" in name.lower() or "accept" in name.lower() or inp.has_attr("checked"):
+                    data[name] = val if val != "" else "1"
+            else:
+                data[name] = val
+
+        # if no obvious accept entry, add a best-effort
+        lowered: set = {k.lower() for k in data.keys()}
+        if not any(("agree" in k or "accept" in k) for k in lowered):
+            data["agree"] = "1"
+
+        headers: dict[str, str]= dict(self.DEFAULT_HEADERS)
+        headers["Referer"] = consent_resp.url
+
+        try:
+            resp: requests.Response = self._post(url=action, data=data, headers=self.DEFAULT_HEADERS, timeout=timeout)
+        except Exception as e:
+            if self.verbose: print(f"Submitting consent form failed: {e}")
+            return consent_resp
+
+        return resp
+
+    def _get_cookie_csrf(self, timeout: int = 20) -> bool:
+        """
+        Strategy 'csrf': go to guce.yahoo.com/consent, extract csrfToken & sessionId,
+        call collectConsent (POST) and copyConsent (GET) to propagate cookies to finance.yahoo.com
+        """
+        if self.verbose: print("Trying csrf cookie flow (https://guce.yahoo.com/consent)")
+        try:
+            resp: requests.Response = self._get(url="https://guce.yahoo.com/consent", headers=self.DEFAULT_HEADERS, timeout=timeout)
+        except Exception as e:
+            if self.verbose: print(f"CSRF cookie request failed: {e}")
+            return False
+
+        # If redirected to a consent form URL, handle accepting form
+        if self._is_consent_url(url=resp.url) or "<form" in resp.text.lower():
+            resp2: requests.Response = self._accept_consent_form(consent_resp=resp, timeout=timeout)
+            # some flows use /v2/collectConsent?sessionId=... endpoint (yfinance posts there too)
+            # now call copyConsent to propagate cookie
+            # yfinance also posts to collectConsent and then calls copyConsent; emulate safe fallback:
+            # Try to find sessionId in the original page to craft collectConsent url
+            soup = BeautifulSoup(markup=resp.text, features="html.parser")
+            session_input = soup.find(name="input", attrs={"name": "sessionId"})
+            if session_input:
+                sessionId = session_input.get("value")
+                collect_url = f"https://consent.yahoo.com/v2/collectConsent?sessionId={sessionId}"
+                copy_url = f"https://guce.yahoo.com/copyConsent?sessionId={sessionId}"
+                try:
+                    self._post(url=collect_url, data={}, headers=dict(self.DEFAULT_HEADERS, Referer=resp.url), timeout=timeout)
+                    self._get(copy_url, headers=dict(self.DEFAULT_HEADERS, Referer=resp.url), timeout=timeout)
+                except Exception:
+                    pass
+            # finally, inspect session cookies
+        # check if yahoo cookies present now
+        cookie_jar = self.session.cookies
+        known = any(name in cookie_jar.get_dict() for name in ("A1", "A3", "GUC", "GUC-pref"))
+        if self.verbose: print(f"CSRF cookie keys now {cookie_jar.get_dict().keys()}; known={known}")
+        
+        return known
+
+    def _get_crumb(self, timeout: int = 20) -> str | None:
+        """
+        Try to obtain a crumb using the current session cookies. Returns crumb string or None.
+        """
+        try:
+            if self.verbose: print("Requesting crumb endpoint")
+            resp = self._get(url="https://query1.finance.yahoo.com/v1/test/getcrumb", headers=self.DEFAULT_HEADERS, timeout=timeout)
+        except Exception as e:
+            if self.verbose: print(f"get_crumb request failed: {e}")
+            return None
+
+        if resp.status_code == 429:
+            if self.verbose: print("Rate limited when requesting crumb")
+            return None
+
+        text = (resp.text or "").strip()
+        if not text or "<html" in text.lower():
+            if self.verbose: print("crumb response is empty or html")
+            return None
+        return text
+
+    def getCrumb(self, force:bool=True, timeout: int = 20) -> tuple[str | None, str]:
+        """
+        Orchestrator: try basic then crumb; if fail, try csrf strategy.
+        Returns (crumb_or_None, strategy_used)
+        """
+        # si ya tenemos crumb y no pedimos force forzado, devolverla
+        if self.crumb and not force:
+            return self.crumb
+        
+        # try basic
+        if self.verbose: print("getCrumb: trying BASIC strategy")
+        if self._get_cookie_basic(timeout=timeout):
+            crumb = self._get_crumb(timeout=timeout)
+            if crumb:
+                self.crumb = crumb
+                # opcional: actualizar header Cookie con cookie actual (no estrictamente necesario)
+                cj = self.session.cookies.get_dict()
+                # formatear cookies como header Cookie si quieres
+                if cj:
+                    self.cookie = '; '.join(f"{k}={v}" for k, v in cj.items())
+                if self.verbose: print("Obtained crumb using BASIC strategy")
+                return crumb
+            else:
+                if self.verbose: print("BASIC strategy didn't yield crumb")
+
+        # fallback to csrf
+        if self.verbose: print("getCrumb: trying CSRF/CONSENT strategy")
+        if self._get_cookie_csrf(timeout=timeout):
+            crumb = self._get_crumb(timeout=timeout)
+            if crumb:
+                self.crumb = crumb
+                # opcional: actualizar header Cookie con cookie actual (no estrictamente necesario)
+                cj = self.session.cookies.get_dict()
+                # formatear cookies como header Cookie si quieres
+                if cj:
+                    self.cookie = '; '.join(f"{k}={v}" for k, v in cj.items())
+                if self.verbose: print("Obtained crumb using CSRF strategy")
+                return crumb
+            else:
+                if self.verbose: print("CSRF strategy didn't yield crumb")
+
+        if self.verbose: print("Failed to obtain crumb with both strategies")
+        return ''
+
+
+class YahooBaseFail:
+
+    base_url: str = 'https://query1.finance.yahoo.com'
+
+    headers: dict[str, str] = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/json',
+        # Cookie inicial opcional; normalmente se sobreescribe con cookies dinámicas
+        'Cookie': '',
+        'Host': base_url.split('//')[-1],
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'x-crumb': '',
+    }
+
+    def __init__(self, verify:bool=True, impersonate:BrowserTypeLiteral='chrome', wait:bool=True, verbose:bool=False) -> None:
+        self.verify: bool = verify
+        self.impersonate:BrowserTypeLiteral = impersonate
+        self.wait: bool = wait
+        self.verbose: bool = verbose
+        self._last_time = None
+        # usa la sesión que prefieras; curl_cffi.requests.Session() soporta impersonate en sus llamadas
+        self.session = requests.Session()
+        # sincroniza headers base en la sesión
+        self.session.headers.update({
+            "User-Agent": self.headers["User-Agent"],
+            "Accept-Language": self.headers["Accept-Language"]
+        })
+        # Inicializar crumb/cookies (no forzamos init=True para evitar usar valores hardcodeados)
+        try:
+            self.getCrumb(force=False)
+        except Exception:
+            if self.verbose:
+                print("Warning: initial getCrumb failed")
+
+    def _sleep_if_needed(self):
+        if self.wait:
+            wait = randint(5, 20)/10 - (dt.datetime.now() - self._last_time).total_seconds() if self._last_time is not None else 0
+            if self.verbose: print('Waiting: ', wait)
+            if wait > 0: time.sleep(wait)
+
+    def _get(self, url:str, params:dict[str, str]=None, headers:dict[str, str]=None) -> requests.Response:
+        self._sleep_if_needed()
+        hdrs = {**self.session.headers}
+        if headers:
+            hdrs.update(headers)
+        # usamos session.get para mantener cookies
+        self.r: requests.Response = self.session.get(url=url, params=params, headers=hdrs, http_version=CurlHttpVersion.V1_1, timeout=300, impersonate=self.impersonate, verify=self.verify, allow_redirects=True)
         self._last_time: dt.datetime = dt.datetime.now()
         return self.r
     
     def _post(self, url:str, params:dict[str, str]=None, data:dict[str, str]=None, headers:dict[str, str]=None) -> requests.Response:
-        if self.wait:
-            wait = randint(5, 20)/10 - (dt.datetime.now() - self._last_time).total_seconds() if self._last_time is not None else 0
-            if self.verbose: print('Waiting POST: ', wait)
-            if wait > 0: time.sleep(wait)
-            
-        self.r: requests.Response = requests.post(url=url, params=params, json=data, headers=headers, http_version=CurlHttpVersion.V1_1, timeout=300, impersonate=self.impersonate, verify=self.verify)
+        self._sleep_if_needed()
+        hdrs = {**self.session.headers}
+        if headers:
+            hdrs.update(headers)
+        # IMPORTANTE: usar self.session.post para que las cookies se mantengan en la sesión
+        self.r: requests.Response = self.session.post(url=url, params=params, data=data, headers=hdrs, http_version=CurlHttpVersion.V1_1, timeout=300, impersonate=self.impersonate, verify=self.verify, allow_redirects=True)
         self._last_time: dt.datetime = dt.datetime.now()
         return self.r
 
-    def getCrumb(self, init:bool=False) -> str:
+    # ---------------------- MÉTODOS YFINANCE-LIKE ------------------------
 
-        if init:
-            url = 'https://query2.finance.yahoo.com/v1/test/getcrumb'
-            headers: dict[str, str] = {
+    def _get_cookie_basic(self, timeout: int = 20) -> bool:
+        """Intentar obtener cookies básicas solicitando fc.yahoo.com"""
+        try:
+            if self.verbose: print("Trying basic cookie fetch (https://fc.yahoo.com)")
+            resp = self._get("https://fc.yahoo.com", headers=None)
+        except Exception as e:
+            if self.verbose: print("basic cookie request failed:", e)
+            return False
+
+        cj = self.session.cookies.get_dict()
+        # Chequeo heurístico: busca nombres comunes de cookies Yahoo
+        known = any(name in cj for name in ("A1", "A3", "GUC", "A1S", "GUC-pref"))
+        # también permitir que existan otras cookies con yahoo en domain; curl_cffi maneja jar internamente
+        if self.verbose: print("Session cookies after basic:", cj.keys())
+        return known
+
+    def _is_consent_url(self, response_url: str) -> bool:
+        try:
+            hostname = urlsplit(response_url).hostname or ""
+            return hostname.endswith("consent.yahoo.com")
+        except Exception:
+            return False
+
+    def _accept_consent_form(self, consent_resp: requests.Response, timeout: int = 20) -> requests.Response:
+        """Parsea la página de consentimiento y envía formulario de aceptación."""
+        soup = BeautifulSoup(consent_resp.text, "html.parser")
+        form = soup.find("form")
+        if not form:
+            if self.verbose: print("No consent form found")
+            return consent_resp
+
+        action = form.get("action") or consent_resp.url
+        action = urljoin(consent_resp.url, action)
+        data = {}
+        for inp in form.find_all("input"):
+            name = inp.get("name")
+            if not name:
+                continue
+            typ = (inp.get("type") or "text").lower()
+            val = inp.get("value") or ""
+            if typ in ("checkbox", "radio"):
+                if "agree" in name.lower() or "accept" in name.lower() or inp.has_attr("checked"):
+                    data[name] = val if val != "" else "1"
+            else:
+                data[name] = val
+        lowered = {k.lower() for k in data.keys()}
+        if not any(("agree" in k or "accept" in k) for k in lowered):
+            data["agree"] = "1"
+
+        headers = {"Referer": consent_resp.url}
+        resp = self._post(action, data=data, headers=headers)
+        return resp
+
+    def _get_cookie_csrf(self, timeout: int = 20) -> bool:
+        """Estrategia CSRF/consent: visitar guce.yahoo.com, enviar formulario, y propagar cookies."""
+        try:
+            if self.verbose: print("Trying csrf cookie flow (https://guce.yahoo.com/consent)")
+            resp = self._get("https://guce.yahoo.com/consent", headers=None)
+        except Exception as e:
+            if self.verbose: print("csrf initial request failed:", e)
+            return False
+
+        # Si la url corresponde a la página de consentimiento, completarla
+        if self._is_consent_url(resp.url) or "<form" in (resp.text or "").lower():
+            resp2 = self._accept_consent_form(resp, timeout=timeout)
+            # intentar replicar collectConsent/copyConsent si aparecen sessionId en el HTML original
+            soup = BeautifulSoup(resp.text, "html.parser")
+            session_input = soup.find("input", attrs={"name": "sessionId"})
+            if session_input:
+                sessionId = session_input.get("value")
+                collect_url = f"https://consent.yahoo.com/v2/collectConsent?sessionId={sessionId}"
+                copy_url = f"https://guce.yahoo.com/copyConsent?sessionId={sessionId}"
+                try:
+                    self._post(collect_url, data={}, headers={"Referer": resp.url})
+                    self._get(copy_url, headers={"Referer": resp.url})
+                except Exception:
+                    # si fallan, no crítico; las cookies pueden haberse establecido por el post del form
+                    pass
+
+        cj = self.session.cookies.get_dict()
+        if self.verbose: print("Session cookies after csrf:", cj.keys())
+        known = any(name in cj for name in ("A1", "A3", "GUC", "A1S", "GUC-pref"))
+        return known
+
+    def _get_crumb(self, timeout: int = 30) -> str | None:
+        """Pedir endpoint getcrumb con la sesión actual."""
+        try:
+            if self.verbose: print("Requesting crumb endpoint")
+            r = self._get("https://query2.finance.yahoo.com/v1/test/getcrumb", headers={
                 'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
                 'Content-Type': 'text/plain',
-                'Cookie': 'dflow=210; GUC=AQABCAFn5ZBoFEIhcgSk&s=AQAAAEagaMWl&g=Z-RGdg; A1=d=AQABBKuyRGACEHbfmOBdBeCkRMrYGIFxTsYFEgABCAGQ5WcUaOTo7L8AAiAAAAcIq7JEYIFxTsY&S=AQAAAge6ioa3POgOxm8OdvEsvpI; A3=d=AQABBKuyRGACEHbfmOBdBeCkRMrYGIFxTsYFEgABCAGQ5WcUaOTo7L8AAiAAAAcIq7JEYIFxTsY&S=AQAAAge6ioa3POgOxm8OdvEsvpI; A1S=d=AQABBKuyRGACEHbfmOBdBeCkRMrYGIFxTsYFEgABCAGQ5WcUaOTo7L8AAiAAAAcIq7JEYIFxTsY&S=AQAAAge6ioa3POgOxm8OdvEsvpI; EuConsent=CQFwyQAQFwyQAAOACKESBJFgAAAAAAAAACiQAAAAAAAA; cmp=t=1743703482&j=1&u=1---&v=74; PRF=t%3DRYCEY%252BRR.L%252BRRU.HM%252BRRU.DU%252B500.PA%252BTSLA%252BSPY%252BRLLCF%252BRYCEF%252BIXP%252BWOOD%252BSLVP%252BPICK%252BILIT%252BRING%26qct-neo%3Dcandle%26qke-neo%3Dfalse%26theme%3Dauto',
-                'origin': 'https://es.finance.yahoo.com',
-                'priority': 'u=1, i',
-                'referer': f'https://es.finance.yahoo.com',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-site',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-                'sec-ch-ua': '"Google Chrome";v="134", "Chromium";v="134", "Not_A Brand";v="24"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-            }
-            r: requests.Response = self._get(url=url, headers=headers)
-            self.headers['x-crumb'] = r.text
-            return r.text
-        else:
-            return self.headers['x-crumb']
+                'Referer': 'https://finance.yahoo.com'
+            })
+        except Exception as e:
+            if self.verbose: print("getcrumb request failed:", e)
+            return None
+
+        if r.status_code == 429:
+            if self.verbose: print("Rate limited when requesting crumb")
+            return None
+        txt = (r.text or "").strip()
+        if not txt or '<html' in txt.lower():
+            if self.verbose: print("crumb response invalid:", txt[:200])
+            return None
+        return txt
+
+    # ---------------------- ORQUESTADOR ------------------------
+
+    def getCrumb(self, init:bool=False) -> str:
+        """
+        Si init=True fuerza la obtención usando valores por defecto.
+        Si init=False intenta reutilizar self.headers['x-crumb'] si ya existe,
+        o intenta obtener cookie+crumb vía basic -> csrf.
+        """
+        # si ya tenemos crumb y no pedimos init forzado, devolverla
+        existing = self.headers.get('x-crumb', '') or ''
+        if existing and not init:
+            return existing
+
+        # 1) intentamos basic
+        if self.verbose: print("getCrumb: trying BASIC strategy")
+        ok = self._get_cookie_basic()
+        if ok:
+            crumb = self._get_crumb()
+            if crumb:
+                self.crumb = crumb
+                # opcional: actualizar header Cookie con cookie actual (no estrictamente necesario)
+                cj = self.session.cookies.get_dict()
+                # formatear cookies como header Cookie si quieres
+                if cj:
+                    self.cookie = '; '.join(f"{k}={v}" for k, v in cj.items())
+                if self.verbose: print("got crumb (basic)")
+                return crumb
+
+        # 2) fallback csrf/consent
+        if self.verbose: print("getCrumb: trying CSRF/CONSENT strategy")
+        ok2 = self._get_cookie_csrf()
+        if ok2:
+            crumb = self._get_crumb()
+            if crumb:
+                self.headers['x-crumb'] = crumb
+                cj = self.session.cookies.get_dict()
+                if cj:
+                    cookie_header = '; '.join(f"{k}={v}" for k, v in cj.items())
+                    self.headers['Cookie'] = cookie_header
+                if self.verbose: print("got crumb (csrf)")
+                return crumb
+
+        # si llegamos aquí, no hemos conseguido crumb
+        if self.verbose: print("getCrumb: failed to obtain crumb")
+        return ""
+
+
 
 class YahooFinance(YahooBase):
 
@@ -121,7 +538,24 @@ class YahooFinance(YahooBase):
             'lang': 'en-US',
             'region': 'US'
         }
-        headers: dict[str, str] = self.headers
+        headers: dict[str, str] = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            'Cookie': self.cookie,
+            'Host': self.base_url.split('//')[-1],
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'x-crumb': self.crumb,
+        }
         r: requests.Response = self._get(url=url, params=params, headers=headers)
         data = r.json()
 
@@ -187,7 +621,7 @@ class YahooFinance(YahooBase):
             'useRecordsResponse': True,
             'lang': 'en-US',
             'region': 'US',
-            'crumb': 'e4rJKMRoY0B'#self.headers['x-crumb']
+            'crumb': self.crumb
         }
         data: dict = {
             "size":limit,
@@ -271,7 +705,7 @@ class YahooFinance(YahooBase):
             'accept-language': 'es-ES,es;q=0.9,en;q=0.8',
             'content-length': len(str(data)),
             'content-type': 'application/json',
-            'cookie': 'dflow=810; A1=d=AQABBKsOemgCEJBzssV3jVnb5VzSOWffCa8FEgABCAFUe2ipaOTy7L8AAiAAAAcIqA56aHi_6WY&S=AQAAAtjvN91_FsfuyrYGHk8Oodw; EuConsent=CQUv5EAQUv5EAAOACKESBzFgAAAAAAAAACiQAAAAAAAA; A1S=d=AQABBKsOemgCEJBzssV3jVnb5VzSOWffCa8FEgABCAFUe2ipaOTy7L8AAiAAAAcIqA56aHi_6WY&S=AQAAAtjvN91_FsfuyrYGHk8Oodw; GUC=AQABCAFoe1RoqUIf1QRh&s=AQAAALUoiRx2&g=aHoOtQ; A3=d=AQABBKsOemgCEJBzssV3jVnb5VzSOWffCa8FEgABCAFUe2ipaOTy7L8AAiAAAAcIqA56aHi_6WY&S=AQAAAtjvN91_FsfuyrYGHk8Oodw; PRF=t%3DGETR; cmp=t=1752840502&j=1&u=1---&v=89',
+            'cookie': self.cookie,
             'origin': 'https://finance.yahoo.com',
             'priority': 'u=1, i',
             'referer': 'https://finance.yahoo.com/research-hub/screener/most_active_penny_stocks/?start=0&count=25',
@@ -282,7 +716,7 @@ class YahooFinance(YahooBase):
             'sec-fetch-mode': 'cors',
             'sec-fetch-site': 'same-site',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-            'x-crumb': 'Ce9NsrXTAnw'
+            'x-crumb': self.crumb
         }
         print(data)
         r: requests.Response = self._post(url=url, params=params, data=data, headers=headers)
@@ -336,7 +770,7 @@ class YahooFinance(YahooBase):
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
             'cache-control': 'no-cache',
             'connection': 'keep-alive',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': self.base_url.split('//')[-1],
             'origin': 'https://es.finance.yahoo.com',
             'pragma': 'no-cache',
@@ -371,7 +805,7 @@ class YahooFinance(YahooBase):
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Cookie': 'dflow=627; PRF=t%3DAAPL%252BXLK%252BSPY%252B500.PA%252BRRU.DU%26theme%3Dauto%26su-oo%3Dtrue%26dock-collapsed%3Dtrue; GUC=AQABCAFoI0ZoS0IZ3wPq&s=AQAAAOEyJ2la&g=aCH-ng; A1=d=AQABBFOTkGcCEDNLPt4eAn0stcNEiUDDjRkFEgABCAFGI2hLaOTo7L8AAiAAAAcIU5OQZ0DDjRk&S=AQAAAtp_iUhvfQ5xsxvZktepZpU; A1S=d=AQABBFOTkGcCEDNLPt4eAn0stcNEiUDDjRkFEgABCAFGI2hLaOTo7L8AAiAAAAcIU5OQZ0DDjRk&S=AQAAAtp_iUhvfQ5xsxvZktepZpU; A3=d=AQABBFOTkGcCEDNLPt4eAn0stcNEiUDDjRkFEgABCAFGI2hLaOTo7L8AAiAAAAcIU5OQZ0DDjRk&S=AQAAAtp_iUhvfQ5xsxvZktepZpU; _yb=MgE0ATEBLTEBMTY3MDMxNzk4Mw==; cmp=t=1747637215&j=1&u=1---&v=80; EuConsent=CQRTEQAQRTEQAAOACKESBpFgAAAAAAAAACiQAAAAAAAA',
+            'Cookie': self.cookie,
             'Host': 'query1.finance.yahoo.com',
             'Origin': 'https://es.finance.yahoo.com',
             'Pragma': 'no-cache',
@@ -419,7 +853,7 @@ class YahooTicker(YahooBase):
     }
 
     def __init__(self, ticker:str, verify:bool=True, impersonate:str='chrome', wait:bool=True, verbose:bool=False):
-        super().__init__(verify, impersonate, wait, verbose)
+        super().__init__(verify=verify, impersonate=impersonate, wait=wait, verbose=verbose)
         self.ticker: str = ticker
 
     def quoteType(self) -> dict:
@@ -433,7 +867,7 @@ class YahooTicker(YahooBase):
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Site': 'same-site',
@@ -452,10 +886,10 @@ class YahooTicker(YahooBase):
         url: str = f'{self.base_url}/v10/finance/quoteSummary/{self.ticker}'
         params: dict = {
             'formatted': True,
-            'modules': 'assetProfile,secFilings',
+            'modules': 'assetProfile,secFilings,institutionOwnership,insiderHolders,summaryDetail,netSharePurchaseActivity,insiderTransactions,majorHoldersBreakdown,majorDirectHolders,fundOwnership',
             'lang': 'en-US',
             'region': 'US',
-            'crumb': 'e4rJKMRoY0B'
+            'crumb': self.crumb
         }
         headers: dict[str, str] = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -464,7 +898,7 @@ class YahooTicker(YahooBase):
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
             'Content-Type': 'application/json',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': self.base_url.split('//')[-1],
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
@@ -473,11 +907,13 @@ class YahooTicker(YahooBase):
             'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'x-crumb': self.getCrumb(),
+            'x-crumb': self.crumb,
         }
         r: requests.Response = self._get(url=url, params=params, headers=headers)
         data = r.json()
         profile = {}
+        if 'quoteSummary' not in data:
+            print(data)
         if data['quoteSummary']['result']:
             if 'assetProfile' not in data['quoteSummary']['result'][0]:
                 return {}
@@ -499,6 +935,9 @@ class YahooTicker(YahooBase):
                                             'unexercised_value': o.get('unexercisedValue', {}).get('raw', None), 
                                             'birth': o.get('yearBorn', None)} for o in profile['company_officers']]
             profile['sec_filings'] = [{'date': f['date'], 'epoch_date': f['epochDate'], 'title': f['title'], 'type': f['type'], 'url': f['edgarUrl']} for f in profile['sec_filings']]
+            if 'majorHoldersBreakdown' in data['quoteSummary']['result'][0]:
+                profile['insiders_pct'] = data['quoteSummary']['result'][0]['majorHoldersBreakdown']['insidersPercentHeld']['raw']
+                profile['institutional_pct'] = data['quoteSummary']['result'][0]['majorHoldersBreakdown']['institutionsPercentHeld']['raw']
 
         # profile = {**profile, **self.quoteType(), **self.quote()}
         
@@ -535,8 +974,8 @@ class YahooTicker(YahooBase):
                 for period in day:
                     session_data.append({
                         'session': session_type.upper(),  # 'PRE', 'REGULAR', 'POST' → 'PRE', 'REG', 'POST'
-                        'start': dt.datetime.utcfromtimestamp(period['start']),
-                        'end': dt.datetime.utcfromtimestamp(period['end']),
+                        'start': dt.datetime.fromtimestamp(timestamp=period['start'], tz=dt.timezone.utc),
+                        'end': dt.datetime.fromtimestamp(timestamp=period['end'], tz=dt.timezone.utc),
                     })
 
         # Convertimos a DataFrame
@@ -583,7 +1022,7 @@ class YahooTicker(YahooBase):
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
             'Content-Type': 'application/json',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': self.base_url.split('//')[-1],
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
@@ -592,7 +1031,7 @@ class YahooTicker(YahooBase):
             'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'x-crumb': self.getCrumb(),
+            'x-crumb': self.crumb,
         }
         r: requests.Response = self._get(url=url, params=params, headers=headers)
         data = r.json()
@@ -638,7 +1077,7 @@ class YahooTicker(YahooBase):
             'Connection': 'keep-alive',
             'Content-Length': '3862',
             'Content-Type': 'text/plain;charset=UTF-8',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': 'finance.yahoo.com',
             'Origin': 'https://finance.yahoo.com',
             'Pragma': 'no-cache',
@@ -650,7 +1089,7 @@ class YahooTicker(YahooBase):
             'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'x-crumb': self.getCrumb(),
+            'x-crumb': self.crumb,
         }
         data: dict = {
             "serviceConfig":{
@@ -739,7 +1178,7 @@ class YahooTicker(YahooBase):
                 "yrid":"6l1sngpjo1fbk",
                 "user":{
                     "age":-2147483648,
-                    "crumb":"CkiKVmOEA..",
+                    "crumb": self.crumb,
                     "firstName":None,
                     "gender":"",
                     "year":0
@@ -790,7 +1229,7 @@ class YahooTicker(YahooBase):
             'Connection': 'keep-alive',
             'Content-Length': '3862',
             'Content-Type': 'text/plain;charset=UTF-8',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': 'finance.yahoo.com',
             'Origin': 'https://finance.yahoo.com',
             'Pragma': 'no-cache',
@@ -802,7 +1241,7 @@ class YahooTicker(YahooBase):
             'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'x-crumb': 'e4rJKMRoY0B',
+            'x-crumb': self.crumb,
         }
         data: dict = {
             "serviceConfig":{
@@ -891,7 +1330,7 @@ class YahooTicker(YahooBase):
                 "yrid":"6l1sngpjo1fbk",
                 "user":{
                     "age":-2147483648,
-                    "crumb":"CkiKVmOEA..",
+                    "crumb":self.crumb,
                     "firstName":None,
                     "gender":"",
                     "year":0
@@ -932,7 +1371,7 @@ class YahooTicker(YahooBase):
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': 'query1.finance.yahoo.com',
             'Origin': 'https://finance.yahoo.com',
             'Pragma': 'no-cache',
@@ -944,7 +1383,7 @@ class YahooTicker(YahooBase):
             'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'x-crumb': self.getCrumb(),
+            'x-crumb': self.crumb,
         }
         r: requests.Response = self._get(url=url, params=params, headers=headers)
         result = r.json()['finance']['result']
@@ -970,14 +1409,14 @@ class YahooTicker(YahooBase):
             'imgHeights': 50,
             'imgLabels': 'logoUrl',
             'imgWidths': 50,
-            'crumb': self.getCrumb(),
+            'crumb': self.crumb,
             'fields': 'optionsType,fromExchange,longName,regularMarketPrice,postMarketChangePercent,postMarketTime,headSymbolAsString,regularMarketChange,preMarketChangePercent,logoUrl,preMarketTime,fiftyTwoWeekLow,shortName,marketCap,preMarketPrice,fromCurrency,preMarketChange,fiftyTwoWeekHigh,regularMarketTime,toCurrency,postMarketPrice,regularMarketVolume,regularMarketOpen,regularMarketChangePercent,underlyingExchangeSymbol,postMarketChange,toExchange,regularMarketSource,underlyingSymbol,messageBoardId'
         }
         headers: dict[str, str] = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
-            'Cookie': 'dflow=210; GUC=AQABCAFn5ZBoFEIhcgSk&s=AQAAAEagaMWl&g=Z-RGdg; A1=d=AQABBKuyRGACEHbfmOBdBeCkRMrYGIFxTsYFEgABCAGQ5WcUaOTo7L8AAiAAAAcIq7JEYIFxTsY&S=AQAAAge6ioa3POgOxm8OdvEsvpI; A3=d=AQABBKuyRGACEHbfmOBdBeCkRMrYGIFxTsYFEgABCAGQ5WcUaOTo7L8AAiAAAAcIq7JEYIFxTsY&S=AQAAAge6ioa3POgOxm8OdvEsvpI; A1S=d=AQABBKuyRGACEHbfmOBdBeCkRMrYGIFxTsYFEgABCAGQ5WcUaOTo7L8AAiAAAAcIq7JEYIFxTsY&S=AQAAAge6ioa3POgOxm8OdvEsvpI; EuConsent=CQFwyQAQFwyQAAOACKESBJFgAAAAAAAAACiQAAAAAAAA; cmp=t=1743703482&j=1&u=1---&v=74; PRF=t%3DRYCEY%252BRR.L%252BRRU.HM%252BRRU.DU%252B500.PA%252BTSLA%252BSPY%252BRLLCF%252BRYCEF%252BIXP%252BWOOD%252BSLVP%252BPICK%252BILIT%252BRING%26qct-neo%3Dcandle%26qke-neo%3Dfalse%26theme%3Dauto',
+            'Cookie': self.cookie,
             'origin': 'https://es.finance.yahoo.com',
             'priority': 'u=1, i',
             'referer': f'https://es.finance.yahoo.com/quote/{self.ticker}/profile/',
@@ -1021,7 +1460,7 @@ class YahooTicker(YahooBase):
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7',
             'cache-control': 'no-cache',
             'connection': 'keep-alive',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': self.base_url.split('//')[-1],
             'origin': 'https://es.finance.yahoo.com',
             'pragma': 'no-cache',
@@ -1056,7 +1495,17 @@ class YahooTicker(YahooBase):
 
     def getFundamental(self, start:dt.datetime, end:dt.datetime, type:str=None, df:bool=True) -> dict:
 
-        if type == None: type = 'quarterlyMarketCap,trailingMarketCap,quarterlyEnterpriseValue,trailingEnterpriseValue,quarterlyPeRatio,trailingPeRatio,quarterlyForwardPeRatio,trailingForwardPeRatio,quarterlyPegRatio,trailingPegRatio,quarterlyPsRatio,trailingPsRatio,quarterlyPbRatio,trailingPbRatio,quarterlyEnterprisesValueRevenueRatio,trailingEnterprisesValueRevenueRatio,quarterlyEnterprisesValueEBITDARatio,trailingEnterprisesValueEBITDARatio'
+        if isinstance(start, dt.datetime):
+            start = start.timestamp()
+        elif isinstance(start, dt.date):
+            start = dt.datetime.combine(start, dt.time(0, 0, 0)).timestamp()
+            
+        if isinstance(end, dt.datetime):
+            end = end.timestamp()
+        elif isinstance(end, dt.date):
+            end = dt.datetime.combine(end, dt.time(23, 59, 59)).timestamp()
+
+        if type == None: type = 'cashAndCashEquivalentsAtCarryingValue,assetsCurrent,assets,liabilitiesCurrent,quarterlyMarketCap,trailingMarketCap,quarterlyEnterpriseValue,trailingEnterpriseValue,quarterlyPeRatio,trailingPeRatio,quarterlyForwardPeRatio,trailingForwardPeRatio,quarterlyPegRatio,trailingPegRatio,quarterlyPsRatio,trailingPsRatio,quarterlyPbRatio,trailingPbRatio,quarterlyEnterprisesValueRevenueRatio,trailingEnterprisesValueRevenueRatio,quarterlyEnterprisesValueEBITDARatio,trailingEnterprisesValueEBITDARatio'
         url: str = f'{self.base_url}/ws/fundamentals-timeseries/v1/finance/timeseries/{self.ticker}'
         params: dict[str, bool|str] = {
             'merge': False,
@@ -1074,7 +1523,7 @@ class YahooTicker(YahooBase):
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Cookie': 'A1=d=AQABBDtm1WYCEFys__46DFFzlPqGPNYPx9EFEgABCAHegGetZ-S2b2UBAiAAAAcInXrRZskjzuQ&S=AQAAAh5MvLzwu_PDCuOIGDVnUjk;',
+            'Cookie': self.cookie,
             'Host': 'query1.finance.yahoo.com',
             'Origin': 'https://finance.yahoo.com',
             'Pragma': 'no-cache',
@@ -1086,14 +1535,14 @@ class YahooTicker(YahooBase):
             'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'x-crumb': self.getCrumb(),
+            'x-crumb': self.crumb,
         }
         r: requests.Response = self._get(url=url, params=params, headers=headers)
         data = {}
         for series in r.json()['timeseries']['result']:
             key = series['meta']['type'][0]
             if series['meta']['symbol'][0] == self.ticker and key in series:
-                temp = pd.DataFrame(data=[{'date': val['asOfDate'], 'value': val['reportedValue']['raw']} for val in series[key]])#, index=series['timestamp'])
+                temp = pd.DataFrame(data=[{'date': val['asOfDate'], 'value': val['reportedValue']['raw']} for val in series[key] if val is not None])#, index=series['timestamp'])
                 # temp.index = pd.to_datetime(temp.index, unit='s')
                 # temp.index = temp.index.tz_localize('UTC').tz_convert('Europe/Madrid')
                 temp.dropna(axis=0, inplace=True)
@@ -1120,7 +1569,7 @@ class YahooTicker(YahooBase):
             'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Cookie': 'dflow=627; PRF=t%3DAAPL%252BXLK%252BSPY%252B500.PA%252BRRU.DU%26theme%3Dauto%26su-oo%3Dtrue%26dock-collapsed%3Dtrue; GUC=AQABCAFoI0ZoS0IZ3wPq&s=AQAAAOEyJ2la&g=aCH-ng; A1=d=AQABBFOTkGcCEDNLPt4eAn0stcNEiUDDjRkFEgABCAFGI2hLaOTo7L8AAiAAAAcIU5OQZ0DDjRk&S=AQAAAtp_iUhvfQ5xsxvZktepZpU; A1S=d=AQABBFOTkGcCEDNLPt4eAn0stcNEiUDDjRkFEgABCAFGI2hLaOTo7L8AAiAAAAcIU5OQZ0DDjRk&S=AQAAAtp_iUhvfQ5xsxvZktepZpU; A3=d=AQABBFOTkGcCEDNLPt4eAn0stcNEiUDDjRkFEgABCAFGI2hLaOTo7L8AAiAAAAcIU5OQZ0DDjRk&S=AQAAAtp_iUhvfQ5xsxvZktepZpU; _yb=MgE0ATEBLTEBMTY3MDMxNzk4Mw==; cmp=t=1747637215&j=1&u=1---&v=80; EuConsent=CQRTEQAQRTEQAAOACKESBpFgAAAAAAAAACiQAAAAAAAA',
+            'Cookie': self.cookie,
             'Host': 'query1.finance.yahoo.com',
             'Origin': 'https://es.finance.yahoo.com',
             'Pragma': 'no-cache',
@@ -1143,16 +1592,19 @@ if __name__ == '__main__':
 
     # print(YahooFinance().search(text='AAPL'))
 
-    yf_ticker = YahooTicker(ticker='AAPL', verify=False)
-    fundamental = yf_ticker.getFundamental(start=int((dt.datetime.now() - dt.timedelta(days=2*365)).timestamp()), end=int(dt.datetime.now().timestamp()), df=True)
-    profile: dict = yf_ticker.getProfile()
-    info: dict = yf_ticker.getTicker()
-    news: list|pd.DataFrame = yf_ticker.getNews()
-    sec: list|pd.DataFrame = yf_ticker.getSecReports()
-    intraday: list|pd.DataFrame = yf_ticker.getPrice(start=int((dt.datetime.now() - dt.timedelta(days=6)).timestamp()), end=int(dt.datetime.now().timestamp()), timeframe='1m')
-    daily: list|pd.DataFrame = yf_ticker.getPrice(start=int((dt.datetime.now() - dt.timedelta(days=365*2)).timestamp()), end=int(dt.datetime.now().timestamp()), timeframe='1d')
+    yf_ticker = YahooTicker(ticker='BYND', verify=False)
+    # fundamental = yf_ticker.getFundamental(start=int((dt.datetime.now() - dt.timedelta(days=2*365)).timestamp()), end=int(dt.datetime.now().timestamp()), df=True)
+    profile: dict = yf_ticker.getTicker()
+
+    if False:
+            
+        info: dict = yf_ticker.getTicker()
+        news: list|pd.DataFrame = yf_ticker.getNews()
+        sec: list|pd.DataFrame = yf_ticker.getSecReports()
+        intraday: list|pd.DataFrame = yf_ticker.getPrice(start=int((dt.datetime.now() - dt.timedelta(days=6)).timestamp()), end=int(dt.datetime.now().timestamp()), timeframe='1m')
+        daily: list|pd.DataFrame = yf_ticker.getPrice(start=int((dt.datetime.now() - dt.timedelta(days=365*2)).timestamp()), end=int(dt.datetime.now().timestamp()), timeframe='1d')
 
 
-    from zoneinfo import ZoneInfo
-    price = YahooTicker('500.PA') \
-                                            .getPrice(start=-90000000000000, end=int(dt.datetime.now().replace(tzinfo=ZoneInfo('Europe/Paris'), hour=0, minute=0, second=0).timestamp()), timeframe='1d', df=True)
+        from zoneinfo import ZoneInfo
+        price = YahooTicker('500.PA') \
+                                                    .getPrice(start=-90000000000000, end=int(dt.datetime.now().replace(tzinfo=ZoneInfo('Europe/Paris'), hour=0, minute=0, second=0).timestamp()), timeframe='1d', df=True)
