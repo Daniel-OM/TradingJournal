@@ -10,6 +10,26 @@ SERVICE_NAME="trading-journal"
 LAST_VERSION_FILE="$APP_DIR/.version"
 VENV_DIR="$APP_DIR/venv"
 
+cd "$APP_DIR" || { echo "No existe $APP_DIR"; exit 1; }
+
+# Traer todo (ramas y tags)
+git fetch --all --tags --prune
+
+LATEST_TAG=$(git ls-remote --tags "$REPO_URL" \
+    | awk '{print $2}' \
+    | sed 's#refs/tags/##' \
+    | grep -v '{}' \
+    | sort -V \
+    | tail -n1)
+
+# Si git fetch falla por 'would clobber existing tag', fuerza la actualización del tag específico:
+if ! git fetch origin --tags; then
+    echo "⚠️ Conflicto de tags: forzando actualización del tag remoto..."
+    # borrar el tag local conflictivo y volver a traer solo ese tag
+    git tag -d "$LATEST_TAG" 2>/dev/null || true
+    git fetch origin "refs/tags/$LATEST_TAG:refs/tags/$LATEST_TAG"
+fi
+
 echo "🔍 Obteniendo último tag usando git..."
 
 # Obtener el último tag usando git ls-remote (no usa API)
@@ -42,9 +62,6 @@ if [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
     echo "💾 Creando backup en $BACKUP_DIR"
     cp -r "$APP_DIR" "$BACKUP_DIR"
 
-    # Navegar al directorio de la app
-    cd "$APP_DIR" || exit 1
-
     # Inicializar repo si no existe
     if [ ! -d "$APP_DIR/.git" ]; then
         echo "📥 Clonando repositorio..."
@@ -54,9 +71,26 @@ if [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
         rm -rf temp_clone
     fi
     
+    # Navegar al directorio de la app
+    cd "$APP_DIR" || exit 1
+    
     # Actualizar repo
     echo "🔄 Actualizando repositorio..."
-    git fetch --all --tags
+    git fetch --all --tags --prune || true
+
+    # Si el tag local existe y apunta a otro commit, eliminarlo para traer el del remoto
+    if git rev-parse "refs/tags/$LATEST_TAG" >/dev/null 2>&1; then
+        # comparar sha local vs remoto
+        local_sha=$(git rev-parse "refs/tags/$LATEST_TAG")
+        remote_sha=$(git ls-remote --tags "$REPO_URL" "refs/tags/$LATEST_TAG" | awk '{print $1}')
+        if [ -n "$remote_sha" ] && [ "$local_sha" != "$remote_sha" ]; then
+            echo "⚠️ Tag local $LATEST_TAG difiere del remoto; actualizando tag..."
+            git tag -d "$LATEST_TAG" || true
+            git fetch origin "refs/tags/$LATEST_TAG:refs/tags/$LATEST_TAG"
+        fi
+    else
+        git fetch origin "refs/tags/$LATEST_TAG:refs/tags/$LATEST_TAG" || true
+    fi
     
     # Limpiar cambios locales si los hay
     git reset --hard HEAD
@@ -64,7 +98,8 @@ if [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
     
     # Cambiar a la nueva tag
     echo "🏷️  Cambiando a tag $LATEST_TAG"
-    git checkout tags/"$LATEST_TAG" -B "release-$LATEST_TAG"
+    # git checkout tags/"$LATEST_TAG" -B "release-$LATEST_TAG"
+    git checkout -B "release-$LATEST_TAG" "tags/$LATEST_TAG"
 
     # Crear entorno virtual si no existe
     if [ ! -d "$VENV_DIR" ]; then
@@ -108,7 +143,7 @@ if [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
     
     # Limpiar backups antiguos (mantener solo los 3 más recientes)
     echo "🧹 Limpiando backups antiguos..."
-    ls -dt "$APP_DIR"-backup-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null
+    ls -dt "$APP_DIR"-backup-* 2>/dev/null | xargs rm -rf 2>/dev/null
     
 else
     echo "✅ La aplicación ya está en la última versión ($CURRENT_VERSION)"

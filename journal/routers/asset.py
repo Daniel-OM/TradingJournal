@@ -90,11 +90,6 @@ def api_asset(symbol:str) -> str:
         benzinga_key_data = {}
         share_data = {}
 
-    # Obtener datos de Edgar# %%
-    doc = SECFiling(cik='1861622')
-    warrants = doc.getElement('ix:nonfraction', {'name': 'us-gaap:ClassOfWarrantOrRightOutstanding'}, last=False, numeric=True)
-    warrants_price = doc.getElement('ix:nonfraction', {'name': 'us-gaap:ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1'}, last=True, numeric=True)
-    
     # Obtener datos de Finviz
     finviz = FinvizTicker(symbol=symbol, random_headers=True)
     finviz_info = finviz.info(df=False)
@@ -277,6 +272,16 @@ def api_asset(symbol:str) -> str:
         } if len(day3) > 0 else {}
     }
     
+    # Obtener datos de Edgar# %%
+    cik = str(finviz_data.get('CIK', None))
+    if cik.lower() != 'none':
+        doc = SECFiling(cik=cik)
+        warrants = doc.getElement('ix:nonfraction', {'name': 'us-gaap:ClassOfWarrantOrRightOutstanding'}, last=False, numeric=True)
+        warrants_price = doc.getElement('ix:nonfraction', {'name': 'us-gaap:ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1'}, last=True, numeric=True)
+    else:
+        warrants = None
+        warrants_price = None
+
     # Combinar y estructurar los datos
     overview_data = {
         **benzinga_info,

@@ -44,7 +44,7 @@ class LLM:
         {data}
 
         ATTACHED FILE URLS FOR RESEARCH:
-        {'\n'.join(file_urls)}
+        {', '.join(file_urls)}
         
         Provide a structured analysis with statistical rigor:
 

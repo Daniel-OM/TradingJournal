@@ -31,10 +31,11 @@ class DevConfig:
     SQLALCHEMY_DATABASE_URI = LOCAL_DB
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Verifica conexiones antes de usarlas
+        "pool_recycle": 300,     # Tiempo en segundos antes de reciclar conexiones (para evitar desconexiones)
         "pool_size": 10,          # Número máximo de conexiones en el pool
         "max_overflow": 5,        # Número de conexiones extra si el pool está lleno
         "pool_timeout": 30,       # Tiempo máximo para esperar una conexión antes de error
-        "pool_recycle": 1800,     # Tiempo en segundos antes de reciclar conexiones (para evitar desconexiones)
     }
     APPLICATION_ROOT = '/'
     STATIC_URL_PATH = '/static'
@@ -45,10 +46,11 @@ class ProdConfig:
     SQLALCHEMY_DATABASE_URI = REMOTE_DB
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Verifica conexiones antes de usarlas
+        "pool_recycle": 300,     # Tiempo en segundos antes de reciclar conexiones (para evitar desconexiones)
         "pool_size": 10,          # Número máximo de conexiones en el pool
         "max_overflow": 5,        # Número de conexiones extra si el pool está lleno
         "pool_timeout": 30,       # Tiempo máximo para esperar una conexión antes de error
-        "pool_recycle": 1800,     # Tiempo en segundos antes de reciclar conexiones (para evitar desconexiones)
     }
     APPLICATION_ROOT = '/'
     STATIC_URL_PATH = '/static'
