@@ -1,10 +1,10 @@
 
 class TradingChart {
-    constructor(element, dailyData = null, intradayData = null, transactionData = null, options = {}, replay = false, level='error') {
+    constructor(element, dailyData = null, intradayData = null, transactionData = null, options = {}, replay = false, level = 'error') {
         this.theme = {
-            background: options?.background || '#ffffff',
-            gridColor: options?.gridColor || '#e0e0e0',
-            textColor: options?.textColor || '#333333',
+            background: options?.background || 'transparent',
+            gridColor: options?.gridColor || (document.body.classList.contains('dark') ? '#2d3b50ff' : '#e0e0e0'),
+            textColor: options?.textColor || (document.body.classList.contains('dark') ? '#f8fafc' : '#1f2937'),
             bullColor: options?.bullColor || '#00ff41',
             bearColor: options?.bearColor || '#ff4757',
             textFont: options?.textFont || '12px Arial',
@@ -13,6 +13,7 @@ class TradingChart {
             startReplay: options?.startReplay || new Date().toISOString(),
             ...options?.theme
         };
+        console.log(`TradingChart initialized with theme: ${JSON.stringify(this.theme)}`);
         this.level = level.toLowerCase();
         this.dailyCanvas = null;
         this.intradayCanvas = null;
@@ -26,7 +27,7 @@ class TradingChart {
         this.dailyViewEnd = 30;
         this.intradayZoom = 1;
         this.intradayViewStart = 0;
-        this.intradayViewEnd = 60; 
+        this.intradayViewEnd = 60;
 
         this.intializeCanvas(element, dailyData != null, intradayData != null, replay);
         // Cargar datos si se proporcionan, sino generar datos de ejemplo
@@ -35,10 +36,10 @@ class TradingChart {
         } else {
             this.generateData();
         }
-            
+
         this.tooltip = null;
         this.createTooltip();
-        
+
         this.setupCanvas();
         this.drawCharts();
 
@@ -79,9 +80,10 @@ class TradingChart {
                 }
             });
         }
+        window.dispatchEvent(new Event('resize'));
     }
 
-    log(text, level='trace') {
+    log (text, level = 'trace') {
         if (this.level === 'none') return;
         level = level.toLowerCase();
         if (level === 'error' && ['error', 'warn', 'debug', 'trace'].includes(this.level)) {
@@ -95,7 +97,7 @@ class TradingChart {
         }
     }
 
-    intializeCanvas(element, daily=true, intraday=true, replay=false, buttons=false) {
+    intializeCanvas (element, daily = true, intraday = true, replay = false, buttons = false) {
 
         const buttonElement = (name) => {
             return `
@@ -207,10 +209,10 @@ class TradingChart {
         if (intraday) {
             if (buttons) {
                 element.querySelector('.intraday-controls .zoom-btn.zoom-in').addEventListener('click', () => {
-                    this.zoomChart('intraday', 1.2)
+                    this.zoomChart('intraday', 1.2);
                 });
                 element.querySelector('.intraday-controls .zoom-btn.zoom-out').addEventListener('click', () => {
-                    this.zoomChart('intraday', 0.8)
+                    this.zoomChart('intraday', 0.8);
                 });
             }
             this.intradayCanvas = document.getElementById('intradayChart');
@@ -218,7 +220,7 @@ class TradingChart {
         }
     }
 
-    setupCanvas() {
+    setupCanvas () {
         // Ajustar canvas para alta resolución
         const ratio = window.devicePixelRatio || 1;
         [this.dailyCanvas, this.intradayCanvas].forEach(canvas => {
@@ -237,7 +239,7 @@ class TradingChart {
         });
     }
 
-    loadData (dailyData, intradayData, transactionData, replay=false) {
+    loadData (dailyData, intradayData, transactionData, replay = false) {
 
         // Prepare transactions
         this.transactions = [];
@@ -299,17 +301,17 @@ class TradingChart {
             if (this.allTransactions.length > 0) {
                 this.log(`There is intraday data and transactions`, 'debug');
                 let indexes = this.allIntradayData
-                                        .map((v, i) => ({ v, i })) // guardar también el índice
-                                        .filter(item => {
-                                            const candleDate = item.v.time;
-                                            const transactionDate = this.allTransactions[0].time;
-                                            return candleDate.getUTCFullYear() === transactionDate.getUTCFullYear() &&
-                                                candleDate.getUTCMonth() === transactionDate.getUTCMonth() &&
-                                                candleDate.getUTCDate() === transactionDate.getUTCDate();
-                                        }).map(item => item.i);
+                    .map((v, i) => ({ v, i })) // guardar también el índice
+                    .filter(item => {
+                        const candleDate = item.v.time;
+                        const transactionDate = this.allTransactions[0].time;
+                        return candleDate.getUTCFullYear() === transactionDate.getUTCFullYear() &&
+                            candleDate.getUTCMonth() === transactionDate.getUTCMonth() &&
+                            candleDate.getUTCDate() === transactionDate.getUTCDate();
+                    }).map(item => item.i);
                 this.log(`These are the indexes: ${indexes}`, 'debug');
                 this.intradayViewStart = Math.max(0, indexes[0]);
-                this.intradayViewEnd = Math.min(indexes[indexes.length-1], intradayLength);
+                this.intradayViewEnd = Math.min(indexes[indexes.length - 1], intradayLength);
                 this.log(`New start and end for window: ${this.intradayViewStart} -> ${this.intradayViewEnd}`, 'debug');
             } else {
                 this.intradayViewStart = Math.max(0, intradayLength - 60);
@@ -327,23 +329,23 @@ class TradingChart {
         }
     }
 
-    generateData() {
+    generateData () {
         // Método de fallback para generar datos de ejemplo si no se proporcionan datos reales
         console.warn('No se proporcionaron datos reales, generando datos de ejemplo...');
-        
+
         // Generar datos de velas diarias
         this.dailyData = [];
         let basePrice = 2.5;
-        
+
         for (let i = 0; i < 30; i++) {
             const date = new Date('2024-07-01');
             date.setDate(date.getDate() + i);
-            
+
             const open = basePrice + (Math.random() - 0.5) * 0.2;
             const close = open + (Math.random() - 0.5) * 0.3;
             const high = Math.max(open, close) + Math.random() * 0.1;
             const low = Math.min(open, close) - Math.random() * 0.1;
-            
+
             this.dailyData.push({
                 date: date,
                 open: open,
@@ -353,25 +355,25 @@ class TradingChart {
                 volume: Math.floor(Math.random() * 1000000) + 500000,
                 id: i + 1
             });
-            
+
             basePrice = close;
         }
 
         // Generar datos intradía (1 minuto)
         this.intradayData = [];
         this.allIntradayData = [];
-        
+
         basePrice = 2.5;
         const startDate = new Date('2024-07-30T09:30:00');
-        
+
         for (let i = 0; i < 390; i++) { // 6.5 horas * 60 minutos
             const time = new Date(startDate.getTime() + i * 60000);
-            
+
             const open = basePrice + (Math.random() - 0.5) * 0.05;
             const close = open + (Math.random() - 0.5) * 0.1;
             const high = Math.max(open, close) + Math.random() * 0.02;
             const low = Math.min(open, close) - Math.random() * 0.02;
-            
+
             const candle = {
                 time: time,
                 open: open,
@@ -381,7 +383,7 @@ class TradingChart {
                 volume: Math.floor(Math.random() * 10000) + 1000,
                 id: i + 1
             };
-            
+
             this.allIntradayData.push(candle);
             basePrice = close;
         }
@@ -390,11 +392,11 @@ class TradingChart {
         // Generar transacciones
         this.transactions = [];
         this.allTransactions = [];
-        
+
         for (let i = 0; i < 20; i++) {
             const randomIndex = Math.floor(Math.random() * this.allIntradayData.length);
             const candle = this.allIntradayData[randomIndex];
-            
+
             const transaction = {
                 time: candle.time,
                 type: Math.random() > 0.5 ? 'buy' : 'sell',
@@ -402,20 +404,20 @@ class TradingChart {
                 quantity: Math.floor(Math.random() * 1000) + 100,
                 id: i + 1
             };
-            
+
             this.allTransactions.push(transaction);
         }
-        
+
         this.allTransactions.sort((a, b) => a.time - b.time);
     }
 
-    setupEventHandlers() {
+    setupEventHandlers () {
         document.getElementById('playBtn').addEventListener('click', () => this.play());
         document.getElementById('pauseBtn').addEventListener('click', () => this.pause());
         document.getElementById('stopBtn').addEventListener('click', () => this.stop());
         document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
         document.getElementById('resetBtn').addEventListener('click', () => this.reset());
-        
+
         const speedSlider = document.getElementById('speedSlider');
         speedSlider.addEventListener('input', (e) => {
             this.speed = parseInt(e.target.value);
@@ -432,7 +434,7 @@ class TradingChart {
         });
     }
 
-    setupInteractive(canvas) {
+    setupInteractive (canvas) {
         let isDragging = false;
         let lastX = 0;
         const chartType = canvas === this.dailyCanvas ? 'daily' : 'intraday';
@@ -448,7 +450,7 @@ class TradingChart {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
+
             if (isDragging) {
                 const deltaX = e.clientX - lastX;
                 lastX = e.clientX;
@@ -479,7 +481,7 @@ class TradingChart {
         });
     }
 
-    createTooltip() {
+    createTooltip () {
         this.tooltip = document.createElement('div');
         this.tooltip.className = 'trading-tooltip';
         this.tooltip.style.cssText = `
@@ -496,19 +498,19 @@ class TradingChart {
         document.body.appendChild(this.tooltip);
     }
 
-    panChart(chartType, deltaX) {
+    panChart (chartType, deltaX) {
         const data = chartType === 'daily' ? this.dailyData : this.allIntradayData;
         if (data.length === 0) return;
-        
+
         const rect = (chartType === 'daily' ? this.dailyCanvas : this.intradayCanvas).getBoundingClientRect();
         const chartWidth = rect.width - this.theme.padding;
         const zoom = chartType === 'daily' ? this.dailyZoom : this.intradayZoom;
         const visibleCandles = Math.floor(chartWidth / (8 * zoom)); // Mínimo 8px por vela
-        
+
         // Calcular cuántas velas mover basado en el deltaX
         const candlesPerPixel = visibleCandles / chartWidth;
         const candlesToMove = Math.round(-deltaX * candlesPerPixel);
-        
+
         if (chartType === 'daily') {
             this.dailyViewStart = Math.max(0, Math.min(data.length - visibleCandles, this.dailyViewStart + candlesToMove));
             this.dailyViewEnd = this.dailyViewStart + visibleCandles;
@@ -516,19 +518,19 @@ class TradingChart {
             this.intradayViewStart = Math.max(0, Math.min(data.length - visibleCandles, this.intradayViewStart + candlesToMove));
             this.intradayViewEnd = this.intradayViewStart + visibleCandles;
         }
-        
+
         this.drawCharts();
     }
-    
-    zoomChart(chartType, factor, mouseX = null) {
+
+    zoomChart (chartType, factor, mouseX = null) {
         const data = chartType === 'daily' ? this.dailyData : this.allIntradayData;
         if (data.length === 0) return;
-        
+
         const rect = (chartType === 'daily' ? this.dailyCanvas : this.intradayCanvas).getBoundingClientRect();
         const chartWidth = rect.width - this.theme.padding;
-        
+
         let currentViewStart, currentViewEnd, currentZoom;
-        
+
         if (chartType === 'daily') {
             currentViewStart = this.dailyViewStart;
             currentViewEnd = this.dailyViewEnd;
@@ -538,17 +540,17 @@ class TradingChart {
             currentViewEnd = this.intradayViewEnd;
             currentZoom = this.intradayZoom;
         }
-        
+
         const newZoom = Math.max(0.1, Math.min(10, currentZoom * factor));
         const visibleCandles = Math.max(5, Math.floor(chartWidth / (8 * newZoom)));
-        
+
         // Si se proporciona mouseX, hacer zoom hacia ese punto
         if (mouseX !== null) {
             const mouseRatio = (mouseX - this.theme.padding) / chartWidth;
             const centerIndex = currentViewStart + (currentViewEnd - currentViewStart) * mouseRatio;
             const newStart = Math.max(0, Math.min(data.length - visibleCandles, Math.floor(centerIndex - visibleCandles * mouseRatio)));
             const newEnd = newStart + visibleCandles;
-            
+
             if (chartType === 'daily') {
                 this.dailyZoom = newZoom;
                 this.dailyViewStart = newStart;
@@ -563,7 +565,7 @@ class TradingChart {
             const center = (currentViewStart + currentViewEnd) / 2;
             const newStart = Math.max(0, Math.min(data.length - visibleCandles, Math.floor(center - visibleCandles / 2)));
             const newEnd = newStart + visibleCandles;
-            
+
             if (chartType === 'daily') {
                 this.dailyZoom = newZoom;
                 this.dailyViewStart = newStart;
@@ -574,13 +576,13 @@ class TradingChart {
                 this.intradayViewEnd = newEnd;
             }
         }
-        
+
         this.drawCharts();
     }
 
-    play() {
+    play () {
         if (this.isPlaying) return;
-        
+
         this.isPlaying = true;
         document.getElementById('playBtn').disabled = true;
         document.getElementById('pauseBtn').disabled = false;
@@ -596,17 +598,17 @@ class TradingChart {
         this.intradayData = [];
         this.transactions = []; // Resetear transacciones para replay
         this.drawIntradayChart([]);
-        
+
         this.replayInterval = setInterval(() => {
             this.nextStep();
         }, 1000 / this.speed);
     }
 
-    pause() {
+    pause () {
         this.isPlaying = false;
         document.getElementById('playBtn').disabled = false;
         document.getElementById('pauseBtn').disabled = true;
-        
+
         if (this.replayInterval) {
             clearInterval(this.replayInterval);
             this.replayInterval = null;
@@ -614,31 +616,31 @@ class TradingChart {
         this.drawCharts();
     }
 
-    stop() {
+    stop () {
         this.pause();
         document.getElementById('stopBtn').disabled = true;
         this.reset();
     }
 
-    reset() {
+    reset () {
         this.currentTime = document.getElementById('startTime') ? new Date(document.getElementById('startTime').value) : null;
         this.intradayData = []; //.slice(0, 60);
         this.transactions = [];
         this.drawCharts();
     }
 
-    nextStep() {
+    nextStep () {
         // Avanzar 1 minuto
         this.currentTime.setMinutes(this.currentTime.getMinutes() + 1);
-        
+
         // Agregar nueva vela intradía si existe
-        const newCandle = this.allIntradayData.find(candle => 
+        const newCandle = this.allIntradayData.find(candle =>
             Math.abs(candle.time - this.currentTime) < 30000
         );
-        
+
         if (newCandle && !this.intradayData.find(c => c.time.getTime() === newCandle.time.getTime())) {
             this.intradayData.push(newCandle);
-            
+
             // Mantener solo las últimas 60 velas en vista
             if (this.intradayData.length > 60) {
                 this.intradayData.shift();
@@ -650,17 +652,17 @@ class TradingChart {
             Math.abs(transaction.time - this.currentTime) < 30000 &&
             !this.transactions.find(t => t.id === transaction.id)
         );
-        
+
         this.transactions.push(...newTransactions);
 
         this.drawCharts();
         this.updateTransactionsList();
 
         // Verificar si hemos llegado al final
-        const endTime = this.allIntradayData.length > 0 ? 
+        const endTime = this.allIntradayData.length > 0 ?
             new Date(this.allIntradayData[this.allIntradayData.length - 1].time) :
             new Date();
-            
+
         if (this.currentTime >= endTime) {
             this.pause();
             document.getElementById('stopBtn').disabled = true;
@@ -691,30 +693,30 @@ class TradingChart {
             this.log(`There is no intraday data to show`, 'warn');
         }
     }
-    
-    showTooltip(e, x, y, chartType) {
+
+    showTooltip (e, x, y, chartType) {
         const allData = chartType === 'daily' ? this.dailyData : this.allIntradayData;
         const viewStart = chartType === 'daily' ? this.dailyViewStart : this.intradayViewStart;
         const viewEnd = chartType === 'daily' ? this.dailyViewEnd : this.intradayViewEnd;
-        
+
         if (allData.length === 0) return;
-        
+
         const visibleData = allData.slice(viewStart, viewEnd);
         if (visibleData.length === 0) return;
-        
+
         const rect = (chartType === 'daily' ? this.dailyCanvas : this.intradayCanvas).getBoundingClientRect();
         const padding = this.theme.padding;
         const chartWidth = rect.width - padding;
         const spacing = chartWidth / visibleData.length;
-        
+
         // Calcular índice de la vela
         const adjustedX = x - padding;
         const index = Math.floor(adjustedX / spacing);
-        
+
         if (index >= 0 && index < visibleData.length) {
             const candle = visibleData[index];
             const date = candle.date || candle.time;
-            
+
             this.tooltip.innerHTML = `
                 <div><strong>${date.toLocaleDateString()} ${date.toLocaleTimeString()}</strong></div>
                 <div>Open: ${candle.open.toFixed(2)}</div>
@@ -723,7 +725,7 @@ class TradingChart {
                 <div>Close: ${candle.close.toFixed(2)}</div>
                 <div>Volume: ${candle.volume?.toLocaleString() || 'N/A'}</div>
             `;
-            
+
             this.tooltip.style.display = 'block';
             this.tooltip.style.left = e.pageX + 10 + 'px';
             this.tooltip.style.top = e.pageY - 10 + 'px';
@@ -737,7 +739,7 @@ class TradingChart {
             this.log(`There id no dailyData to show: ${this.dailyData}`, 'warn');
             return;
         }
-            
+
         const ctx = this.dailyCtx;
         const canvas = this.dailyCanvas;
         const rect = canvas.getBoundingClientRect();
@@ -791,7 +793,7 @@ class TradingChart {
             this.log(`There is no intraday data to show: ${this.allIntradayData}`, 'warn');
             return;
         }
-        
+
         const ctx = this.intradayCtx;
         const canvas = this.intradayCanvas;
         const rect = canvas.getBoundingClientRect();
@@ -844,7 +846,7 @@ class TradingChart {
         this.drawTransactions(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice, spacing, 'intraday', visibleData);
     }
 
-    drawGrid(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice) {
+    drawGrid (ctx, padding, chartWidth, chartHeight, minPrice, maxPrice) {
         ctx.strokeStyle = this.theme.gridColor;
         ctx.lineWidth = 1;
         ctx.setLineDash([2, 2]);
@@ -863,36 +865,43 @@ class TradingChart {
                 ctx.fillStyle = this.theme.textColor;
                 ctx.font = this.theme.textFont;
                 ctx.textAlign = 'right';
+                this.log(`Drawing price label: ${price.toFixed(2)} at x: ${padding - 5} with ${this.theme.textColor} as textcolor`, 'debug');
                 ctx.fillText(price.toFixed(2), padding - 5, y + 4);
             }
         }
 
         ctx.setLineDash([]);
     }
-    
-    drawTimeAxis(ctx, padding, chartWidth, y, data, spacing) {
+
+    drawTimeAxis (ctx, padding, chartWidth, y, data, spacing) {
         ctx.strokeStyle = this.theme.gridColor;
         ctx.fillStyle = this.theme.textColor;
         ctx.font = this.theme.textFont;
         ctx.textAlign = 'center';
-        
+        ctx.textBaseline = 'top';
+
         // Línea del eje
         ctx.beginPath();
         ctx.moveTo(padding, y);
         ctx.lineTo(padding + chartWidth, y);
         ctx.stroke();
-        
+
         // Etiquetas de tiempo
         const maxLabels = 8;
         const step = Math.max(1, Math.floor(data.length / maxLabels));
-        
+
         for (let i = 0; i < data.length; i += step) {
             const x = padding + i * spacing + spacing / 2;
             const date = data[i].date || data[i].time;
-            const label = date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-            
-            ctx.fillText(label, x, y + 20);
-            
+            let label;
+            if (date && date.getHours !== undefined) {
+                label = date.toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } else {
+                label = (new Date(date)).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+            }
+            this.log(`Drawing time label: ${label} at x: ${x}`, 'debug');
+            ctx.fillText(label, x, y + 6);
+
             // Marca en el eje
             ctx.beginPath();
             ctx.moveTo(x, y);
@@ -901,7 +910,7 @@ class TradingChart {
         }
     }
 
-    drawTransactions(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice, spacing, chartType, visibleData = null) {
+    drawTransactions (ctx, padding, chartWidth, chartHeight, minPrice, maxPrice, spacing, chartType, visibleData = null) {
         if (!this.allTransactions || this.allTransactions.length === 0) {
             this.log(`No transactions to show: ${this.allTransactions}`, 'warn');
             return;
@@ -937,15 +946,16 @@ class TradingChart {
         let transactionsDrawn = 0;
         this.allTransactions.forEach(transaction => {
             let index = -1;
-            
+
             this.log(`Processing transaction ${transaction.index}: ${{
                 time: transaction.time,
                 type: transaction.type,
-                price: transaction.price}}`, 'debug');
+                price: transaction.price
+            }}`, 'debug');
 
             if (chartType === 'intraday') {
                 // Buscar por tiempo (con tolerancia de 30 segundos)
-                index = dataToCheck.findIndex(candle => 
+                index = dataToCheck.findIndex(candle =>
                     candle.time - transaction.time > 0
                 ) - 1;
                 this.log(`Intraday search - index found: ${index}`, 'debug');
@@ -966,7 +976,7 @@ class TradingChart {
                 this.log(`Transaction not found in visible data`, 'warn');
                 return;
             }
-            
+
             // Calcular posición
             const x = padding + index * spacing + spacing / 2;
             const y = padding + (maxPrice - transaction.price) / (maxPrice - minPrice) * chartHeight;
@@ -978,7 +988,7 @@ class TradingChart {
                 this.log(`Transaction away of visible area of canvas`, 'warn');
                 return;
             }
-            
+
             const isLong = transaction.type.toLowerCase() === 'long';
             const color = isLong ? '#00ff41' : '#ff4757';
             const triangleSize = 8;
@@ -1000,12 +1010,12 @@ class TradingChart {
 
             ctx.closePath();
             ctx.fill();
-    
+
             // Borde blanco
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.stroke();
-    
+
             if (false) {
                 // Texto de la transacción
                 ctx.fillStyle = '#fff';
@@ -1034,14 +1044,14 @@ class TradingChart {
         });
     }
 
-    updateLastDailyCandle(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice, spacing, candleWidth) {
+    updateLastDailyCandle (ctx, padding, chartWidth, chartHeight, minPrice, maxPrice, spacing, candleWidth) {
         // Encontrar velas intradía del día actual
         const todayCandles = this.intradayData.filter(candle => {
             const candleDate = candle.time;
             const currentDate = new Date(this.currentTime);
             return candleDate.getUTCFullYear() === currentDate.getUTCFullYear() &&
-                    candleDate.getUTCMonth() === currentDate.getUTCMonth() &&
-                    candleDate.getUTCDate() === currentDate.getUTCDate();
+                candleDate.getUTCMonth() === currentDate.getUTCMonth() &&
+                candleDate.getUTCDate() === currentDate.getUTCDate();
         });
 
         if (todayCandles.length === 0) return;
@@ -1055,7 +1065,7 @@ class TradingChart {
         // Actualizar la última vela diaria
         const lastIndex = this.dailyData.length - 1;
 
-        
+
         const start_date = new Date(document.getElementById('startTime').value);
         const pastCandles = this.dailyData.filter(candle => {
             const candleDate = new Date(candle.date);
@@ -1067,7 +1077,7 @@ class TradingChart {
         }
     }
 
-    printCandle(ctx, index, padding, spacing, open, high, low, close, maxPrice, minPrice, candleWidth, chartHeight, session='RH', reprint=false) {
+    printCandle (ctx, index, padding, spacing, open, high, low, close, maxPrice, minPrice, candleWidth, chartHeight, session = 'RH', reprint = false) {
         const x = padding + index * spacing + spacing / 2;
         const openY = padding + (maxPrice - open) / (maxPrice - minPrice) * chartHeight;
         const closeY = padding + (maxPrice - close) / (maxPrice - minPrice) * chartHeight;
@@ -1122,8 +1132,8 @@ class TradingChart {
 
         ctx.fillRect(x - barWidth / 2, y, barWidth, volHeight);
     }
-    
-    deleteCandle(ctx, x, padding, candleWidth, chartHeight) {
+
+    deleteCandle (ctx, x, padding, candleWidth, chartHeight) {
         // Limpiar área de la última vela
         ctx.clearRect(x - candleWidth, padding, candleWidth * 2, chartHeight);
 
@@ -1132,19 +1142,18 @@ class TradingChart {
         ctx.fillRect(x - candleWidth, padding, candleWidth * 2, chartHeight);
     }
 
-    updateTransactionsList() {
+    updateTransactionsList () {
         const container = document.getElementById('transactionsList');
         container.innerHTML = '';
 
         // Mostrar las últimas 5 transacciones
         const recentTransactions = this.transactions.slice(-5).reverse();
-        
+
         recentTransactions.forEach(transaction => {
             const transactionDiv = document.createElement('div');
-            transactionDiv.className = `d-flex justify-content-between align-items-center p-2 mb-2 rounded ${
-                transaction.type === 'buy' ? 'bg-success' : 'bg-danger'
-            } bg-opacity-10 border border-${transaction.type === 'buy' ? 'success' : 'danger'}`;
-            
+            transactionDiv.className = `d-flex justify-content-between align-items-center p-2 mb-2 rounded ${transaction.type === 'buy' ? 'bg-success' : 'bg-danger'
+                } bg-opacity-10 border border-${transaction.type === 'buy' ? 'success' : 'danger'}`;
+
             transactionDiv.innerHTML = `
                 <div>
                     <i class="fas fa-${transaction.type === 'buy' ? 'arrow-up' : 'arrow-down'} me-2"></i>
@@ -1156,7 +1165,7 @@ class TradingChart {
                     <small class="text-muted">${transaction.time.toLocaleTimeString('es-ES')}</small>
                 </div>
             `;
-            
+
             container.appendChild(transactionDiv);
         });
 
