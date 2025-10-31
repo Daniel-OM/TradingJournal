@@ -1,0 +1,1486 @@
+{% extends "base.html" %}
+
+
+{% block title %}Watchlist Performance</title>{% endblock %}
+
+{% block style %}
+<style>
+    .sector-badge {
+        display: inline-block;
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        padding: 5px 10px;
+        border-radius: 20px;
+        margin: 2px;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Filters -->
+    <div class="col-12 mb-3">
+        <div class="card card-body mb-2">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Start Date</label>
+                    <input type="date" id="start-date" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>End Date</label>
+                    <input type="date" id="end-date" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>Symbol</label>
+                    <input type="text" id="symbol" placeholder="e.g., AAPL" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>Limit</label>
+                    <input id="limit" type="number" min="0" step="1" placeholder="e.g., 100" class="rounded">
+                </div>
+            </div>
+            <div class="filter-actions align-items-center">
+                <button class="btn btn-pill bg-primary" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn btn-pill bg-secondary" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">{{ watchlist.name }} Performance</h1>
+                </div>
+                <button id="refreshBtn" class="btn btn-primary" hidden>
+                    <i class="fas fa-sync-alt"></i> Update
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Analyzing the watchlist performance...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="alert alert-danger d-none" role="alert">
+        <h4 class="alert-heading">Error in the analysis</h4>
+        <p id="errorMessage"></p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="d-none">
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card card-body">
+                    <div class="summary-value" id="totalTrades">-</div>
+                    <div class="summary-label">Total Entries</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card card-body" id="winRateCard">
+                    <div class="summary-value" id="winRate">-</div>
+                    <div class="summary-label">Win Rate</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card card-body">
+                    <div class="summary-value" id="avgReturn">-</div>
+                    <div class="summary-label">Average Return</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card card-body">
+                    <div class="summary-value" id="sharpeRatio">-</div>
+                    <div class="summary-label">Sharpe Ratio</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Return Distribution</h5></div>
+                    <div class="card-body">
+                        <div class="chart-container mt-0">
+                            <canvas id="returnsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Cummulative Return</h5></div>
+                    <div class="card-body">
+                        <div class="chart-container mt-0">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Return By Hour</h5></div>
+                    <div class="card-body">
+                        <div class="chart-container mt-0">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                        <small class="text-muted">Shows the hours with highest movements</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Risk vs Return</h5></div>
+                    <div class="card-body">
+                        <div class="chart-container mt-0">
+                            <canvas id="riskReturnChart"></canvas>
+                        </div>
+                        <small class="text-muted">Volatility vs Return for each symbol</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sector Analysis -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Performance by Sector</h5></div>
+                    <div class="card-body">
+                        <div id="sectorAnalysis" class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Sector</th>
+                                        <th>Avg. Return</th>
+                                        <th>Ocurrencies</th>
+                                        <th>Win Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sectorTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Aditional Statistics</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><strong>Best Trade:</strong></p>
+                                <p class="text-success mb-3" id="bestTrade">-</p>
+                                
+                                <p class="mb-1"><strong>Avg. Return:</strong></p>
+                                <p class="mb-3" id="medianReturn">-</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><strong>Worst Trade:</strong></p>
+                                <p class="text-danger mb-3" id="worstTrade">-</p>
+                                
+                                <p class="mb-1"><strong>Standard Deviation:</strong></p>
+                                <p class="mb-3" id="stdDev">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-3">Key Insights</h5></div>
+                    <div class="card-body">
+                        <ul id="keyInsights" class="list-unstyled">
+                        <!-- Se llenarán dinámicamente -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Estadísticas de Watchlist -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h4 class="mb-1">{{ extra.watchlist_info.name }}</h4>
+                    <small class="text-muted">{{ extra.watchlist_info.type|upper }} Trading Analysis</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary">{{ extra.watchlist_info.entries_with_data }}/{{ extra.watchlist_info.total_entries }} with data</span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Resumen de estadísticas principales -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-center">
+                            <div class="card-body">
+                                <h5 class="summary-value text-white">{{ "%.2f"|format(extra.general_stats.mathematical_expectation) }}%</h5>
+                                <p class="summary-label text-white mb-0">Esperanza Matemática</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-center">
+                            <div class="card-body">
+                                <h5 class="summary-value text-white">{{ "%.1f"|format(extra.general_stats.win_rate) }}%</h5>
+                                <p class="summary-label text-white mb-0">Tasa de Éxito</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-center">
+                            <div class="card-body">
+                                <h5 class="summary-value text-white">{{ "%.2f"|format(extra.general_stats.avg_return) }}%</h5>
+                                <p class="summary-label text-white mb-0">Retorno Medio</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-center">
+                            <div class="card-body">
+                                <h5 class="summary-value text-white">{{ "%.1f"|format(extra.general_stats.avg_holding_period) }} {{ extra.time_unit }}</h5>
+                                <p class="summary-label text-white mb-0">Período Medio</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs para diferentes secciones -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab" type="button">
+                            <i class="fas fa-chart-line me-2"></i>General
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#time-tab" type="button">
+                            <i class="fas fa-clock me-2"></i>Patrones Temporales
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#performance-tab" type="button">
+                            <i class="fas fa-trophy me-2"></i>Rendimiento
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#charts-tab" type="button">
+                            <i class="fas fa-chart-area me-2"></i>Visualización
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab General -->
+                    <div class="tab-pane active" id="general-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mt-3 mb-2">Estadísticas Básicas</h6>
+                                <div class="stat-row">
+                                    <span class="stat-label">Total de operaciones</span>
+                                    <span class="stat-value">{{ extra.general_stats.total_trades }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Operaciones ganadoras</span>
+                                    <span class="stat-value text-profit">{{ extra.general_stats.positive_trades }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Operaciones perdedoras</span>
+                                    <span class="stat-value text-loss">{{ extra.general_stats.negative_trades }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Retorno mediano</span>
+                                    <span class="stat-value">{{ "%.2f"|format(extra.general_stats.median_return) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Desviación estándar</span>
+                                    <span class="stat-value">{{ "%.2f"|format(extra.general_stats.std_return) }}%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mt-3 mb-2">Extremos</h6>
+                                <div class="stat-row">
+                                    <span class="stat-label">Mejor retorno</span>
+                                    <span class="stat-value text-profit">{{ "%.2f"|format(extra.general_stats.max_return) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Peor retorno</span>
+                                    <span class="stat-value text-loss">{{ "%.2f"|format(extra.general_stats.min_return) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Rango promedio diario</span>
+                                    <span class="stat-value">{{ "%.2f"|format(extra.volatility_analysis.avg_daily_range) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Volatilidad</span>
+                                    <span class="stat-value">{{ "%.2f"|format(extra.volatility_analysis.volatility) }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Patrones Temporales -->
+                    <div class="tab-pane" id="time-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mt-3 mb-2">Máximos más Frecuentes</h6>
+                                {% if extra.is_daytrading %}
+                                    <div class="stat-row">
+                                        <span class="stat-label">Día más común para mínimos</span>
+                                        <span class="stat-value">Día {{ extra.time_analysis.most_common_low_day }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Gráficos de distribución temporal -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h6>Distribución de Máximos</h6>
+                                <div class="chart-container mt-0">
+                                    <canvas id="high-distribution-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Distribución de Mínimos</h6>
+                                <div class="chart-container mt-0">
+                                    <canvas id="low-distribution-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Rendimiento -->
+                    <div class="tab-pane" id="performance-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mt-3 mb-2">Métricas de Rendimiento</h6>
+                                <div class="stat-row">
+                                    <span class="stat-label">Sharpe Ratio</span>
+                                    <span class="stat-value">{{ "%.3f"|format(extra.performance_stats.sharpe_ratio) }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Profit Factor</span>
+                                    <span class="stat-value">{{ "%.2f"|format(extra.performance_stats.profit_factor) }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Máximo drawdown</span>
+                                    <span class="stat-value text-loss">{{ "%.2f"|format(extra.performance_stats.max_drawdown) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Movimiento favorable promedio</span>
+                                    <span class="stat-value text-profit">{{ "%.2f"|format(extra.performance_stats.avg_max_favorable) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Movimiento adverso promedio</span>
+                                    <span class="stat-value text-loss">{{ "%.2f"|format(extra.performance_stats.avg_max_adverse) }}%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mt-3 mb-2">Análisis de Rupturas</h6>
+                                <div class="stat-row">
+                                    <span class="stat-label">Rupturas de máximos</span>
+                                    <span class="stat-value">{{ extra.breakout_analysis.high_breaks }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Rupturas de mínimos</span>
+                                    <span class="stat-value">{{ extra.breakout_analysis.low_breaks }}</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Tasa de ruptura alta</span>
+                                    <span class="stat-value">{{ "%.1f"|format(extra.breakout_analysis.high_break_rate) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Tasa de ruptura baja</span>
+                                    <span class="stat-value">{{ "%.1f"|format(extra.breakout_analysis.low_break_rate) }}%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Total oportunidades</span>
+                                    <span class="stat-value">{{ extra.breakout_analysis.total_opportunities }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Visualización -->
+                    <div class="tab-pane" id="charts-tab">
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="mt-3 mb-2">Simulación Monte Carlo de Evolución de Precios</h6>
+                                <p class="text-muted small">Todas las trazas normalizadas al precio de entrada (100%). Las líneas más gruesas representan percentiles 25, 75 y la media.</p>
+                                <div class="chart-container mt-0">
+                                    <canvas id="monte-carlo-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h6 class="mb-2">Mapa de Calor: Probabilidad de Máximos/Mínimos</h6>
+                                <p class="text-muted small">Verde indica mayor probabilidad de máximos, rojo indica mayor probabilidad de mínimos. Eje X: {{ 'Horas' if extra.is_daytrading else 'Días' }}, Eje Y: Nivel de precio (% respecto entrada).</p>
+                                <div class="chart-container mt-0">
+                                    <canvas id="heatmap-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script>
+        class WatchlistAnalysis {
+            constructor(watchlistId, data=null) {
+                this.watchlistId = watchlistId;
+                this.data = data;
+                this.chartsCommonOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { color: '#b0b0b0' },
+                            grid: { color: '#b0b0b0' }
+                        },
+                        y: {
+                            ticks: { color: '#b0b0b0' },
+                            grid: { color: '#b0b0b0' }
+                        }
+                    }
+                };
+                this.charts = {};
+                
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    if (this.data === null) await this.loadData();
+                    this.renderAll();
+                    this.hideLoading();
+                } catch (error) {
+                    this.showError(error.message);
+                }
+                
+                // Event listeners
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.refresh();
+                });
+            }
+            
+            async loadData() {
+                const response = await fetch(`/api/watchlist/${this.watchlistId}/performance`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error when loading data');
+                }
+                
+                this.data = await response.json();
+            }
+            
+            renderAll() {
+                Chart.defaults.color = '#b0b0b0';
+                Chart.defaults.backgroundColor = '#2d2d2d';
+                Chart.defaults.borderColor = '#404040';
+                this.renderMetrics();
+                this.renderCharts();
+                this.renderSectorAnalysis();
+                this.renderAdditionalStats();
+                this.renderInsights();
+            }
+            
+            renderMetrics() {
+                const stats = this.data.statistics;
+                
+                document.getElementById('totalTrades').textContent = stats.total_trades;
+                document.getElementById('winRate').textContent = `${stats.win_rate}%`;
+                document.getElementById('avgReturn').textContent = `${stats.average_return}%`;
+                document.getElementById('sharpeRatio').textContent = stats.sharpe_ratio;
+                
+                // Color coding for win rate
+                const winRateCard = document.getElementById('winRateCard');
+                if (stats.win_rate >= 60) {
+                    winRateCard.classList.add('text-profit');
+                } else if (stats.win_rate <= 40) {
+                    winRateCard.classList.add('text-loss');
+                }
+            }
+            
+            renderCharts() {
+                this.renderReturnsChart();
+                this.renderTimelineChart();
+                this.renderHourlyChart();
+                this.renderRiskReturnChart();
+            }
+            
+            renderReturnsChart() {
+                if (this.charts.returns) {
+                    this.charts.returns.destroy();
+                }
+                const ctx = document.getElementById('returnsChart').getContext('2d');
+                const returns = this.data.visualizations.returns_distribution;
+                
+                // Create histogram data
+                const bins = 10;
+                const min = Math.min(...returns);
+                const max = Math.max(...returns);
+                const binSize = (max - min) / bins;
+                
+                const histogram = Array(bins).fill(0);
+                const labels = [];
+                
+                for (let i = 0; i < bins; i++) {
+                    const binStart = min + i * binSize;
+                    const binEnd = binStart + binSize;
+                    labels.push(`${binStart.toFixed(1)}% - ${binEnd.toFixed(1)}%`);
+                    
+                    returns.forEach(ret => {
+                        if (ret >= binStart && ret < binEnd) {
+                            histogram[i]++;
+                        }
+                    });
+                }
+                
+                this.charts.returns = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Frequency',
+                            data: histogram,
+                            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        ...this.chartsCommonOptions,
+                        plugins: {
+                            ...this.chartsCommonOptions.plugins,
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            ...this.chartsCommonOptions.scales,
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: '#b0b0b0'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Return (%)',
+                                    color: '#b0b0b0'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            renderHourlyChart() {
+                if (this.charts.hourly) {
+                    this.charts.hourly.destroy();
+                }
+                const ctx = document.getElementById('hourlyChart').getContext('2d');
+                const hourlyData = this.data.visualizations.hourly_activity;
+                
+                this.charts.hourly = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: hourlyData.map(d => d.hour),
+                        datasets: [{
+                            label: 'Significative Movements',
+                            data: hourlyData.map(d => d.activity),
+                            backgroundColor: function(context) {
+                                const value = context.parsed?.y;
+                                return value > 0 ? '#00c851' : value < 0 ? '#ff4444' : '#b0b0b0';
+                            }
+                        }]
+                    },
+                    options: {
+                        ...this.chartsCommonOptions,
+                        plugins: {
+                            ...this.chartsCommonOptions.plugins,
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            ...this.chartsCommonOptions.scales,
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Quantity',
+                                    color: '#b0b0b0'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Hour',
+                                    color: '#b0b0b0'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            renderRiskReturnChart() {
+                if (this.charts.riskReturn) {
+                    this.charts.riskReturn.destroy();
+                }
+                const ctx = document.getElementById('riskReturnChart').getContext('2d');
+                const riskReturnData = this.data.visualizations.risk_return_scatter;
+                
+                this.charts.riskReturn = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Symbols',
+                            data: riskReturnData.map(d => ({
+                                x: d.volatility,
+                                y: d.return,
+                                symbol: d.symbol
+                            })),
+                            backgroundColor: function(context) {
+                                const dataPoint = context.raw;
+                                return dataPoint ? dataPoint.y > 0 ? '#00c851' : dataPoint.y < 0 ? '#ff4444' : '#b0b0b0' : '#b0b0b0';
+                            },
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        ...this.chartsCommonOptions,
+                        plugins: {
+                            ...this.chartsCommonOptions.plugins,
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const point = context.raw;
+                                        return `${point.symbol}: ${point.y.toFixed(2)}% retorno, ${point.x.toFixed(2)}% volatilidad`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            ...this.chartsCommonOptions.scales,
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Volatility (%)',
+                                    color: '#b0b0b0'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Return (%)',
+                                    color: '#b0b0b0'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            renderTimelineChart() {
+                if (this.charts.timeline) {
+                    this.charts.timeline.destroy();
+                }
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                const timeline = this.data.visualizations.timeline;
+                
+                // Calculate cumulative returns
+                let cumulative = 0;
+                const cumulativeData = timeline.map(item => {
+                    cumulative += item.return;
+                    return {
+                        x: item.date,
+                        y: cumulative
+                    };
+                });
+                console.log(cumulativeData);
+                this.charts.timeline = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: 'Cummulative Return (%)',
+                            data: cumulativeData,
+                            borderColor: '#007cff',
+                            backgroundColor: 'rgba(0, 124, 255, 0.1)',
+                            fill: true,
+                            tension: 0.1,
+                            yAxisID: 'y'
+                        }]
+                    },
+                    options: {
+                        ...this.chartsCommonOptions,
+                        plugins: {
+                            ...this.chartsCommonOptions.plugins,
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            ...this.chartsCommonOptions.scales,
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: '#b0b0b0'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Cummulative Return (%)',
+                                    color: '#b0b0b0'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            renderSectorAnalysis() {
+                const sectorData = this.data.statistics.sector_performance;
+                const tbody = document.getElementById('sectorTableBody');
+                
+                tbody.innerHTML = '';
+                
+                // Sort sectors by average return
+                const sortedSectors = Object.entries(sectorData)
+                    .sort(([,a], [,b]) => b.avg_return - a.avg_return);
+                
+                sortedSectors.forEach(([sector, data]) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="sector-badge">${sector}</span></td>
+                        <td class="${data.avg_return >= 0 ? 'text-success' : 'text-danger'}">${data.avg_return}%</td>
+                        <td>${data.count}</td>
+                        <td>${data.win_rate.toFixed(1)}%</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            renderAdditionalStats() {
+                const stats = this.data.statistics;
+                
+                document.getElementById('bestTrade').textContent = `${stats.max_single_return}%`;
+                document.getElementById('worstTrade').textContent = `${stats.min_single_return}%`;
+                document.getElementById('medianReturn').textContent = `${stats.median_return}%`;
+                document.getElementById('stdDev').textContent = `${stats.std_deviation}%`;
+            }
+            
+            renderInsights() {
+                const stats = this.data.statistics;
+                const insights = [];
+                
+                // Generate dynamic insights
+                if (stats.win_rate > 60) {
+                    insights.push(`✅ Excellent win rate of ${stats.win_rate}%`);
+                } else if (stats.win_rate < 40) {
+                    insights.push(`⚠️ Low win rate of ${stats.win_rate}%`);
+                }
+                
+                if (stats.sharpe_ratio > 1) {
+                    insights.push(`📈 Good Risk-Reward ratio (Sharpe: ${stats.sharpe_ratio})`);
+                } else if (stats.sharpe_ratio < 0.5) {
+                    insights.push(`📉 Low Risk-Reward ratio (Sharpe: ${stats.sharpe_ratio})`);
+                }
+                
+                if (stats.average_return > 5) {
+                    insights.push(`🚀 Strong average return of ${stats.average_return}%`);
+                } else if (stats.average_return < -2) {
+                    insights.push(`📉 Negative average return of ${stats.average_return}%`);
+                }
+                
+                const mostActiveHours = stats.most_active_hours;
+                if (mostActiveHours.length > 0) {
+                    const topHour = mostActiveHours[0][0];
+                    let timeDescription = '';
+                    if (topHour >= 9 && topHour <= 16) {
+                        timeDescription = 'during regular market hours';
+                    } else if (topHour >= 4 && topHour <= 9) {
+                        timeDescription = 'in premarket';
+                    } else {
+                        timeDescription = 'in after-hours';
+                    }
+                    insights.push(`⏰ Greatest activity at ${topHour}:00 ${timeDescription}`);
+                }
+                
+                if (stats.std_deviation > 10) {
+                    insights.push(`🌊 High average volatility (${stats.std_deviation}%)`);
+                } else if (stats.std_deviation < 3) {
+                    insights.push(`😴 Low average volatility (${stats.std_deviation}%)`);
+                }
+                
+                // Best performing sector
+                const sectorData = stats.sector_performance;
+                if (Object.keys(sectorData).length > 0) {
+                    const bestSector = Object.entries(sectorData)
+                        .reduce(([bestName, bestData], [name, data]) => 
+                            data.avg_return > bestData.avg_return ? [name, data] : [bestName, bestData]
+                        );
+                    insights.push(`🏆 Best sector: ${bestSector[0]} (${bestSector[1].avg_return}%)`);
+                }
+                
+                // Render insights
+                const insightsContainer = document.getElementById('keyInsights');
+                insightsContainer.innerHTML = '';
+                
+                insights.forEach(insight => {
+                    const li = document.createElement('li');
+                    li.textContent = insight;
+                    insightsContainer.appendChild(li);
+                });
+            }
+            
+            hideLoading() {
+                document.getElementById('loadingState').classList.add('d-none');
+                document.getElementById('mainContent').classList.remove('d-none');
+            }
+            
+            showError(message) {
+                document.getElementById('loadingState').classList.add('d-none');
+                document.getElementById('errorState').classList.remove('d-none');
+                document.getElementById('errorMessage').textContent = message;
+            }
+            
+            async refresh() {
+                // Show loading
+                document.getElementById('mainContent').classList.add('d-none');
+                document.getElementById('errorState').classList.add('d-none');
+                document.getElementById('loadingState').classList.remove('d-none');
+                
+                // Destroy existing charts
+                Object.values(this.charts).forEach(chart => {
+                    if (chart) chart.destroy();
+                });
+                this.charts = {};
+                
+                // Reload data
+                try {
+                    await this.loadData();
+                    this.renderAll();
+                    this.hideLoading();
+                } catch (error) {
+                    this.showError(error.message);
+                }
+            }
+        }
+        
+        
+        // Filter functions
+        function applyFilters () {
+            const filters = {
+                start: document.getElementById('start-date').value,
+                end: document.getElementById('end-date').value,
+                symbol: document.getElementById('symbol').value,
+                limit: document.getElementById('limit').value
+            };
+
+            // En una aplicación real, esto haría una petición al servidor
+            window.location.href = `{{ url_for('watchlist_endpoints.watchlist_performance', id=watchlist.id) }}?start=${filters.start}&end=${filters.end}&symbol=${filters.symbol}&limit=${filters.limit}`;
+        }
+
+        async function resetFilters () {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.getElementById('symbol').value = '';
+            document.getElementById('limit').value = '';
+
+            applyFilters();
+        }
+        
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default date range (last 30 days)
+            const endDate = new Date("{{ end }}");
+            const startDate = new Date("{{ start}}");
+
+            document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
+            document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
+            document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
+            document.getElementById('limit').value = "{{ limit }}" || '';
+
+            // Extract watchlist ID from URL or pass it from template
+            const watchlistId = {{ watchlist.id }};
+            const data = JSON.parse('{{ stats | tojson | safe }}');
+            const analysis = new WatchlistAnalysis(watchlistId, data);
+
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    applyFilters();
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Configuración global de Chart.js
+        Chart.defaults.color = '#b0b0b0';
+        Chart.defaults.backgroundColor = '#2d2d2d';
+        Chart.defaults.borderColor = '#404040';
+
+        // Global chart options
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            /* plugins: {
+                legend: {
+                    labels: {
+                        color: '#b0b0b0',
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }, */
+            scales: {
+                x: {
+                    ticks: { color: '#b0b0b0' },
+                    grid: { color: '#b0b0b0' }
+                },
+                y: {
+                    ticks: { color: '#b0b0b0' },
+                    grid: { color: '#b0b0b0' }
+                }
+            }
+        };
+
+        // Variables globales para los gráficos
+        let charts = {};
+
+        // Función principal para inicializar todos los gráficos
+        function initializeWatchlistCharts() {
+            const data = JSON.parse('{{ extra | tojson | safe }}');
+            if (!data) {
+                console.error('Datos de estadísticas no disponibles');
+                return;
+            }
+            
+            // Inicializar gráficos de distribución temporal
+            initializeDistributionCharts(data);
+            
+            // Inicializar gráfico Monte Carlo
+            initializeMonteCarloChart(data);
+            
+            // Inicializar heatmap
+            initializeHeatmapChart(data);
+        }
+
+        // Gráficos de distribución de máximos y mínimos
+        function initializeDistributionCharts(stats) {
+            const timeUnit = stats.is_daytrading ? 'Hora' : 'Día';
+            const timeData = stats.is_daytrading ? 
+                stats.time_analysis.hourly_high_distribution : 
+                stats.time_analysis.daily_high_distribution;
+            
+            const lowTimeData = stats.is_daytrading ? 
+                stats.time_analysis.hourly_low_distribution : 
+                stats.time_analysis.daily_low_distribution;
+
+            // Preparar datos para gráfico de máximos
+            const highLabels = Object.keys(timeData).sort((a, b) => parseInt(a) - parseInt(b));
+            const highValues = highLabels.map(label => timeData[label]);
+            
+            // Preparar datos para gráfico de mínimos
+            const lowLabels = Object.keys(lowTimeData).sort((a, b) => parseInt(a) - parseInt(b));
+            const lowValues = lowLabels.map(label => lowTimeData[label]);
+
+            // Gráfico de distribución de máximos
+            if (charts.highDistributionChart) {
+                charts.highDistributionChart.destroy();
+            }
+            const highCtx = document.getElementById('high-distribution-chart').getContext('2d');
+            charts.highDistributionChart = new Chart(highCtx, {
+                type: 'bar',
+                data: {
+                    labels: highLabels.map(label => stats.is_daytrading ? `${label}:00` : `${timeUnit} ${label}`),
+                    datasets: [{
+                        label: 'Frecuencia de Máximos',
+                        data: highValues,
+                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Frecuencia'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: timeUnit
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Distribución de Máximos por ${timeUnit}`
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de distribución de mínimos
+            const lowCtx = document.getElementById('low-distribution-chart').getContext('2d');
+            lowDistributionChart = new Chart(lowCtx, {
+                type: 'bar',
+                data: {
+                    labels: lowLabels.map(label => stats.is_daytrading ? `${label}:00` : `${timeUnit} ${label}`),
+                    datasets: [{
+                        label: 'Frecuencia de Mínimos',
+                        data: lowValues,
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Frecuencia'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: timeUnit
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Distribución de Mínimos por ${timeUnit}`
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico Monte Carlo con percentiles
+        function initializeMonteCarloChart(stats) {
+            const chartData = stats.chart_data;
+            if (!chartData || !chartData.monte_carlo_traces) {
+                return;
+            }
+
+            const datasets = [];
+            
+            // Agregar trazas individuales (líneas finas y transparentes)
+            chartData.monte_carlo_traces.forEach((trace, index) => {
+                datasets.push({
+                    label: trace.length > 0 ? trace[0].symbol : `Serie ${index + 1}`,
+                    data: trace,
+                    borderColor: `hsla(${(index * 137.5) % 360}, 70%, 50%, 0.3)`,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1,
+                    showLine: true
+                });
+            });
+
+            // Agregar percentiles (líneas más gruesas)
+            if (chartData.percentile_data) {
+                const percentiles = chartData.percentile_data;
+                
+                // Percentil 90 (línea superior)
+                if (percentiles.p90) {
+                    datasets.push({
+                        label: 'Percentil 90',
+                        data: percentiles.p90,
+                        borderColor: 'rgba(16, 185, 129, 0.8)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.1,
+                        showLine: true,
+                        borderDash: [5, 5]
+                    });
+                }
+
+                // Percentil 75
+                if (percentiles.p75) {
+                    datasets.push({
+                        label: 'Percentil 75',
+                        data: percentiles.p75,
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.1,
+                        showLine: true
+                    });
+                }
+
+                // Media
+                if (percentiles.mean) {
+                    datasets.push({
+                        label: 'Media',
+                        data: percentiles.mean,
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.1,
+                        showLine: true
+                    });
+                }
+
+                // Percentil 25
+                if (percentiles.p25) {
+                    datasets.push({
+                        label: 'Percentil 25',
+                        data: percentiles.p25,
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.1,
+                        showLine: true
+                    });
+                }
+
+                // Percentil 10 (línea inferior)
+                if (percentiles.p10) {
+                    datasets.push({
+                        label: 'Percentil 10',
+                        data: percentiles.p10,
+                        borderColor: 'rgba(239, 68, 68, 0.8)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.1,
+                        showLine: true,
+                        borderDash: [5, 5]
+                    });
+                }
+            }
+
+            const ctx = document.getElementById('monte-carlo-chart').getContext('2d');
+            monteCarloChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: stats.is_daytrading ? 'Horas' : 'Días'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Precio (% respecto entrada)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Evolución de Precios - Simulación Monte Carlo'
+                        },
+                        legend: {
+                            display: true,
+                            filter: function(legendItem, chartData) {
+                                // Solo mostrar percentiles y media en la leyenda
+                                return legendItem.text.includes('Percentil') || legendItem.text === 'Media';
+                            }
+                        },
+                        tooltip: {
+                            filter: function(tooltipItem) {
+                                // Solo mostrar tooltips para percentiles y media
+                                return tooltipItem.dataset.label.includes('Percentil') || tooltipItem.dataset.label === 'Media';
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mapa de calor para probabilidades de máximos/mínimos
+        function initializeHeatmapChart(stats) {
+            const heatmapData = stats.chart_data.heatmap_data;
+            if (!heatmapData || heatmapData.length === 0) {
+                return;
+            }
+
+            // Preparar datos para el heatmap
+            const data = heatmapData.map(point => ({
+                x: point.x,
+                y: point.y,
+                v: point.z // Valor de -1 a 1 (rojo a verde)
+            }));
+
+            // Determinar rangos
+            const xMax = Math.max(...data.map(d => d.x));
+            const yMin = Math.min(...data.map(d => d.y));
+            const yMax = Math.max(...data.map(d => d.y));
+
+            const ctx = document.getElementById('heatmap-chart').getContext('2d');
+            
+            // Crear un canvas para el heatmap personalizado
+            const canvas = ctx.canvas;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Limpiar canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Función para convertir valor a color
+            function valueToColor(value) {
+                // value va de -1 (rojo, mínimos) a 1 (verde, máximos)
+                const intensity = Math.abs(value);
+                if (value > 0) {
+                    // Verde para máximos
+                    return `rgba(16, 185, 129, ${intensity})`;
+                } else {
+                    // Rojo para mínimos
+                    return `rgba(239, 68, 68, ${Math.abs(value)})`;
+                }
+            }
+
+            // Dibujar el heatmap
+            data.forEach(point => {
+                const x = (point.x / xMax) * width;
+                const y = height - ((point.y - yMin) / (yMax - yMin)) * height;
+                
+                ctx.fillStyle = valueToColor(point.v);
+                const cellWidth = width / (xMax + 1);
+                const cellHeight = height / 20; // 20 niveles de precio
+                
+                ctx.fillRect(x - cellWidth/2, y - cellHeight/2, cellWidth, cellHeight);
+            });
+
+            // Agregar etiquetas y ejes (simplificado)
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-color-primary').trim();
+            ctx.font = '12px Arial';
+            
+            // Etiquetas del eje X
+            for (let i = 0; i <= xMax; i += Math.ceil(xMax / 10)) {
+                const x = (i / xMax) * width;
+                ctx.fillText(stats.is_daytrading ? `${i}h` : `${i}d`, x, height - 5);
+            }
+            
+            // Etiquetas del eje Y
+            const yStep = (yMax - yMin) / 5;
+            for (let i = 0; i <= 5; i++) {
+                const yVal = yMin + (i * yStep);
+                const y = height - (i / 5) * height;
+                ctx.fillText(`${yVal.toFixed(0)}%`, 5, y);
+            }
+
+            // Crear leyenda personalizada
+            createHeatmapLegend();
+        }
+
+        // Función para crear leyenda del heatmap
+        function createHeatmapLegend() {
+            const legendContainer = document.getElementById('heatmap-chart').parentNode;
+            
+            // Remover leyenda existente si existe
+            const existingLegend = legendContainer.querySelector('.heatmap-legend');
+            if (existingLegend) {
+                existingLegend.remove();
+            }
+
+            const legend = document.createElement('div');
+            legend.className = 'heatmap-legend mt-3 d-flex justify-content-center align-items-center';
+            legend.style.fontSize = '12px';
+            
+            legend.innerHTML = `
+                <div class="d-flex align-items-center me-3">
+                    <div style="width: 20px; height: 20px; background: rgba(239, 68, 68, 0.8); margin-right: 5px; border-radius: 3px;"></div>
+                    <span>Alta prob. mínimos</span>
+                </div>
+                <div class="d-flex align-items-center me-3">
+                    <div style="width: 20px; height: 20px; background: rgba(128, 128, 128, 0.3); margin-right: 5px; border-radius: 3px;"></div>
+                    <span>Neutral</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="width: 20px; height: 20px; background: rgba(16, 185, 129, 0.8); margin-right: 5px; border-radius: 3px;"></div>
+                    <span>Alta prob. máximos</span>
+                </div>
+            `;
+            
+            legendContainer.appendChild(legend);
+        }
+
+        // Función para actualizar el tema de los gráficos
+        function updateChartsTheme() {
+            const isDark = document.body.classList.contains('dark');
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color-primary').trim();
+            const backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--card-bg-color').trim();
+
+            Chart.defaults.color = textColor;
+            Chart.defaults.backgroundColor = backgroundColor;
+
+            // Actualizar todos los gráficos existentes
+            [highDistributionChart, lowDistributionChart, monteCarloChart].forEach(chart => {
+                if (chart) {
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.options.scales.x.title.color = textColor;
+                    chart.options.scales.y.title.color = textColor;
+                    chart.options.plugins.title.color = textColor;
+                    chart.options.plugins.legend.labels.color = textColor;
+                    chart.update();
+                }
+            });
+
+            // Redibujar el heatmap
+            if (window.watchlistStats) {
+                initializeHeatmapChart(window.watchlistStats);
+            }
+        }
+
+        // Función para limpiar todos los gráficos
+        function destroyWatchlistCharts() {
+            [highDistributionChart, lowDistributionChart, monteCarloChart, heatmapChart].forEach(chart => {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+            
+            highDistributionChart = null;
+            lowDistributionChart = null;
+            monteCarloChart = null;
+            heatmapChart = null;
+        }
+
+        // Función para redimensionar gráficos
+        function resizeWatchlistCharts() {
+            [highDistributionChart, lowDistributionChart, monteCarloChart].forEach(chart => {
+                if (chart) {
+                    chart.resize();
+                }
+            });
+            
+            // Redibujar heatmap
+            if (window.watchlistStats) {
+                initializeHeatmapChart(window.watchlistStats);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar gráficos cuando el DOM esté listo
+            setTimeout(initializeWatchlistCharts, 100);
+        });
+
+        // Listener para cambios de tema
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    updateChartsTheme();
+                }
+            });
+        });
+
+        observer.observe(document.body, { attributes: true });
+
+        // Listener para redimensionamiento
+        window.addEventListener('resize', function() {
+            clearTimeout(window.resizeTimeout);
+            window.resizeTimeout = setTimeout(resizeWatchlistCharts, 250);
+        });
+
+        // Listener para cambios de tab (redibujar gráficos cuando se muestren)
+        document.addEventListener('shown.bs.tab', function(e) {
+            if (e.target.getAttribute('data-bs-target') === '#charts-tab') {
+                setTimeout(() => {
+                    resizeWatchlistCharts();
+                }, 100);
+            }
+        });
+
+        // Exportar funciones para uso externo
+        window.WatchlistCharts = {
+            initialize: initializeWatchlistCharts,
+            destroy: destroyWatchlistCharts,
+            resize: resizeWatchlistCharts,
+            updateTheme: updateChartsTheme
+        };
+    </script>
+
+{% endblock %}

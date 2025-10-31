@@ -211,13 +211,12 @@ class Benzinga():
         '''
             
         self._newSymbol(symbol)
-
         info: dict = {
-            **self.data['metaProps'],
-            **self.data['profile']['fundamentals']['company'],
-            **self.data['profile']['fundamentals']['companyProfile'],
-            **self.data['profile']['fundamentals']['shareClass'],
-            **self.data['profile']['fundamentals']['assetClassification'],
+            **self.data.get('metaProps', {}),
+            **self.data.get('profile', {}).get('fundamentals', {}).get('company', {}),
+            **self.data.get('profile', {}).get('fundamentals', {}).get('companyProfile', {}),
+            **self.data.get('profile', {}).get('fundamentals', {}).get('shareClass', {}),
+            **self.data.get('profile', {}).get('fundamentals', {}).get('assetClassification', {}),
         }
         del info['translations']
 

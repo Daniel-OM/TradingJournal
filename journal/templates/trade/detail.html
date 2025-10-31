@@ -183,7 +183,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='chart.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart.js') }}"></script>
 <script>
     // Sample trade data - replace with real data from your backend
     const tradeData = JSON.parse('{{ trade_data|tojson }}');
@@ -201,7 +201,7 @@
         const pnlPercent = ((tradeData.profit_loss / (tradeData.entry_price * tradeData.quantity)) * 100).toFixed(2); // TODO: Calculate the return correctly and with last asset price
         const tradePnl = document.getElementById('tradePnl');
         tradePnl.textContent = `${tradeData.profit_loss >= 0 ? '+' : ''}$${tradeData.profit_loss.toFixed(2)} (${pnlPercent}%)`;
-        const pnlParent = tradePnl.parentElement
+        const pnlParent = tradePnl.parentElement;
         pnlParent.classList.add(tradeData.profit_loss > 0 ? 'bg-success' : tradeData.profit_loss < 0 ? 'bg-danger' : 'bg-warning');
         const pnlGranParent = pnlParent.parentElement;
         pnlGranParent.classList.add(tradeData.profit_loss > 0 ? 'bg-success' : tradeData.profit_loss < 0 ? 'bg-danger' : 'bg-warning');
@@ -328,7 +328,7 @@
         tradeData.errors.forEach(error => {
             const errorItem = document.createElement('div');
             errorItem.className = 'card shadow-none error-item';
-            const severityClass = error.severity == 'low' ? 'bg-info' : error.severity == 'medium' ? 'bg-warning' : 'bg-danger' ;
+            const severityClass = error.severity == 'low' ? 'bg-info' : error.severity == 'medium' ? 'bg-warning' : 'bg-danger';
             errorItem.innerHTML = `
                     <div class="error-header">
                         <div class="error-description">${error.description}</div>
@@ -385,12 +385,12 @@
     }
 
     function editTrade () {
-        window.location.href = `{{ url_for('journal_endpoints.edit_trade', trade_id=0) }}`.replace('0', tradeData.id);
+        window.location.href = `{{ url_for('journal_pages.edit_trade', trade_id=0) }}`.replace('0', tradeData.id);
     }
 
     async function deleteTrade () {
         if (confirm('¿Estás seguro de que quieres borrar este trade?')) {
-            const url = `{{ url_for('journal_endpoints.delete_trade', trade_id=0) }}`.replace('0', tradeData.id);
+            const url = `{{ url_for('journal_pages.delete_trade', trade_id=0) }}`.replace('0', tradeData.id);
             try {
                 const response = await fetch(url, {
                     method: 'POST',
@@ -487,7 +487,9 @@
             chart.drawCharts();
         } else {
             // Crear nuevo chart
-            chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, { startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time });
+            chart = new TradingChart(document.getElementById('chartCard'), candleData['1d'], candleData['1m'], globalTransactionData, {
+                startReplay: window.tradeData.entry_date + 'T' + window.tradeData.entry_time,
+            }, false, 'trace'); // TODO: Fix the charts so that replay is available
         }
     }
 

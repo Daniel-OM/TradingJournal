@@ -77,6 +77,7 @@ class Trade(Model):
             'stop_loss': self.stop_loss,
             'take_profit': self.take_profit,
             'quantity': self.quantity,
+            'exit_quantity': self.exit_quantity,
             'balance': self.balance,
             'commission': self.commission,
             'trade_type': self.trade_type,
@@ -248,10 +249,10 @@ class Trade(Model):
             Candle.date >= start_datetime,
             Candle.date <= end_datetime + timedelta(minutes=1),
             Candle.timeframe == timeframe
-        ).all()
+        ).distinct().order_by(Candle.date.asc()).all()
 
         if not candles:
-            print(f'No candles data between {start_datetime} and {end_datetime}')
+            print(f'No candles data between {start_datetime} and {end_datetime} for {self.symbol}')
             return []
         
         return candles
@@ -465,20 +466,19 @@ class Trade(Model):
         
         return None
     
-    def maximumFavorableAverse(self) -> tuple[float, float]:
+    def maximumFavorableAverse(self, candles:list[Candle]=None) -> tuple[float, float]:
         
         if not self.transactions:
             return 0.0, 0.0
         
-        # Obtener precios de entrada y salida
-        entry_price = self.entry_price
-        exit_price = self.exit_price
-        candles: list[Candle] = self.getCandles(timeframe='1m')
-        
-        if entry_price is None or exit_price is None:
+        if self.entry_price is None or self.exit_price is None:
             return 0.0, 0.0
-
-        mae = max(self.entry_price - candle.low for candle in candles)
-        mfe = max(candle.high - self.entry_price for candle in candles)
+        
+        # Obtener precios de entrada y salida
+        if candles is None:
+            candles: list[Candle] = self.getCandles(timeframe='1m')
+    
+        mae = max((self.entry_price - candle.low if self.trade_type.upper() == 'LONG' else candle.high - self.entry_price) for candle in candles)
+        mfe = max((candle.high - self.entry_price if self.trade_type.upper() == 'LONG' else self.entry_price - candle.low) for candle in candles)
 
         return mae, mfe

@@ -5,9 +5,10 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import flash
 
-from ..config import UPLOAD_FOLDER, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE
+from ..config import UPLOAD_FOLDER, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE, POLYGON_KEY, POLYGON_FREE
 from ..models import Trade, Candle
 from ..src.yahoofinance import YahooTicker
+from ..src.polygon import Polygon
 
 def allowed_file(filename, allowed_extensions) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
@@ -84,6 +85,34 @@ def calculate_max_drawdown(trades: list[Trade]) -> int:
     
     return max_dd
 
+def getPrice(symbol:str, start:datetime, end:datetime, timeframe:str='1d', free:bool=None, yahoo:bool=False):
+    print(symbol, start, end, timeframe)
+    try:
+        if yahoo:
+            yf = YahooTicker(symbol)
+            return yf.getPrice(start=start, end=end, timeframe=timeframe, df=True)
+        else:
+            multiplier = int(timeframe[:-1])
+            timestamp: str = timeframe[-1]
+            if timestamp == 'd':
+                timestamp = 'day'
+            elif timestamp == 'h':
+                timestamp = 'hour'
+            elif timestamp == 'm':
+                timestamp = 'minute'
+            elif timestamp == 'w':
+                timestamp = 'week'
+            elif timestamp == 'M':
+                timestamp = 'month'
+            
+            pol = Polygon(api_key=POLYGON_KEY, free=POLYGON_FREE if free is None else free)
+            data = pol.aggregates(symbol=symbol, multiplier=multiplier, timespan=timestamp, start=start.strftime('%Y-%m-%d'), end=end.strftime('%Y-%m-%d'), adjusted=False, df=True)
+            data['date'] = data.index
+            return data.rename(columns={c: c.lower() for c in data.columns})
+    except Exception as e:
+        print(f"Error downloading data for {symbol} from Polygon: {e}")
+        yf = YahooTicker(symbol)
+        return yf.getPrice(start=start, end=end, timeframe=timeframe, df=True)
 
 def download_candles(db, symbol:str, config:dict[str, datetime|str]):
     '''
@@ -94,10 +123,9 @@ def download_candles(db, symbol:str, config:dict[str, datetime|str]):
         [{'start': dt.datetime(2024,07,31, 0, 0, 0), 'end': dt.datetime(2025,07,31, 0, 0, 0), 'timeframe': '1d'}]
     '''
     try:
-        yf = YahooTicker(symbol)
         data = []
         for conf in config:
-            data.append([conf['timeframe'], yf.getPrice(start=conf['start'], end=conf['end'], timeframe=conf['timeframe'], df=True)])
+            data.append([conf['timeframe'], getPrice(symbol=symbol, start=conf['start'], end=conf['end'], timeframe=conf['timeframe'])])
             db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= conf['start'], Candle.date <= conf['end'], Candle.timeframe == conf['timeframe']).delete(synchronize_session=False)
 
         db.session.commit()

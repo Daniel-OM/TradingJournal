@@ -32,7 +32,7 @@ def getCandles(trade:Trade, timeframe='1m') -> list[Candle]:
     ).all()
 
     if not candles:
-        print(f'No candles data between {start_datetime} and {end_datetime}')
+        print(f'No candles data between {start_datetime} and {end_datetime} for {trade.symbol}')
         return []
     
     return candles
@@ -206,8 +206,6 @@ def equity_curve(trade:Trade, initial_balance: float = 0):
         current_time += timedelta(minutes=1)
 
     return equity_points
-
-# TODO: Add all the candles needed for the charts of the trades already registered
 
 db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'instance', 'trading_journal.db'))
 engine = create_engine(f'sqlite:///{db_path}')
@@ -1127,3 +1125,122 @@ print_statistics(results)
 # Crear visualizaciones interactivas
 heatmap_fig = create_heatmap_visualization(results)
 # summary_fig = create_summary_dashboard(results)
+
+
+
+from yahoofinance import YahooTicker
+
+watchlists: dict[str, list[str]] = {
+    '2025-08-04': ['VERB', 'PBM', 'COMM', 'ATCH', 'BLDE', 'ORIS', 'BTAI', 'INMB'],
+    '2025-08-05': ['SMXT', 'AIP', 'STAA', 'ADAP', 'STTK', 'AUUD', 'RUBI', 'OPAD'],
+    '2025-08-06': ['SGBX', 'PHGE', 'SMCZ', 'MYGN', 'XELB', 'AIMD', 'CYRX', 'SHOP'],
+    '2025-08-07': ['IMG', 'CMCT', 'CELH', 'AGRI', 'BTOG', 'CREG', 'NVOX', 'FOXO'],
+    '2025-08-08': ['ORIS', 'MRM', 'REAL', 'SOUN', 'SGBX', 'TEMT', 'IXHL', 'BTOG'],
+    '2025-08-12': ['ATNF', 'WOW', 'GEVO', 'HBI', 'PRPH', 'XFOR', 'TLRY', 'ZENA'],
+    '2025-08-15': ['PMNT', 'PGEN', 'PPSI', 'DFLI', 'VMAR', 'CODX', 'UNHG', 'KULR'],
+    '2025-08-18': ['VTAK', 'PPCB', 'SNGX', 'ADAP', 'DHAI', 'BTAI', 'IQ', 'RVYL'],
+    '2025-08-19': ['LASE', 'PRFX', 'GXAI', 'ADD', 'VCIG', 'IINN', 'AREC', 'LIDR'],
+    '2025-08-20': ['NBY', 'SISI', 'THAR', 'PPCB', 'AUUD', 'STAI', 'COCH', 'TIVC'],
+    '2025-08-22': ['EEIQ', 'MODV', 'CYCU', 'LIMN', 'AZTR', 'IXHL', 'GNPX', 'EDUC'],
+    '2025-08-27': ['NBY', 'AZTR', 'PTNM', 'DEVS', 'FLNT', 'KSS', 'DSS', 'TNFA'],
+    '2025-08-29': ['GMHS', 'MOVE', 'NUKK', 'NXTT', 'SMX', 'WOOF', 'IREN', 'SRXH'],
+
+    '2025-09-02': ['CARM', 'UUU', 'HWH', 'SHFS', 'SSKN', 'GCTK', 'MNKD', 'HOTH'],
+    '2025-09-03': ['STI', 'BTBD', 'AIHS', 'BURU', 'GEG', 'LOFY', 'UGRO', 'IPDN'],
+    '2025-09-04': ['CIGL', 'BRIA', 'ZNB', 'BSLKl', 'AEO', 'HWH', 'BBLG', 'BDSX'],
+    '2025-09-10': ['GLE', 'AEHL', 'CUPR', 'JBDI', 'ASST', 'MWYN', 'CAMP', 'EDHL'],
+    '2025-09-12': ['GCTK', 'COCP', 'HCWB', 'VSTD', 'PLRZ', 'OPI', 'UOKA', 'HUIZ'],
+}
+
+watchlists = {datetime.strptime(d, '%Y-%m-%d'): w for d, w in watchlists.items()}
+
+
+def download_candles(session:Session, symbol:str, config:dict[str, datetime|str]):
+    '''
+    symbol: str
+        Symbol of the asset.
+    config: list[list]
+        List with the configurations. Eg:
+        [{'start': dt.datetime(2024,07,31, 0, 0, 0), 'end': dt.datetime(2025,07,31, 0, 0, 0), 'timeframe': '1d'}]
+    '''
+    try:
+        yf = YahooTicker(symbol)
+        data = []
+        for conf in config:
+            data.append([conf['timeframe'], yf.getPrice(start=conf['start'], end=conf['end'], timeframe=conf['timeframe'], df=True)])
+            session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= conf['start'], Candle.date <= conf['end'], Candle.timeframe == conf['timeframe']).delete(synchronize_session=False)
+
+        session.commit()
+
+        candle_objs = []
+        for tf, candles in data:
+            if hasattr(candles, 'iterrows'):
+                candle_objs += [
+                    Candle(
+                        symbol=symbol,
+                        date=row['date'] if 'date' in row else idx, # .strftime('%Y-%m-%d %H:%M:%S%z')
+                        open=row['open'],
+                        high=row['high'],
+                        low=row['low'],
+                        close=row['close'],
+                        volume=row.get('volume', None),
+                        session=row.get('session', 'REG'),
+                        timeframe=tf
+                    ) for idx, row in candles.iterrows()
+                ]
+            elif isinstance(candles, list):
+                candle_objs += [
+                    Candle(
+                        symbol=symbol,
+                        date=row['date'], # .strftime('%Y-%m-%d %H:%M:%S%z'),
+                        open=row['open'],
+                        high=row['high'],
+                        low=row['low'],
+                        close=row['close'],
+                        volume=row.get('volume', None),
+                        session=row.get('session', 'REG'),
+                        timeframe=tf
+                    ) for row in candles
+                ]
+
+        if candle_objs:
+            session.bulk_save_objects(candle_objs)
+            session.commit()
+
+    except Exception as e:
+        print(f"Error descargando velas para {symbol}: {e}")
+
+for d, watchlist in watchlists.items():
+    
+    week_ago = d - timedelta(days=5)
+    one_year_ago = d - timedelta(days=365)
+    while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+        week_ago = week_ago + timedelta(days=1)
+    for w in watchlist:
+        download_candles(session=session,
+                        symbol=w,
+                        config=[
+                            {'timeframe': '1d', 'start':one_year_ago, 'end':d},
+                            {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 
+                             'end': datetime.combine(d, time(23, 59, 59)) },
+                        ])
+
+        
+        start_datetime = datetime.combine(trade.entry_date, datetime.strptime(trade.entry_time, '%H:%M:%S').time())
+        end_datetime = datetime.combine(trade.exit_date, datetime.strptime(trade.exit_time, '%H:%M:%S').time())
+
+        candles = session.query(Candle).filter(
+            Candle.symbol == trade.symbol,
+            Candle.date >= start_datetime,
+            Candle.date <= end_datetime + timedelta(minutes=1),
+            Candle.timeframe == '1m'
+        ).all()
+
+candles = getCandles(trade, timeframe='1m')
+
+# Preparar DataFrame de candles
+df_candles = pd.DataFrame([c.to_dict() for c in candles])
+# date ya es datetime UTC, solo necesitamos asegurar que es datetime
+df_candles['datetime'] = pd.to_datetime(df_candles['date'], utc=True)
+df_candles.set_index('datetime', inplace=True)
+df_candles.sort_index(inplace=True)
