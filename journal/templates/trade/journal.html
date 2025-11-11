@@ -16,7 +16,10 @@
         <button class="nav-btn btn-none ms-3" onclick="changeMonth(1)"><i class="fa-solid fa-greater-than"></i></button>
         
         <a href="{{ url_for('journal_pages.add_trade') }}" class="btn btn-pill bg-primary ms-auto">
-            <i class="fas fa-plus me-2"></i>Añadir Trade
+            <i class="fas fa-plus me-2"></i>Add Trade
+        </a>
+        <a href="#" class="btn btn-pill bg-primary ms-2" onclick="showImportModal()">
+            <i class="fas fa-upload me-2"></i>Import Trades
         </a>
     </div>
 
@@ -35,7 +38,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 id="modalTitle">Trades del día</h2>
-            <span class="close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></span>
+            <span class="close" onclick="closeModal('tradesModal')"><i class="fa-solid fa-xmark"></i></span>
         </div>
         <div class="modal-body">
             <!-- Gráfico de evolución del capital -->
@@ -52,6 +55,28 @@
             <div id="tradesList">
                 <!-- Trades list will be generated here -->
             </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Import Trades</h2>
+            <span class="close" onclick="closeModal('importModal')"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="modal-body">
+            <form id="importForm">
+                <input type="file" id="csvFile" accept=".csv" required>
+
+                <label>
+                    <input type="checkbox" id="dryRun">
+                    Do not save in DB
+                </label>
+                
+                <button type="submit">Importar</button>
+            </form>
+            <div id="importResults"></div>
         </div>
     </div>
 </div>
@@ -576,11 +601,16 @@
             modal.style.display = 'block';
         }
 
-        function closeModal() {
-            document.getElementById('tradesModal').style.display = 'none';
+        function showImportModal () {
+            const modal = document.getElementById('importModal');
+            modal.style.display = 'block';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
 
             // Limpiar el gráfico al cerrar
-            if (capitalChart) {
+            if (id == 'tradesModal' && capitalChart) {
                 capitalChart.destroy();
                 capitalChart = null;
             }
@@ -620,17 +650,69 @@
             }
         }
 
+        async function importFile() {
+            const form = document.getElementById('importForm');
+            const file = form.querySelector('#csvFile').files[0];
+            const dryRun = form.querySelector('#dryRun').checked;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('dry_run', dryRun);
+
+            try {
+                const response = await fetch("{{ url_for('journal_endpoints.import_trades') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                const resultsDiv = document.getElementById('importResults');
+
+                if (result.success) {
+                    resultsDiv.innerHTML = `
+                        <h3>✓ Successful import</h3>
+                        ${JSON.stringify(result)}
+                        <ul>
+                            <li>Executions: ${result.stats.total_executions}</li>
+                            <li>Trades: ${result.stats.trades_created}</li>
+                            <li>Closed: ${result.stats.closed_trades}</li>
+                            <li>Open: ${result.stats.open_trades}</li>
+                        </ul>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3>✗ Error in import</h3>
+                        ${JSON.stringify(result)}
+                        <ul>
+                            ${result.stats.errors.map(e => `<li>${e}</li>`).join('')}
+                        </ul>
+                    `;
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('tradesModal');
-            if (event.target === modal) {
-                closeModal();
+            const modals = ['tradesModal', 'importModal'];
+            for (const modalId of modals) {
+                let modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    closeModal(modalId);
+                }
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize calendar
             getData();
+
+            document.getElementById('importForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                importFile();
+            });
         });
 
     </script>
