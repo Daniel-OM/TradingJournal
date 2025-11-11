@@ -12,7 +12,7 @@ def load_env(path=".env"):
 
 load_env()
 
-UPLOAD_FOLDER = 'instance/media'
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'journal', 'instance', 'media')
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 MAX_IMAGE_SIZE = 50 * 1024 * 1024  # 50MB

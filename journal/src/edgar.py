@@ -112,7 +112,7 @@ class Edgar:
         self.random_headers: bool = random_headers
         self._session = requests.Session()
         self._session.headers.update(
-            {
+            headers={
                 "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
                 "Accept-Encoding": "gzip, deflate",
                 "Host": "data.sec.gov",
@@ -320,7 +320,13 @@ class SECFiling:
                 self.accn: str = None
             else:
                 df = self.getApiCikFilings(cik=cik, df=True)
-                self.accn: str = df[df['form'] == '10-Q'].iloc[0]['accessionNumber'].replace('-', '')
+                qs = df[df['form'] == '10-Q']
+                if not qs.empty:
+                    self.accn: str = qs.iloc[0]['accessionNumber'].replace('-', '')
+                elif not df.empty:
+                    self.accn: str = df.iloc[0]['accessionNumber'].replace('-', '')
+                else:
+                    self.accn: str = ''
         else:
             self.accn: str = accn.replace('-', '')
         self.random_headers: bool = random_headers
@@ -334,6 +340,8 @@ class SECFiling:
                 raise ValueError('You must pass the CIK value to the object constructor or define it after creating the object.')
             if self.accn == None:
                 raise ValueError('You must pass the ACCN value to the object constructor or define it after creating the object.')
+            elif self.accn == '':
+                return None
         
         #self.r: requests.Response = requests.get(url=url, params=params, headers=randomHeader(headers=self.headers) if self.random_headers else self.headers)
 
@@ -350,8 +358,11 @@ class SECFiling:
 
     def getMainFiling(self, doc_type:str='10-Q') -> str:
         r: requests.Response = self._get(f'{self._FILING_URL}/{self.cik}/{self.accn}/FilingSummary.xml')
-        html = BeautifulSoup(r.content)
-        self.file: str = html.find('file', {'doctype': doc_type}).get_text()
+        if r is None:
+            return ''
+        html = BeautifulSoup(markup=r.content)
+        file: str = html.find('file', {'doctype': doc_type})
+        self.file: str = file.get_text() if file is not None else None
         return self.file
 
     def getFilingContent(self, file:str=None, html:bool=True) -> BeautifulSoup:
@@ -359,7 +370,9 @@ class SECFiling:
         file = file or self.file
         if file is None:
             file = self.getMainFiling()
-
+        if file is None:
+            self.filing = None
+            return self.filing
         r: requests.Response = self._get(f'{self._FILING_URL}/{self.cik}/{self.accn}/{file}')
         self.filing = BeautifulSoup(r.content)
 
@@ -369,8 +382,14 @@ class SECFiling:
         
         if self.filing is None:
             self.getFilingContent(html=True)
+        if self.filing is None:
+            return None
 
-        element = self.filing.find_all(tag, attrs=attrs)[-1] if last else self.filing.find(tag, attrs=attrs)
+        if last:
+            tmp = self.filing.find_all(tag, attrs=attrs)
+            element = tmp[-1] if len(tmp) > 0 else None
+        else:
+            element = self.filing.find(tag, attrs=attrs)
 
         if element is None:
             print(f'Element not found: tag={tag}, attrs={attrs}, last={last}')
@@ -401,6 +420,8 @@ class SECFiling:
         while 'next' in next_button['value'].lower():
             params['start'] = len(data)
             r: requests.Response = self._get(url=f'{self._BASE_URL}/cgi-bin/browse-edgar', params=params)
+            if r is None:
+                break
             html = BeautifulSoup(markup=r.content)
             
             if params['output'] == 'atom':
@@ -426,6 +447,8 @@ class SECFiling:
             raise EdgarAPIError('The CIK must be passed')
         
         r: requests.Response = self._get(url=f'{self._BASE_URL}/Archives/edgar/data/{cik}', accn_needed=False)
+        if r is None:
+            return pd.DataFrame() if df else []
         html = BeautifulSoup(markup=r.content, features="html.parser")
         table = html.find(name='div', attrs={'id': 'main-content'}).find('table')
         columns: list[str] = [h.get_text().lower() for h in table.find_all('th')]

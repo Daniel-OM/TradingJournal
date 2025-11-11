@@ -7,19 +7,21 @@ from copy import deepcopy
 
 import numpy as np
 
+from werkzeug.utils import secure_filename
 from werkzeug.datastructures.file_storage import FileStorage
 from sqlalchemy import desc, func, case, extract, and_, or_
-from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort
+from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort, current_app
 from flask_login import login_required, current_user
 from werkzeug.wrappers.response import Response
 
-from ..models.watchlist_entry import WatchlistEntry
+from journal.src.import_das import ImportStats
 
 from ..models.watchlist_entry import WatchlistEntry
 
 from ..config import UPLOAD_FOLDER
-from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
+from ..models import db, AccountBalance, Trade, Transaction, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
 from ..src.performance import TradePerformance
+from ..src.import_das import CSVImporter
 from .utils import save_uploaded_files, calculate_max_drawdown, download_candles, localToUtc
 
 journal_pages = Blueprint(name='journal_pages', import_name=__name__)
@@ -1061,6 +1063,217 @@ def performance_api() -> str:
     charts = { 'net': net_charts, 'gross': gross_charts }
     
     return jsonify(stats=stats, charts=charts)
+
+@journal_bp.route(rule='/import', methods=['POST'])
+@login_required
+def import_trades():
+    """
+    Endpoint para importar CSV.
+    
+    Request:
+        - file: Archivo CSV (multipart/form-data)
+        - dry_run: true/false (opcional, default: false)
+    
+    Response:
+        {
+            "success": true,
+            "stats": {...}
+        }
+    """
+    
+    if not current_user.is_authenticated:
+        return jsonify({"error": "No autorizado"}), 401
+        
+    # Validar archivo
+    if 'file' not in request.files:
+        return jsonify({"error": "No se proporcionó archivo"}), 400
+    
+    file: FileStorage = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "Nombre de archivo vacío"}), 400
+    
+    if not file.filename.lower().endswith('.csv'):
+        return jsonify({"error": "Solo se permiten archivos CSV"}), 400
+    
+    # Guardar archivo temporalmente
+    filename = secure_filename(file.filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    temp_path = os.path.join(UPLOAD_FOLDER, f"{timestamp}_{filename}")
+    file.save(temp_path)
+    
+    try:
+        # Importar
+        dry_run = request.form.get('dry_run', 'false').lower() == 'true'
+        
+        importer = CSVImporter(current_app=current_app, trade_model=Trade, 
+                               transaction_model=Transaction, user_id=current_user.id, db=db)
+        
+        stats, loged_trades = importer.import_from_csv(csv_path=temp_path, dry_run=dry_run)
+        
+        for trade in loged_trades:
+            today = trade.entry_date or date.today()
+            one_year_ago = today - timedelta(days=365)
+            week_ago = today - timedelta(days=5)
+            while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+                week_ago = week_ago + timedelta(days=1)
+            # Descargar velas con Yahoo Finance
+            download_candles(db=db,
+                            symbol=trade.symbol,
+                            config=[
+                                {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                            ])
+        
+        db.session.commit()
+            
+        # Log del resultado
+        if stats.success:
+            current_app.logger.info(
+                f"Import successful - User: {current_user.id}, File: {filename}, Trades: {stats.trades_created}"
+            )
+        else:
+            current_app.logger.warning(
+                f"Import failed - User: {current_user.id}, File: {filename}, Errors: {len(stats.errors)}"
+            )
+        
+        return jsonify({
+            "success": stats.success,
+            "message": "Importación completada" if stats.success else "Importación fallida",
+            "stats": {
+                "total_executions": stats.total_executions,
+                "trades_created": stats.trades_created,
+                "closed_trades": stats.closed_trades,
+                "open_trades": stats.open_trades,
+                "transactions_created": stats.transactions_created,
+                "errors": stats.errors
+            }
+        }), 200 if stats.success else 400
+    
+    except FileNotFoundError as e:
+        current_app.logger.error(f"File not found: {e}")
+        return jsonify({"error": "Archivo no encontrado"}), 404
+    
+    except ValueError as e:
+        current_app.logger.error(f"Validation error: {e}")
+        return jsonify({"error": str(e)}), 400
+    
+    except Exception as e:
+        current_app.logger.error(f"Import error: {e}", exc_info=True)
+        return jsonify({
+            "error": "Error interno del servidor",
+            "details": str(e) if current_app.debug else None
+        }), 500
+    
+    finally:
+        # Limpiar archivo temporal
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception as e:
+                current_app.logger.warning(f"Could not delete temp file: {e}")
+
+@journal_bp.route(rule='/import/batch', methods=['POST'])
+@login_required
+def import_batch_trades():
+    """
+    POST /api/trades/import/batch
+    
+    Importa múltiples archivos CSV en una sola petición.
+    
+    Form Data:
+        - files[]: Array de archivos CSV (required)
+        - dry_run: bool (optional, default: false)
+    
+    Returns:
+        JSON con estadísticas de cada archivo
+    """
+    
+    if not current_user.is_authenticated:
+        return jsonify({"error": "No autorizado"}), 401
+    
+    # Validar archivos
+    if 'files[]' not in request.files:
+        return jsonify({"error": "No se proporcionaron archivos"}), 400
+    
+    files = request.files.getlist('files[]')
+    
+    if not files or len(files) == 0:
+        return jsonify({"error": "Lista de archivos vacía"}), 400
+    
+    # Validar que todos sean CSV
+    for file in files:
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({
+                "error": f"Archivo inválido: {file.filename}. Solo CSV permitidos"
+            }), 400
+    
+    # Parámetros comunes
+    dry_run: bool = request.form.get('dry_run', 'false').lower() == 'true'
+    
+    results: dict = {}
+    temp_files: list[str] = []
+    
+    try:
+        # Procesar cada archivo
+        for file in files:
+            filename: str = secure_filename(filename=file.filename)
+            timestamp: str = datetime.now().strftime(format='%Y%m%d_%H%M%S')
+            temp_path: str = os.path.join(UPLOAD_FOLDER, f"{timestamp}_{filename}")
+            
+            temp_files.append(temp_path)
+            file.save(dst=temp_path)
+            
+            try:
+                importer = CSVImporter(current_app=current_app, trade_model=Trade, 
+                               transaction_model=Transaction, user_id=current_user.id, db=db)
+                
+                stats: ImportStats = importer.import_from_csv(csv_path=temp_path, dry_run=dry_run)
+                
+                results[filename] = {
+                    "success": stats.success,
+                    "stats": {
+                        "total_executions": stats.total_executions,
+                        "trades_created": stats.trades_created,
+                        "closed_trades": stats.closed_trades,
+                        "open_trades": stats.open_trades,
+                        "transactions_created": stats.transactions_created,
+                        "errors": stats.errors
+                    }
+                }
+                
+            except Exception as e:
+                results[filename] = {
+                    "success": False,
+                    "error": str(e)
+                }
+        
+        # Resumen total
+        total_success: int = sum(1 for r in results.values() if r.get('success', False))
+        total_trades: int = sum(
+            r.get('stats', {}).get('trades_created', 0) 
+            for r in results.values()
+        )
+        
+        return jsonify({
+            "success": total_success == len(files),
+            "summary": {
+                "total_files": len(files),
+                "successful": total_success,
+                "failed": len(files) - total_success,
+                "total_trades_created": total_trades
+            },
+            "results": results
+        })
+        
+    finally:
+        # Limpiar archivos temporales
+        for temp_path in temp_files:
+            if os.path.exists(path=temp_path):
+                try:
+                    os.remove(path=temp_path)
+                except Exception as e:
+                    current_app.logger.warning(f"Could not delete temp file: {e}")
 
 def get_balance_data():
     """Obtener datos de balance histórico"""
