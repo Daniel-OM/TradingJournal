@@ -14,11 +14,11 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-eye me-2"></i>Watchlist</h2>
     {% if watchlist_filter %}
-    <a href="{{ url_for('watchlist_endpoints.watchlist_performance', id=watchlist_filter) }}" class="btn btn-pill bg-primary">
+    <a href="{{ url_for('watchlist_pages.watchlist_performance', id=watchlist_filter) }}" class="btn btn-pill bg-primary">
         <i class="fas fa-plus me-2"></i>Performance
     </a>
     {% endif %}
-    <a href="{{ url_for('watchlist_endpoints.add_watchlist_entry') }}" class="btn btn-pill bg-primary">
+    <a href="{{ url_for('watchlist_pages.add_watchlist_entry') }}" class="btn btn-pill bg-primary">
         <i class="fas fa-plus me-2"></i>Add Asset
     </a>
 </div>
@@ -60,7 +60,7 @@
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 watchlist-card" 
                     style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
-                    onclick="window.location.href='{{ url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id) }}';"
+                    onclick="window.location.href='{{ url_for('watchlist_pages.detail_watchlist_entry', id=entry.id) }}';"
                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)';"
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
                     
@@ -155,7 +155,7 @@
                         <div class="d-flex mt-auto">
                             <button type="button" 
                                     class="btn btn-pill bg-primary btn-sm"
-                                    onclick="event.stopPropagation(); window.location.href='{{ url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id) }}';">
+                                    onclick="event.stopPropagation(); window.location.href='{{ url_for('watchlist_pages.detail_watchlist_entry', id=entry.id) }}';">
                                 <i class="fas fa-info-circle me-1"></i>Details
                             </button>
                             {% if not entry.exit_date %}
@@ -223,7 +223,7 @@ document.getElementById('confirmRemove').addEventListener('click', function() {
         // Crear formulario para enviar la petición POST
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `{{ url_for('watchlist_endpoints.delete_watchlist_entry', id=0) }}`.replace('0', entryToRemove);
+        form.action = `{{ url_for('watchlist_pages.delete_watchlist_entry', id=0) }}`.replace('0', entryToRemove);
         
         // Agregar token CSRF si existe
         {% if csrf_token %}

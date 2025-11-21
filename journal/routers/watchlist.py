@@ -5,26 +5,27 @@ import asyncio
 from copy import deepcopy
 
 from sqlalchemy import func, or_
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, abort
+from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required, current_user
+from werkzeug.wrappers.response import Response
 
 from ..models import db, Watchlist, WatchlistEntry, WatchlistCondition
 from ..src.performance import WatchlistPerformance
 from .utils import download_candles
 
-watchlist_bp = Blueprint(name='watchlist_endpoints', import_name=__name__)
+watchlist_pages = Blueprint(name='watchlist_pages', import_name=__name__)
 
-@watchlist_bp.route('/')
+@watchlist_pages.route(rule='/')
 @login_required
-def watchlist():
+def watchlist() -> str:
     
     watchlists = Watchlist.query.filter(Watchlist.user_id == current_user.id).all()
     
     return render_template('watchlist/watchlist.html', watchlists=watchlists)
 
-@watchlist_bp.route('/<int:id>')
+@watchlist_pages.route(rule='/<int:id>')
 @login_required
-def watchlist_detail(id):
+def watchlist_detail(id) -> str:
     selected_date = datetime.strptime(request.args.get('date', date.today().strftime('%Y-%m-%d')), '%Y-%m-%d')
     watchlist_filter = request.args.get('watchlist', str(id))
     hashtag_filter = request.args.get('hashtag', '')
@@ -47,9 +48,9 @@ def watchlist_detail(id):
                          selected_date=selected_date.strftime('%Y-%m-%d'), 
                          watchlist_filter=watchlist_filter, hashtag_filter=hashtag_filter)
 
-@watchlist_bp.route('/<int:id>/performance')
+@watchlist_pages.route(rule='/<int:id>/performance')
 @login_required
-def watchlist_performance(id):
+def watchlist_performance(id) -> str:
     start = request.args.get('start', type=str)
     end = request.args.get('end', type=str)
     asset_symbol = request.args.get('symbol', type=str)
@@ -111,9 +112,9 @@ def watchlist_performance(id):
 
 
 
-@watchlist_bp.route('/config', methods=['GET', 'POST'])
+@watchlist_pages.route(rule='/config', methods=['GET', 'POST'])
 @login_required
-def watchlist_configuration():
+def watchlist_configuration() -> Response | str:
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -193,14 +194,14 @@ def watchlist_configuration():
                 flash('Scoring criteria deleted successfully!', 'info')
         
         db.session.commit()
-        return redirect(url_for('watchlist_endpoints.watchlist'))
+        return redirect(url_for('watchlist_pages.watchlist'))
 
     watchlists = Watchlist.query.all()
     return render_template('watchlist/create.html', date=date, watchlists=watchlists, json_watchlists=[s.to_dict() for s in watchlists])
 
-@watchlist_bp.route('/<int:id>/update', methods=['POST'])
+@watchlist_pages.route(rule='/<int:id>/update', methods=['POST'])
 @login_required
-def update_watchlist(id):
+def update_watchlist(id) -> Response:
     """Actualizar un registro de la watchlist"""
     try:
         entry: WatchlistEntry = WatchlistEntry.query.get_or_404(id)
@@ -235,21 +236,35 @@ def update_watchlist(id):
         db.session.commit()
         
         flash(f'Registro de {entry.symbol} actualizado exitosamente', 'success')
-        return redirect(url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id))
+        return redirect(url_for('watchlist_pages.detail_watchlist_entry', id=entry.id))
         
     except ValueError as e:
         flash(f'Error en los datos ingresados: {str(e)}', 'error')
-        return redirect(url_for('watchlist_endpoints.edit_watchlist_entry', id=id))
+        return redirect(url_for('watchlist_pages.edit_watchlist_entry', id=id))
     except Exception as e:
         db.session.rollback()
         flash(f'Error al actualizar el registro: {str(e)}', 'error')
-        return redirect(url_for('watchlist_endpoints.edit_watchlist_entry', id=id))
+        return redirect(url_for('watchlist_pages.edit_watchlist_entry', id=id))
 
-@watchlist_bp.route('/entry/add', methods=['GET', 'POST'])
+@watchlist_pages.route(rule='/entry/add', methods=['GET', 'POST'])
 @login_required
-def add_watchlist_entry():
+def add_watchlist_entry() -> Response | str:
 
-    if request.method == 'POST':
+    if request.method == 'POST' and 'entry' in request.form:
+        try:
+            print('Data: ', request.form['entry'])
+            entry_obj: WatchlistEntry = WatchlistEntry.from_dict(json.loads(request.form['entry']))
+        except Exception as e:
+            print("Error trying to convert watchlist entry form in watchlist: ", e)
+            entry_obj = None
+        watchlists = Watchlist.query.all()
+        return render_template(template_name_or_list='watchlist_entry/create.html',
+                               watchlist_id=getattr(entry_obj, 'watchlist_id', None),
+                               date=date, watchlists=watchlists,
+                               json_watchlists=[s.to_dict(exclude=['entries']) for s in watchlists],
+                               entry=entry_obj)
+
+    elif request.method == 'POST':
 
         entry = WatchlistEntry(
             date=datetime.strptime(request.form['date'], '%Y-%m-%d').date(),
@@ -301,20 +316,19 @@ def add_watchlist_entry():
         
         db.session.commit()
         flash('Activo añadido a la watchlist exitosamente!', 'success')
-        return redirect(url_for('watchlist_endpoints.watchlist_detail', id=entry.watchlist_id))
+        return redirect(url_for('watchlist_pages.watchlist_detail', id=entry.watchlist_id))
     
     watchlists = Watchlist.query.all()
-    entry = request.args.get(key='entry', default=None)
     
     return render_template('watchlist_entry/create.html', 
                            watchlist_id=request.args.get('watchlist_id', None), 
                            date=date, watchlists=watchlists, 
                            json_watchlists=[s.to_dict(exclude=['entries']) for s in watchlists], 
-                           entry=WatchlistEntry.from_dict(json.loads(entry)) if entry else None)
+                           entry=None)
 
-@watchlist_bp.route('/entry/<int:id>/detail')
+@watchlist_pages.route(rule='/entry/<int:id>/detail')
 @login_required
-def detail_watchlist_entry(id):
+def detail_watchlist_entry(id) -> str | Response:
     """Vista detallada de un registro específico de la watchlist"""
     try:
         entry: WatchlistEntry = WatchlistEntry.query.get_or_404(id)
@@ -344,9 +358,9 @@ def detail_watchlist_entry(id):
                              
     except Exception as e:
         flash(f'Error al cargar el detalle: {str(e)}', 'error')
-        return redirect(url_for('watchlist_endpoints.watchlist'))
+        return redirect(url_for('watchlist_pages.watchlist'))
 
-@watchlist_bp.route('/entry/<int:id>/remove', methods=['POST'])
+@watchlist_pages.route(rule='/entry/<int:id>/remove', methods=['POST'])
 @login_required
 def delete_watchlist_entry(id):
     """Dar de baja un registro de la watchlist (agregar fecha de salida)"""
@@ -361,7 +375,7 @@ def delete_watchlist_entry(id):
         # Verificar que no esté ya dado de baja
         if entry.date_exit:
             flash(f'El activo {entry.symbol} ya está dado de baja desde {entry.date_exit.strftime("%d/%m/%Y")}', 'warning')
-            return redirect(url_for('watchlist_endpoints.watchlist'))
+            return redirect(url_for('watchlist_pages.watchlist'))
         
         # Agregar fecha de salida
         entry.date_exit = date.today()
@@ -383,7 +397,7 @@ def delete_watchlist_entry(id):
                 'exit_date': entry.date_exit.strftime("%d/%m/%Y")
             })
         
-        return redirect(url_for('watchlist_endpoints.watchlist_detail', id=watchlist_id))
+        return redirect(url_for('watchlist_pages.watchlist_detail', id=watchlist_id))
         
     except Exception as e:
         db.session.rollback()
@@ -397,11 +411,11 @@ def delete_watchlist_entry(id):
                 'message': error_msg
             }), 500
         
-        return redirect(url_for('watchlist_endpoints.watchlist'))
+        return redirect(url_for('watchlist_pages.watchlist'))
 
-@watchlist_bp.route('/entry/<int:id>/reactivate', methods=['POST'])
+@watchlist_pages.route(rule='/entry/<int:id>/reactivate', methods=['POST'])
 @login_required
-def reactivate_watchlist_entry(id):
+def reactivate_watchlist_entry(id) -> Response:
     """Reactivar un registro de la watchlist (quitar fecha de salida)"""
     try:
         entry: WatchlistEntry = WatchlistEntry.query.get_or_404(id)
@@ -412,7 +426,7 @@ def reactivate_watchlist_entry(id):
         # Verificar que esté dado de baja
         if not entry.date_exit:
             flash(f'El activo {entry.symbol} ya está activo', 'warning')
-            return redirect(url_for('watchlist_endpoints.watchlist_detail', id=entry.id))
+            return redirect(url_for('watchlist_pages.watchlist_detail', id=entry.id))
         
         # Quitar fecha de salida
         entry.date_exit = None
@@ -420,16 +434,16 @@ def reactivate_watchlist_entry(id):
         db.session.commit()
         
         flash(f'Activo {entry.symbol} reactivado exitosamente', 'success')
-        return redirect(url_for('watchlist_endpoints.watchlist_detail', id=entry.id))
+        return redirect(url_for('watchlist_pages.watchlist_detail', id=entry.id))
         
     except Exception as e:
         db.session.rollback()
         flash(f'Error al reactivar el activo: {str(e)}', 'error')
-        return redirect(url_for('watchlist_endpoints.watchlist'))
+        return redirect(url_for('watchlist_pages.watchlist'))
 
-@watchlist_bp.route('/entry/<int:id>/edit', methods=['GET', 'POST'])
+@watchlist_pages.route(rule='/entry/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_watchlist_entry(id):
+def edit_watchlist_entry(id) -> Response | str:
     """Vista para editar un registro de la watchlist"""
     # try:
 
@@ -493,7 +507,7 @@ def edit_watchlist_entry(id):
         db.session.commit()
         
         flash(f'Registro de {entry.symbol} actualizado exitosamente', 'success')
-        return redirect(url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id))
+        return redirect(url_for('watchlist_pages.detail_watchlist_entry', id=entry.id))
     
 
     entry = WatchlistEntry.query.get_or_404(id)
@@ -510,7 +524,7 @@ def edit_watchlist_entry(id):
                              
     # except Exception as e:
     #     flash(f'Error al cargar el registro para edición: {str(e)}', 'error')
-    #     return redirect(url_for('watchlist_endpoints.watchlist'))
+    #     return redirect(url_for('watchlist_pages.watchlist'))
 
 # Función auxiliar para obtener estadísticas de la watchlist
 def get_watchlist_stats():
@@ -537,3 +551,19 @@ def get_watchlist_stats():
             'inactive': 0,
             'avg_score': 0
         }
+
+
+watchlist_bp = Blueprint(name='watchlist_endpoints', import_name=__name__)
+
+@watchlist_bp.route(rule='/')
+@login_required
+def get_watchlists() -> Response:
+    
+    watchlists: list[Watchlist] = Watchlist.query.filter(Watchlist.user_id == current_user.id).all()
+    complete: bool = request.args.get(key='complete', default='false').lower() == 'true'
+    
+    return jsonify({
+        'success': True,
+        'data': [watchlist.to_dict(exclude=['entries', 'conditions'] if not complete else []) for watchlist in watchlists],
+        'error': None
+    })

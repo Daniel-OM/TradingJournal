@@ -400,7 +400,7 @@ class TradeSummaryReport:
 class CSVImporter:
     """Importador de CSV a base de datos con validación y logging"""
     
-    def __init__(self, current_app, trade_model, transaction_model, user_id: int, db) -> None:
+    def __init__(self, current_app, trade_model, transaction_model, user_id: int) -> None:
         """
         Args:
             user_id: ID del usuario propietario de los trades
@@ -413,15 +413,14 @@ class CSVImporter:
         self.current_app = current_app
         self.trade_model = trade_model
         self.transaction_model = transaction_model
-        self.db = db
     
-    def import_from_csv(self, csv_path: str | Path, 
+    def import_from_file(self, file_path: str | Path, 
                        dry_run: bool = False) -> tuple[ImportStats, list]:
         """
         Importa trades desde CSV a base de datos.
         
         Args:
-            csv_path: Ruta al archivo CSV
+            file_path: Ruta al archivo
             dry_run: Si True, procesa pero no commitea a DB
             
         Returns:
@@ -431,11 +430,11 @@ class CSVImporter:
         
         # try:
         # 1. Leer y validar CSV
-        df: pd.DataFrame = self._read_csv(csv_path=csv_path)
+        df: pd.DataFrame = self._read_file(file_path=file_path)
         self.stats.total_executions = len(df)
         
         # 2. Dividir en trades
-        trades_by_symbol: dict[str, list[Trade]] = self.splitter.split(df)
+        trades_by_symbol: dict[str, list[Trade]] = self.splitter.split(df=df)
         
         # 3. Crear modelos de base de datos
         loged_trades: list = []
@@ -453,18 +452,8 @@ class CSVImporter:
                 except Exception as e:
                     self.stats.errors.append(f"Error creando trade {symbol}: {str(e)}")
                     self.current_app.logger.error(f"Error importing trade: {e}", exc_info=True)
-        
-        # 4. Commit si no es dry_run
-        if not dry_run:
-            self.db.session.commit()
-            self.stats.success = True
-        else:
-            self.db.session.rollback()
-            self.stats.success = False
-            self.stats.errors.append("DRY RUN - No se guardaron cambios")
             
         # except Exception as e:
-        #     self.db.session.rollback()
         #     self.stats.success = False
         #     self.stats.errors.append(f"Error general: {str(e)}")
         #     self.current_app.logger.error(f"Import failed: {e}", exc_info=True)
@@ -472,17 +461,20 @@ class CSVImporter:
         
         return self.stats, loged_trades
     
-    def _read_csv(self, csv_path: str | Path) -> pd.DataFrame:
+    def _read_file(self, file_path: str | Path) -> pd.DataFrame:
         """Lee y valida CSV"""
-        path = Path(csv_path)
+        path = Path(file_path)
         
         if not path.exists():
-            raise FileNotFoundError(f"CSV no encontrado: {csv_path}")
+            raise FileNotFoundError(f"File not found: {file_path}")
         
         try:
-            df: pd.DataFrame = pd.read_csv(path)
+            if path.suffix.lower() == '.xlsx':
+                df: pd.DataFrame = pd.read_excel(path)
+            else:
+                df: pd.DataFrame = pd.read_csv(path)
         except Exception as e:
-            raise ValueError(f"Error leyendo CSV: {e}")
+            raise ValueError(f"Error reading file: {e}")
         
         # Validar columnas requeridas
         required: list[str] = ['symb', 'time', 'price', 'qty', 'B/S']
@@ -533,22 +525,14 @@ class CSVImporter:
             description=self._generate_description(trade),
         )
         
-        self.db.session.add(instance=trade_model)
-        self.db.session.flush()  # Para obtener trade_model.id
-        
         # Crear Transactions
-        for execution in trade.executions:
-            transaction = self._create_transaction(execution=execution, trade_id=trade_model.id)
-            self.db.session.add(instance=transaction)
-            self.stats.transactions_created += 1
-
-        if not dry_run:
-            self.db.session.commit()
+        trade_model.transactions = [self._create_transaction(execution=execution) for execution in trade.executions]
+        self.stats.transactions_created += len(trade.executions)
         
         return trade_model
     
     def _create_transaction(self, execution: Execution, 
-                           trade_id: int):
+                           trade_id:int=None):
         """Crea modelo Transaction desde Execution"""
         return self.transaction_model(
             date=execution.datetime.date(),
@@ -644,28 +628,28 @@ class BatchImporter:
         if not directory.exists() or not directory.is_dir():
             raise ValueError(f"Directorio inválido: {directory}")
         
-        csv_files: list[Path] = sorted(directory.glob(pattern))
+        files: list[Path] = sorted(directory.glob(pattern))
         
-        if not csv_files:
+        if not files:
             raise ValueError(f"No se encontraron archivos {pattern} en {directory}")
         
         results = {}
         
-        for csv_file in csv_files:
-            print(f"\nProcesando: {csv_file.name}")
+        for file in files:
+            print(f"\nProcesando: {file.name}")
             
             importer = CSVImporter(current_app=self.current_app, trade_model=self.trade_model, 
                                    transaction_model=self.transaction_model, user_id=self.user_id, db=self.db)
             
             try:
-                stats: ImportStats = importer.import_from_csv(csv_path=csv_file, dry_run=dry_run)
-                results[csv_file.name] = stats
+                stats: ImportStats = importer.import_from_file(file_path=file, dry_run=dry_run)
+                results[file.name] = stats
                 print(stats)
                 
             except Exception as e:
                 print(f"ERROR: {e}")
-                results[csv_file.name] = ImportStats()
-                results[csv_file.name].errors.append(str(e))
+                results[file.name] = ImportStats()
+                results[file.name].errors.append(str(e))
         
         return results
 

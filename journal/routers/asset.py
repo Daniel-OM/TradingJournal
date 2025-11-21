@@ -7,6 +7,7 @@ import pandas as pd
 from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required
 
+from ..config import POLYGON_FREE
 from ..src.yahoofinance import YahooTicker, YahooFinance
 from ..src.benzinga import Benzinga
 from ..src.finviz import FinvizScraper, FinvizTicker
@@ -91,187 +92,23 @@ def api_asset(symbol:str) -> str:
         share_data = {}
 
     # Obtener datos de Finviz
-    finviz = FinvizTicker(symbol=symbol, random_headers=True)
-    finviz_info = finviz.info(df=False)
-    finviz_data = finviz_info if isinstance(finviz_info, dict) else {}
+    try:
+        finviz = FinvizTicker(symbol=symbol, random_headers=True)
+        finviz_info = finviz.info(df=False)
+        finviz_data = finviz_info if isinstance(finviz_info, dict) else {}
+    except Exception as e:
+        print(f'Finviz failed to found {symbol}: ', e)
+        finviz_info = {}
+        finviz_data = {}
 
     # candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d')
-    yahoo = YahooTicker(ticker=symbol)
-    yahoo_info: dict = yahoo.getTicker()
+    try:
+        yahoo = YahooTicker(ticker=symbol)
+        yahoo_info: dict = yahoo.getTicker()
+    except Exception as e:
+        print(f'Yahoo failed to found {symbol}: ', e)
+        yahoo_info = {}
 
-    candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=True, yahoo=True) # TODO: This should be free=None but as we don't pay this is set this way so it does not give any error 
-    yahoo_candles = yahoo.getPrice(start=(datetime.now() - timedelta(days=365)).timestamp(),
-                                    end=datetime.now().timestamp(), 
-                                    timeframe='1d', df=True)
-
-    candles['gap'] = candles['open'] / candles['close'].shift(1) - 1
-    candles['ret'] = candles['close'] / candles['open'] - 1
-    candles['high_spike'] = candles['high'] / candles['open'] - 1
-    candles['low_spike'] = candles['low'] / candles['open'] - 1
-    
-    candles['gap'] = candles['gap'].astype(float)
-    candles['ret'] = candles['ret'].astype(float)
-    candles['high_spike'] = candles['high_spike'].astype(float)
-    candles['low_spike'] = candles['low_spike'].astype(float)
-    day1 = candles[candles['gap'] > 0.1]
-    day2 = candles[candles['gap'].shift(1) > 0.1]
-    day3 = candles[candles['gap'].shift(2) > 0.1]
-
-    df = candles.sort_values('date').reset_index(drop=True)
-    df['date_plus_3'] = df['date'].shift(-3).ffill()
-    
-    mapping = df.set_index('date')['date_plus_3'].reindex(day1['date'].tolist()).to_dict()
-    print('Mapping: ',mapping)
-    windows = [getPrice(symbol=symbol, start=start, end=end, timeframe='1m') for start, end in reversed(list(mapping.items()))]
-
-    def _secondsToTimeStr(sec: float) -> str:
-        if np.isnan(sec):
-            return None
-        sec = int(round(sec))
-        h = sec // 3600
-        m = (sec % 3600) // 60
-        s = sec % 60
-        return f"{h:02d}:{m:02d}:{s:02d}"
-
-    def compute_gap_stats(list_of_dfs: list[pd.DataFrame],
-                        tz_ny: str = 'America/New_York',
-                        session_only: bool = False) -> dict[str, dict]:
-        """
-        Calcula:
-        - serie temporal de retorno medio a lo largo del día (alineado por time-of-day HH:MM)
-        - hora media del high máximo del día
-        - hora media del low mínimo del día
-        para day0 (día del gap), day1 (día siguiente) y day2 (segundo día siguiente).
-
-        Asume que cada DataFrame de entrada contiene al menos 1..3 fechas contiguas (o menos) y
-        que tiene columna 'session' con valores como 'PRE','REG','POST' si quieres filtrar por sesión REG.
-        """
-        # contenedores por día
-        returns_lists = {0: [], 1: [], 2: []}
-        high_seconds = {0: [], 1: [], 2: []}
-        low_seconds = {0: [], 1: [], 2: []}
-
-        for df in list_of_dfs:
-            if not isinstance(df.index, pd.DatetimeIndex):
-                raise ValueError("Each input must have a DatetimeIndex")
-
-            # Garantizar tz-aware; si no lo es asumimos UTC
-            idx = df.index
-            if idx.tz is None:
-                df = df.tz_localize('UTC')
-                idx = df.index
-
-            # Convertir a hora de NY para agrupar por fecha local (pero conservar timestamps originales en df)
-            df_ny = df.tz_convert(tz_ny)
-
-            # Obtener fechas locales ordenadas (puede haber menos de 3 días)
-            unique_dates = sorted({d.date() for d in df_ny.index})
-            # si no hay fechas suficientes, seguir pero solo procesar las disponibles
-            for day_offset in range(0, 3):
-                if day_offset >= len(unique_dates):
-                    continue
-                day_date = unique_dates[day_offset]
-                mask_day = df_ny.index.date == day_date
-                day_df_ny = df_ny.loc[mask_day].copy()
-                if day_df_ny.empty:
-                    continue
-
-                # filtrar REG si se pide
-                if session_only and 'session' in day_df_ny.columns:
-                    day_reg = day_df_ny[day_df_ny['session'] == 'REG']
-                    if day_reg.empty:
-                        # fallback a todo el día si no hay datos REG
-                        day_reg = day_df_ny
-                else:
-                    day_reg = day_df_ny
-
-                # calcular retorno intradía relativo al open del día (primer registro usado como open)
-                open_price = None
-                if 'open' in day_reg.columns and not day_reg['open'].isna().all():
-                    open_price = float(day_reg['open'].iloc[0])
-                elif 'close' in day_reg.columns and not day_reg['close'].isna().all():
-                    # fallback si falta open
-                    open_price = float(day_reg['close'].iloc[0])
-                else:
-                    # no hay precios válidos; saltar
-                    continue
-
-                # return series indexado por time-of-day 'HH:MM'
-                times = day_reg.index.time
-                time_labels = [t.strftime("%H:%M") for t in times]
-                returns = (day_reg['close'].astype(float) / open_price) - 1.0
-                series = pd.Series(returns.values, index=time_labels)
-                returns_lists[day_offset].append(series)
-
-                # hora del max high y min low (usar day_reg)
-                if 'high' in day_reg.columns and not day_reg['high'].isna().all():
-                    idx_max = day_reg['high'].idxmax()
-                    tmax = idx_max.tz_convert(tz_ny).timetz()  # time with tz info
-                    seconds_max = tmax.hour * 3600 + tmax.minute * 60 + tmax.second
-                    high_seconds[day_offset].append(seconds_max)
-                if 'low' in day_reg.columns and not day_reg['low'].isna().all():
-                    idx_min = day_reg['low'].idxmin()
-                    tmin = idx_min.tz_convert(tz_ny).timetz()
-                    seconds_min = tmin.hour * 3600 + tmin.minute * 60 + tmin.second
-                    low_seconds[day_offset].append(seconds_min)
-
-        # Agregar resultados
-        results: dict[str, dict] = {}
-        for day in (0, 1, 2):
-            # mean return series: concatenar por columnas y hacer mean (ignorar NaN)
-            if len(returns_lists[day]) == 0:
-                median_series = pd.Series(dtype=float)
-                avg_series = pd.Series(dtype=float)
-            else:
-                all_returns_df = pd.concat(returns_lists[day], axis=1).sort_index()
-                
-                avg_series = all_returns_df.mean(axis=1, skipna=True)
-                # opcional: asegurar orden por hora
-                avg_series.index = pd.to_datetime(avg_series.index, format="%H:%M").time
-                avg_series = avg_series.sort_index()
-                # devolver index como string HH:MM
-                avg_series.index = [t.strftime("%H:%M") for t in avg_series.index]
-                
-                median_series = all_returns_df.median(axis=1, skipna=True)
-                # opcional: asegurar orden por hora
-                median_series.index = pd.to_datetime(median_series.index, format="%H:%M").time
-                median_series = median_series.sort_index()
-                # devolver index como string HH:MM
-                median_series.index = [t.strftime("%H:%M") for t in median_series.index]
-
-            results[f"day{day+1}"] = {
-                "avg_return_series": [{k: (None if (isinstance(v, float) and np.isnan(v)) else v)} for k, v in avg_series.items()],
-                "median_return_series": [{k: (None if (isinstance(v, float) and np.isnan(v)) else v)} for k, v in median_series.items()],
-                "avg_high_time": _secondsToTimeStr(float(np.nan) if len(high_seconds[day]) == 0 else float(np.mean(high_seconds[day]))),
-                "avg_low_time": _secondsToTimeStr(float(np.nan) if len(low_seconds[day]) == 0 else float(np.mean(low_seconds[day]))),
-                "median_high_time": _secondsToTimeStr(float(np.nan) if len(high_seconds[day]) == 0 else float(np.median(high_seconds[day]))),
-                "median_low_time": _secondsToTimeStr(float(np.nan) if len(low_seconds[day]) == 0 else float(np.median(low_seconds[day]))),
-                "n_instances": len(returns_lists[day])
-            }
-
-        return results
-    print(windows)
-    intraday_stats: dict[str, dict] = compute_gap_stats(list_of_dfs=[w for w in windows if isinstance(w, pd.DataFrame) and not w.empty])
-    
-    # TODO: Add intraday stats (like HOD time and LOD time or the average intrday return line chart)
-    stats = {
-        'quantity': len(day1),
-        'avg_gap': day1['gap'].mean(),
-        'median_gap': day1['gap'].median(),
-        'day1': {
-            **gapStats(data=day1),
-            **intraday_stats['day1']
-        } if len(day1) > 0 else {},
-        'day2': {
-            **gapStats(data=day2),
-            **intraday_stats['day2']
-        } if len(day2) > 0 else {},
-        'day3': {
-            **gapStats(data=day3),
-            **intraday_stats['day3']
-        } if len(day3) > 0 else {}
-    }
-    
     # Obtener datos de Edgar# %%
     cik = str(finviz_data.get('CIK', None))
     if cik.lower() != 'none':
@@ -335,9 +172,7 @@ def api_asset(symbol:str) -> str:
             
             # Timestamps
             'last_updated': datetime.now().isoformat(),
-            'last_trade_time': share_data.get('lastTradeTime', ''),
-            'candles': candles.to_dict(orient='records'),
-            'stats': stats
+            'last_trade_time': share_data.get('lastTradeTime', '')
         }
     }
     
@@ -588,6 +423,214 @@ def get_stock_ownership(symbol):
         return jsonify({
             'success': True,
             'data': ownership_data,
+            'error': None
+        })
+        
+    except Exception as e:
+        return handle_error(e, symbol)
+
+@asset_bp.route('<symbol>/candles')
+@login_required
+def get_stock_candles(symbol):
+    """
+    Get stock candles
+    """
+    try:
+        symbol = symbol.upper()
+        
+        candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=POLYGON_FREE, yahoo=True) # TODO: This should be yahoo=False but as we don't pay this is set this way so it does not give any error 
+
+        
+        return jsonify({
+            'success': True,
+            'data': candles.to_dict(orient='records'),
+            'error': None
+        })
+        
+    except Exception as e:
+        return handle_error(e, symbol)
+
+@asset_bp.route('<symbol>/gap-stats')
+@login_required
+def get_stock_gap_stats(symbol):
+    """
+    Obtiene datos de propiedad institucional e insider
+    """
+    try:
+        symbol = symbol.upper()
+        
+        candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=POLYGON_FREE, yahoo=True) # TODO: This should be yahoo=False but as we don't pay this is set this way so it does not give any error 
+
+        candles['gap'] = candles['open'] / candles['close'].shift(1) - 1
+        candles['ret'] = candles['close'] / candles['open'] - 1
+        candles['high_spike'] = candles['high'] / candles['open'] - 1
+        candles['low_spike'] = candles['low'] / candles['open'] - 1
+        
+        candles['gap'] = candles['gap'].astype(float)
+        candles['ret'] = candles['ret'].astype(float)
+        candles['high_spike'] = candles['high_spike'].astype(float)
+        candles['low_spike'] = candles['low_spike'].astype(float)
+        day1 = candles[candles['gap'] > 0.1]
+        day2 = candles[candles['gap'].shift(1) > 0.1]
+        day3 = candles[candles['gap'].shift(2) > 0.1]
+
+        df = candles.sort_values('date').reset_index(drop=True)
+        df['date_plus_3'] = df['date'].shift(-3).ffill()
+        
+        mapping = df.set_index('date')['date_plus_3'].reindex(day1['date'].tolist()).to_dict()
+        print('Mapping: ',mapping)
+        windows = [getPrice(symbol=symbol, start=start, end=end, timeframe='1m', free=POLYGON_FREE, yahoo=False) for start, end in reversed(list(mapping.items()))]
+
+        def _secondsToTimeStr(sec: float) -> str:
+            if np.isnan(sec):
+                return None
+            sec = int(round(sec))
+            h = sec // 3600
+            m = (sec % 3600) // 60
+            s = sec % 60
+            return f"{h:02d}:{m:02d}:{s:02d}"
+
+        def compute_gap_stats(list_of_dfs: list[pd.DataFrame],
+                            tz_ny: str = 'America/New_York',
+                            session_only: bool = False) -> dict[str, dict]:
+            """
+            Calcula:
+            - serie temporal de retorno medio a lo largo del día (alineado por time-of-day HH:MM)
+            - hora media del high máximo del día
+            - hora media del low mínimo del día
+            para day0 (día del gap), day1 (día siguiente) y day2 (segundo día siguiente).
+
+            Asume que cada DataFrame de entrada contiene al menos 1..3 fechas contiguas (o menos) y
+            que tiene columna 'session' con valores como 'PRE','REG','POST' si quieres filtrar por sesión REG.
+            """
+            # contenedores por día
+            returns_lists = {0: [], 1: [], 2: []}
+            high_seconds = {0: [], 1: [], 2: []}
+            low_seconds = {0: [], 1: [], 2: []}
+
+            for df in list_of_dfs:
+                if not isinstance(df.index, pd.DatetimeIndex):
+                    raise ValueError("Each input must have a DatetimeIndex")
+
+                # Garantizar tz-aware; si no lo es asumimos UTC
+                idx = df.index
+                if idx.tz is None:
+                    df = df.tz_localize('UTC')
+                    idx = df.index
+
+                # Convertir a hora de NY para agrupar por fecha local (pero conservar timestamps originales en df)
+                df_ny = df.tz_convert(tz_ny)
+
+                # Obtener fechas locales ordenadas (puede haber menos de 3 días)
+                unique_dates = sorted({d.date() for d in df_ny.index})
+                # si no hay fechas suficientes, seguir pero solo procesar las disponibles
+                for day_offset in range(0, 3):
+                    if day_offset >= len(unique_dates):
+                        continue
+                    day_date = unique_dates[day_offset]
+                    mask_day = df_ny.index.date == day_date
+                    day_df_ny = df_ny.loc[mask_day].copy()
+                    if day_df_ny.empty:
+                        continue
+
+                    # filtrar REG si se pide
+                    if session_only and 'session' in day_df_ny.columns:
+                        day_reg = day_df_ny[day_df_ny['session'] == 'REG']
+                        if day_reg.empty:
+                            # fallback a todo el día si no hay datos REG
+                            day_reg = day_df_ny
+                    else:
+                        day_reg = day_df_ny
+
+                    # calcular retorno intradía relativo al open del día (primer registro usado como open)
+                    open_price = None
+                    if 'open' in day_reg.columns and not day_reg['open'].isna().all():
+                        open_price = float(day_reg['open'].iloc[0])
+                    elif 'close' in day_reg.columns and not day_reg['close'].isna().all():
+                        # fallback si falta open
+                        open_price = float(day_reg['close'].iloc[0])
+                    else:
+                        # no hay precios válidos; saltar
+                        continue
+
+                    # return series indexado por time-of-day 'HH:MM'
+                    times = day_reg.index.time
+                    time_labels = [t.strftime("%H:%M") for t in times]
+                    returns = (day_reg['close'].astype(float) / open_price) - 1.0
+                    series = pd.Series(returns.values, index=time_labels)
+                    returns_lists[day_offset].append(series)
+
+                    # hora del max high y min low (usar day_reg)
+                    if 'high' in day_reg.columns and not day_reg['high'].isna().all():
+                        idx_max = day_reg['high'].idxmax()
+                        tmax = idx_max.tz_convert(tz_ny).timetz()  # time with tz info
+                        seconds_max = tmax.hour * 3600 + tmax.minute * 60 + tmax.second
+                        high_seconds[day_offset].append(seconds_max)
+                    if 'low' in day_reg.columns and not day_reg['low'].isna().all():
+                        idx_min = day_reg['low'].idxmin()
+                        tmin = idx_min.tz_convert(tz_ny).timetz()
+                        seconds_min = tmin.hour * 3600 + tmin.minute * 60 + tmin.second
+                        low_seconds[day_offset].append(seconds_min)
+
+            # Agregar resultados
+            results: dict[str, dict] = {}
+            for day in (0, 1, 2):
+                # mean return series: concatenar por columnas y hacer mean (ignorar NaN)
+                if len(returns_lists[day]) == 0:
+                    median_series = pd.Series(dtype=float)
+                    avg_series = pd.Series(dtype=float)
+                else:
+                    all_returns_df = pd.concat(returns_lists[day], axis=1).sort_index()
+                    
+                    avg_series = all_returns_df.mean(axis=1, skipna=True)
+                    # opcional: asegurar orden por hora
+                    avg_series.index = pd.to_datetime(avg_series.index, format="%H:%M").time
+                    avg_series = avg_series.sort_index()
+                    # devolver index como string HH:MM
+                    avg_series.index = [t.strftime("%H:%M") for t in avg_series.index]
+                    
+                    median_series = all_returns_df.median(axis=1, skipna=True)
+                    # opcional: asegurar orden por hora
+                    median_series.index = pd.to_datetime(median_series.index, format="%H:%M").time
+                    median_series = median_series.sort_index()
+                    # devolver index como string HH:MM
+                    median_series.index = [t.strftime("%H:%M") for t in median_series.index]
+
+                results[f"day{day+1}"] = {
+                    "avg_return_series": [{k: (None if (isinstance(v, float) and np.isnan(v)) else v)} for k, v in avg_series.items()],
+                    "median_return_series": [{k: (None if (isinstance(v, float) and np.isnan(v)) else v)} for k, v in median_series.items()],
+                    "avg_high_time": _secondsToTimeStr(float(np.nan) if len(high_seconds[day]) == 0 else float(np.mean(high_seconds[day]))),
+                    "avg_low_time": _secondsToTimeStr(float(np.nan) if len(low_seconds[day]) == 0 else float(np.mean(low_seconds[day]))),
+                    "median_high_time": _secondsToTimeStr(float(np.nan) if len(high_seconds[day]) == 0 else float(np.median(high_seconds[day]))),
+                    "median_low_time": _secondsToTimeStr(float(np.nan) if len(low_seconds[day]) == 0 else float(np.median(low_seconds[day]))),
+                    "n_instances": len(returns_lists[day])
+                }
+
+            return results
+        print(windows)
+        intraday_stats: dict[str, dict] = compute_gap_stats(list_of_dfs=[w for w in windows if isinstance(w, pd.DataFrame) and not w.empty])
+        
+        stats = {
+            'quantity': len(day1),
+            'avg_gap': day1['gap'].mean(),
+            'median_gap': day1['gap'].median(),
+            'day1': {
+                **gapStats(data=day1),
+                **intraday_stats['day1']
+            } if len(day1) > 0 else {},
+            'day2': {
+                **gapStats(data=day2),
+                **intraday_stats['day2']
+            } if len(day2) > 0 else {},
+            'day3': {
+                **gapStats(data=day3),
+                **intraday_stats['day3']
+            } if len(day3) > 0 else {}
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': clean_data({k.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '_per_').replace('-', '_').replace('.', ''): v for k, v in stats.items()}),
             'error': None
         })
         

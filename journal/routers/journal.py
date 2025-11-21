@@ -171,7 +171,7 @@ def get_trade(id) -> str:
                                 Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                 Candle.timeframe == '1d').distinct().order_by(Candle.date.asc()).all()
     intraday = Candle.query.filter(Candle.symbol == symbol, 
-                                   Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), 
+                                   Candle.date >= week_ago, 
                                    Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                    Candle.timeframe == '1m').distinct().order_by(Candle.date.asc()).all()
 
@@ -213,7 +213,7 @@ def get_trade(id) -> str:
             'created_at': e.created_at,
         } for e in errors_data],
         "transactions": [
-            t.to_dict() for t in trade.transactions.order_by(db.asc("date"), db.asc("time")).all()
+            t.to_dict(exclude=['trade']) for t in trade.transactions.order_by(db.asc("date"), db.asc("time")).all()
         ],
         "media": [
             {
@@ -306,14 +306,14 @@ def add_trade() -> Response | str:
         today = trade.entry_date or date.today()
         one_year_ago = today - timedelta(days=365)
         week_ago = today - timedelta(days=5)
-        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+        while (datetime.now() - week_ago).days >= 30:
             week_ago = week_ago + timedelta(days=1)
         # Descargar velas con Yahoo Finance
         download_candles(db=db,
                          symbol=symbol,
                          config=[
                              {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                             {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                             {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                          ])
         
         db.session.commit()
@@ -340,7 +340,6 @@ def edit_trade(trade_id):
     
     if request.method == 'POST':
         try:
-            trade_exit_date = trade.exit_date
             trade.entry_date = datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date()
             trade.symbol = request.form['symbol'].upper()
             trade.company_name = request.form.get('company_name', '')
@@ -409,7 +408,7 @@ def edit_trade(trade_id):
                             symbol=symbol,
                             config=[
                                 {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                                {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                             ])
 
             db.session.commit()
@@ -423,7 +422,7 @@ def edit_trade(trade_id):
     strategies = Strategy.query.all()
     errors = Error.query.filter_by(is_active=True).all()
 
-    return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict() for strat in strategies], date=date)
+    return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
 @journal_pages.route('/delete/<int:trade_id>', methods=['POST'])
 @login_required
@@ -475,11 +474,11 @@ def journal_api() -> str:
 
 @journal_bp.route(rule='/trades/<date>/month')
 @login_required
-def month_trades(date) -> Response:
+def month_trades(date:str) -> Response:
     date: datetime = datetime.strptime(date, '%Y-%m-%d')
     start = datetime(date.year, date.month, 1).date()
     end = datetime(date.year, date.month+1, 1).date()
-    trades: list = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
+    trades: list[Trade] = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
     return jsonify([t.to_dict(equity=True) for t in trades])
 
 @journal_bp.route(rule='/add', methods=['GET', 'POST'])
@@ -558,14 +557,14 @@ def add_trade_api() -> Response | str:
         today = trade.entry_date or date.today()
         one_year_ago = today - timedelta(days=365)
         week_ago = today - timedelta(days=5)
-        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+        while (datetime.now() - week_ago).days >= 30:
             week_ago = week_ago + timedelta(days=1)
         # Descargar velas con Yahoo Finance
         download_candles(db=db,
                          symbol=symbol,
                          config=[
                              {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                             {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                             {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                          ])
         
         db.session.commit()
@@ -592,7 +591,6 @@ def edit_trade_api(trade_id):
     
     if request.method == 'POST':
         try:
-            trade_exit_date = trade.exit_date
             trade.entry_date = datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date()
             trade.symbol = request.form['symbol'].upper()
             trade.company_name = request.form.get('company_name', '')
@@ -661,7 +659,7 @@ def edit_trade_api(trade_id):
                             symbol=symbol,
                             config=[
                                 {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                                {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                             ])
 
             db.session.commit()
@@ -1082,19 +1080,19 @@ def import_trades():
     """
     
     if not current_user.is_authenticated:
-        return jsonify({"error": "No autorizado"}), 401
+        return jsonify({"error": "Not authorized"}), 401
         
     # Validar archivo
     if 'file' not in request.files:
-        return jsonify({"error": "No se proporcionó archivo"}), 400
+        return jsonify({"error": "No file provided"}), 400
     
     file: FileStorage = request.files['file']
     
     if file.filename == '':
-        return jsonify({"error": "Nombre de archivo vacío"}), 400
+        return jsonify({"error": "Empty filename"}), 400
     
-    if not file.filename.lower().endswith('.csv'):
-        return jsonify({"error": "Solo se permiten archivos CSV"}), 400
+    if not file.filename.lower().endswith('.csv') and not file.filename.lower().endswith('.xlsx'):
+        return jsonify({"error": "Only CSV or XLSX files are allowed"}), 400
     
     # Guardar archivo temporalmente
     filename = secure_filename(file.filename)
@@ -1104,28 +1102,57 @@ def import_trades():
     
     try:
         # Importar
-        dry_run = request.form.get('dry_run', 'false').lower() == 'true'
-        
+        dry_run = request.form.get(key='dry_run', default='false').lower() == 'true'
+        timezone = request.form.get(key='transaction_timezone', default='Europe/Madrid')
+
         importer = CSVImporter(current_app=current_app, trade_model=Trade, 
-                               transaction_model=Transaction, user_id=current_user.id, db=db)
+                               transaction_model=Transaction, user_id=current_user.id)
         
-        stats, loged_trades = importer.import_from_csv(csv_path=temp_path, dry_run=dry_run)
-        
+        stats, loged_trades = importer.import_from_file(file_path=temp_path, dry_run=dry_run)
+
+        downloaded: dict[str, list] = {}
         for trade in loged_trades:
+            db.session.add(instance=trade)
+            db.session.flush()
+            
+            for transaction in trade.transactions:
+                transaction.trade_id = trade.id
+                transaction.time = localToUtc(date=transaction.date, time=transaction.time, tz=timezone if len(timezone) > 0 else 'Europe/Madrid', mode='time') if len(timezone) > 0 else transaction.time
+            '''
+            for transaction in transactions:
+                trade.add_transaction(date=datetime.strptime(transaction.date, '%Y-%m-%d').date(), 
+                                    price=float(transaction.price), 
+                                    time=localToUtc(date=transaction.date, time=transaction.time, tz=timezone if len(timezone) > 0 else 'Europe/Madrid', mode='time') if len(timezone) > 0 else transaction.time, 
+                                    quantity=float(transaction.quantity), 
+                                    commission=float(transaction.commission), type=transaction.type)
+            '''
             today = trade.entry_date or date.today()
             one_year_ago = today - timedelta(days=365)
-            week_ago = today - timedelta(days=5)
-            while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
-                week_ago = week_ago + timedelta(days=1)
-            # Descargar velas con Yahoo Finance
-            download_candles(db=db,
-                            symbol=trade.symbol,
-                            config=[
-                                {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
-                            ])
-        
-        db.session.commit()
+            week_ago = datetime.combine(today - timedelta(days=5), time(0, 0, 0))
+            while (datetime.now() - week_ago).days >= 30:
+                week_ago = datetime.combine(week_ago + timedelta(days=1), time(0, 0, 0))
+
+            # Descargar velas con Yahoo Finance solo si no se han descargado ya para este símbolo y rango
+            if trade.symbol not in downloaded or [one_year_ago, today] not in downloaded[trade.symbol]['daily'] or [week_ago, datetime.combine(today, time(23, 59, 59))] not in downloaded[trade.symbol]['minute']:
+                download_candles(db=db,
+                                symbol=trade.symbol,
+                                config=[
+                                    {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                                    {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
+                                ])
+                if trade.symbol not in downloaded:
+                    downloaded[trade.symbol] = {'daily': [[one_year_ago, today]], 'minute': [[week_ago, datetime.combine(today, time(23, 59, 59))]]}
+                else:
+                    downloaded[trade.symbol]['daily'].append([one_year_ago, today])
+                    downloaded[trade.symbol]['minute'].append([week_ago, datetime.combine(today, time(23, 59, 59))])
+                
+        if not dry_run:
+            db.session.commit()
+            stats.success = True
+        else:
+            db.session.rollback()
+            stats.success = False
+            stats.errors.append("DRY RUN - Changes are not saved to the database.")
             
         # Log del resultado
         if stats.success:

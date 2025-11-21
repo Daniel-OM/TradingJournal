@@ -1,7 +1,8 @@
 
 import os
 import pytz
-from datetime import datetime
+from datetime import datetime, date, time
+import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import flash
 
@@ -123,15 +124,17 @@ def download_candles(db, symbol:str, config:dict[str, datetime|str]):
         [{'start': dt.datetime(2024,07,31, 0, 0, 0), 'end': dt.datetime(2025,07,31, 0, 0, 0), 'timeframe': '1d'}]
     '''
     try:
-        data = []
+        candle_objs: list[Candle] = []
         for conf in config:
-            data.append([conf['timeframe'], getPrice(symbol=symbol, start=conf['start'], end=conf['end'], timeframe=conf['timeframe'])])
-            db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= conf['start'], Candle.date <= conf['end'], Candle.timeframe == conf['timeframe']).delete(synchronize_session=False)
+            tf = conf['timeframe']
+            print('Downloading candles config: ', conf)
+            if isinstance(conf['start'], date):
+                conf['start'] = datetime.combine(date=conf['start'], time=time(0, 0, 0))
+            if isinstance(conf['end'], date):
+                conf['end'] = datetime.combine(date=conf['end'], time=time(23, 59, 59))
+            candles = getPrice(symbol=symbol, start=conf['start'], end=conf['end'], timeframe=conf['timeframe'])
+            db.session.query(Candle).filter(Candle.symbol == symbol, Candle.date >= conf['start'], Candle.date <= conf['end'], Candle.timeframe == tf).delete()
 
-        db.session.commit()
-
-        candle_objs = []
-        for tf, candles in data:
             if hasattr(candles, 'iterrows'):
                 candle_objs += [
                     Candle(
