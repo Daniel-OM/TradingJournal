@@ -27,6 +27,7 @@ class WatchlistEntry(Model):
     float_shares = db.Column(db.Float, nullable=True)
     per = db.Column(db.Float, nullable=True)
     eps = db.Column(db.Float, nullable=True)
+    current_ratio = db.Column(db.Float, nullable=True)
     exchange = db.Column(db.String(50))
     sector = db.Column(db.String(100))
     industry = db.Column(db.String(100))
@@ -59,6 +60,7 @@ class WatchlistEntry(Model):
             'float_shares': self.float_shares,
             'per': self.per,
             'eps': self.eps,
+            'current_ratio': self.current_ratio,
             'exchange': self.exchange,
             'sector': self.sector,
             'industry': self.industry,
@@ -92,6 +94,7 @@ class WatchlistEntry(Model):
             float_shares=data['float_shares'] if 'float_shares' in data else None,
             per=data['per'] if 'per' in data else None,
             eps=data['eps'] if 'eps' in data else None,
+            current_ratio=data['current_ratio'] if 'current_ratio' in data else None,
             exchange=data['exchange'] if 'exchange' in data else None,
             sector=data['sector'] if 'sector' in data else None,
             industry=data['industry'] if 'industry' in data else None,
@@ -105,6 +108,7 @@ class WatchlistEntry(Model):
             profit_target=data['profit_target'] if 'profit_target' in data else None,
             other_notes=data['other_notes'] if 'other_notes' in data else None,
             date_exit=data['date_exit'] if 'date_exit' in data else None,
+            watchlist_id=data['watchlist_id'] if 'watchlist_id' in data else None,
         )
     
     def add_level(self, price, date, impact_level='medium'):

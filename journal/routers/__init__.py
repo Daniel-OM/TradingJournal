@@ -2,7 +2,7 @@
 from .index import index_bp
 from .user import user_bp
 from .strategy import strategy_bp
-from .watchlist import watchlist_bp
+from .watchlist import watchlist_bp, watchlist_pages
 from .journal import journal_bp, journal_pages
 from .error import error_bp
 from .asset import asset_pages, asset_bp

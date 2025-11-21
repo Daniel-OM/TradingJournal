@@ -125,13 +125,13 @@
         function goToWatchlistDetail(watchlistId) {
             // En una aplicación real, esto sería una redirección a la página de detalle
             console.log(`Navegando al detalle de watchlist ${watchlistId}`);
-            window.location.href = `{{ url_for('watchlist_endpoints.watchlist_detail', id=0) }}`.replace('0', watchlistId);
+            window.location.href = `{{ url_for('watchlist_pages.watchlist_detail', id=0) }}`.replace('0', watchlistId);
         }
 
         function createNewWatchlist() {
             // En una aplicación real, esto abriría un modal o navegaría a una página de creación
             console.log("Creando nueva watchlist");
-            window.location.href = `{{ url_for('watchlist_endpoints.watchlist_configuration') }}`;
+            window.location.href = `{{ url_for('watchlist_pages.watchlist_configuration') }}`;
         }
 
         function filterWatchlists() {

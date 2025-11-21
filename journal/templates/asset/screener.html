@@ -759,7 +759,7 @@
                 'country': data.country,
                 'price': data.current_price,
             };
-            window.location.href = `{{ url_for('watchlist_endpoints.add_watchlist_entry') }}?entry=${JSON.stringify(entry)}`;
+            window.location.href = `{{ url_for('watchlist_pages.add_watchlist_entry') }}?entry=${JSON.stringify(entry)}`;
         }
 
         // Initialize lazy loading

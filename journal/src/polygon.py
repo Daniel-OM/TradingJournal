@@ -266,7 +266,7 @@ class Polygon(DataProvider):
                     exchange_tz = 'America/New_York' # TODO: Get default timezone depending on the exchange it is trading on.
                     # If timestamps are naive, set NY timezone
                     if data['DateTime'].dt.tz is None:
-                        data['DateTime'] = data['DateTime'].dt.tz_localize(exchange_tz)
+                        data['DateTime'] = data['DateTime'].dt.tz_localize('UTC')
                     data['DateTime'] = data['DateTime'].dt.tz_convert('UTC')
 
                     ny_index = data['DateTime'].dt.tz_convert(exchange_tz)
