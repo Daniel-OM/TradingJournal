@@ -895,9 +895,9 @@ class TradingChart {
             const date = data[i].date || data[i].time;
             let label;
             if (date && date.getHours !== undefined) {
-                label = date.toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                label = date.toLocaleString('en-EN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             } else {
-                label = (new Date(date)).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+                label = (new Date(date)).toLocaleDateString('en-EN', { month: 'short', day: 'numeric' });
             }
             this.log(`Drawing time label: ${label} at x: ${x}`, 'debug');
             ctx.fillText(label, x, y + 6);

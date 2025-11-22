@@ -22,32 +22,32 @@
         <!-- Información Básica -->
         <div class="card">
             <h3 class="card-header">
-                Información de la Operación
+                Trade Information
             </h3>
             <div class="card-body">
                 <div class="info-grid">
                     <div class="info-item">
-                        <div class="info-label">Fecha de Entrada</div>
+                        <div class="info-label">Entry Date</div>
                         <div class="info-value" id="entryDate"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Hora de Entrada (UTC)</div>
+                        <div class="info-label">Entry Time (UTC)</div>
                         <div class="info-value" id="entryTime"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Precio de Entrada</div>
+                        <div class="info-label">Entry Price</div>
                         <div class="info-value" id="entryPrice"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Fecha de Salida</div>
+                        <div class="info-label">Exit Date</div>
                         <div class="info-value" id="exitDate"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Hora de Salida (UTC)</div>
+                        <div class="info-label">Exit Time (UTC)</div>
                         <div class="info-value" id="exitTime"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Precio de Salida</div>
+                        <div class="info-label">Exit Price</div>
                         <div class="info-value" id="exitPrice"></div>
                     </div>
                     <div class="info-item">
@@ -63,25 +63,25 @@
                         <div class="info-value" id="takeProfit"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Cantidad</div>
+                        <div class="info-label">Quantity</div>
                         <div class="info-value" id="quantity"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Cantidad Pendiente</div>
+                        <div class="info-label">Pending Quantity</div>
                         <div class="info-value" id="pendingQuantity"></div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Comisión</div>
+                        <div class="info-label">Commission</div>
                         <div class="info-value" id="commission"></div>
                     </div>
                 </div>
             </div>
         </div>
-
+                    
         <!-- Resultado -->
         <div class="card">
             <div class="card-header success">
-                💰 Resultado de la Operación
+                💰 Trade Result
             </div>
             <div class="card-body">
                 <div class="stat-row">
@@ -89,50 +89,50 @@
                     <span class="stat-value" id="profitLoss"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Rendimiento</span>
+                    <span class="stat-label">Return</span>
                     <span class="stat-value" id="return"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Estrategia</span>
+                    <span class="stat-label">Strategy</span>
                     <span class="stat-value" id="strategy"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Duración</span>
+                    <span class="stat-label">Duration</span>
                     <span class="stat-value" id="duration"></span>
                 </div>
             </div>
         </div>
-
+        
         <!-- Análisis y Notas -->
         <div class="card">
             <div class="card-header info">
-                📝 Análisis y Notas
+                📝 Analysis and Notes
             </div>
             <div class="card-body">
                 <div class="info-item">
-                    <div class="info-label">Descripción</div>
+                    <div class="info-label">Description</div>
                     <div class="info-value" id="description"></div>
                 </div>
-
+        
                 <div class="info-item">
-                    <div class="info-label">Por qué fue rentable</div>
+                    <div class="info-label">Why Profitable</div>
                     <div class="info-value" id="whyProfitable"></div>
                 </div>
-
+        
                 <div class="info-item">
-                    <div class="info-label">Factores influyentes</div>
+                    <div class="info-label">Influencing Factors</div>
                     <div class="info-value" id="influencingFactors"></div>
                 </div>
-
+        
                 <div class="hashtags" id="hashtags">
                 </div>
             </div>
         </div>
-
+        
         <!-- Transacciones -->
         <div class="card">
             <div class="card-header warning">
-                🔄 Historial de Transacciones
+                🔄 Transaction History
             </div>
             <div class="card-body pb-2">
                 <div id="transactionsList">
@@ -140,34 +140,34 @@
             </div>
         </div>
     </div>
-
+    
     <div class="right-column">
         <!-- Scoring/Criterios -->
         <div class="card">
             <div class="card-header">
-                ⭐ Evaluación por Criterios
+                ⭐ Scoring by Criteria
             </div>
             <div class="card-body">
                 <div id="scoringList">
                 </div>
             </div>
         </div>
-
+    
         <!-- Errores -->
         <div class="card">
             <div class="card-header danger">
-                ⚠️ Errores Identificados <span id="errorsNumber"></span>
+                ⚠️ Identified Errors <span id="errorsNumber"></span>
             </div>
             <div class="card-body">
                 <div id="errorsList">
                 </div>
             </div>
         </div>
-
+    
         <!-- Media/Screenshots -->
         <div class="card">
             <div class="card-header info">
-                📸 Screenshots y Media
+                📸 Screenshots and Media
             </div>
             <div class="card-body">
                 <div class="media-gallery" id="mediaGallery">
@@ -191,7 +191,7 @@
     window.candleData = tradeData['candles'];
     window.transactionData = tradeData['transactions'];
 
-    function loadTradeData () {
+    async function loadTradeData () {
         // Load basic trade info
         document.getElementById('tradeSymbol').textContent = tradeData.symbol;
         document.getElementById('tradeSubtitle').textContent =
@@ -259,7 +259,7 @@
         // Load hashtags
         const hashtagsContainer = document.getElementById('hashtags');
         const hashtags = tradeData.hashtags;
-        if (hashtags.length > 0) {
+        if (hashtags && hashtags.length > 0) {
             hashtagsContainer.innerHTML = '';
             hashtags.split(',').forEach(hashtag => {
                 const hashtagElement = document.createElement('span');
@@ -281,47 +281,55 @@
         loadTransactions();
     }
 
-    function loadScoring () {
+    async function loadScoring () {
         const scoringContainer = document.getElementById('scoringList');
         scoringContainer.innerHTML = '';
 
         let totalScore = 0;
         let totalMaxPoints = 0;
 
-        tradeData.strategy.conditions.forEach(condition => {
-            const checked = tradeData.conditions.find(obj => obj.scoring_id === parseInt(condition.id));
+        if (tradeData.strategy) {
+            if (tradeData.strategy.conditions.length > 0) {
+                tradeData.strategy.conditions.forEach(condition => {
+                    const checked = tradeData.conditions.find(obj => obj.scoring_id === parseInt(condition.id));
 
-            const scoringItem = document.createElement('div');
-            scoringItem.className = 'card mb-3 shadow-none scoring-item';
-            scoringItem.innerHTML = `
-                    <div class="p-1">
-                        <div class="scoring-name">${condition.name}</div>
-                        <div class="scoring-description">${condition.description}</div>
-                    </div>
-                    <div class="rounded bg-primary p-2 scoring-value">${checked ? checked.value : 0.0}/${condition.score}</div>
+                    const scoringItem = document.createElement('div');
+                    scoringItem.className = 'card mb-3 shadow-none scoring-item';
+                    scoringItem.innerHTML = `
+                        <div class="p-1">
+                            <div class="scoring-name">${condition.name}</div>
+                            <div class="scoring-description">${condition.description}</div>
+                        </div>
+                        <div class="rounded bg-primary p-2 scoring-value">${checked ? checked.value : 0.0}/${condition.score}</div>
+                    `;
+                    scoringContainer.appendChild(scoringItem);
+
+                    totalScore += checked ? checked.value : 0;
+                    totalMaxPoints += condition.score;
+                });
+
+                // Add total score
+                const totalScoreDiv = document.createElement('div');
+                totalScoreDiv.className = 'card shadow-none final-score';
+                totalScoreDiv.innerHTML = `
+                    <div class="info-label">Puntuación Total Ponderada</div>
+                    <div class="score ${totalScore / totalMaxPoints < 0.5 ? 'text-loss' : 'text-profit'}">${(totalScore / totalMaxPoints * 100).toFixed(0)}%</div>
                 `;
-            scoringContainer.appendChild(scoringItem);
-
-            totalScore += checked ? checked.value : 0;
-            totalMaxPoints += condition.score;
-        });
-
-        // Add total score
-        const totalScoreDiv = document.createElement('div');
-        totalScoreDiv.className = 'card shadow-none final-score';
-        totalScoreDiv.innerHTML = `
-                <div class="info-label">Puntuación Total Ponderada</div>
-                <div class="score ${totalScore / totalMaxPoints < 0.5 ? 'text-loss' : 'text-profit'}">${(totalScore / totalMaxPoints * 100).toFixed(0)}%</div>
-            `;
-        scoringContainer.appendChild(totalScoreDiv);
+                scoringContainer.appendChild(totalScoreDiv);
+            } else {
+                scoringContainer.innerHTML = '<div class="no-data">No scoring conditions defined for this strategy</div>';
+            }
+        } else {
+            scoringContainer.innerHTML = '<div class="no-data">No strategy assigned</div>';
+        }
     }
 
-    function loadErrors () {
+    async function loadErrors () {
         const errorsContainer = document.getElementById('errorsList');
         errorsContainer.innerHTML = '';
 
         if (tradeData.errors.length === 0) {
-            errorsContainer.innerHTML = '<div class="no-data">No se identificaron errores en esta operación</div>';
+            errorsContainer.innerHTML = '<div class="no-data">No errors identified in this trade</div>';
             return;
         }
         document.getElementById('errorsNumber').innerHTML = `(${tradeData.errors.length})`;
@@ -334,13 +342,13 @@
                         <div class="error-description">${error.description}</div>
                         <span class="severity-badge rounded ${severityClass}">${error.severity.charAt(0).toUpperCase() + error.severity.slice(1)}</span>
                     </div>
-                    <div class="error-meta text-muted">Categoría: ${error.category} | Detectado el ${tradeData.entry_date}</div>
+                    <div class="error-meta text-muted">Category: ${error.category} | Detected on ${tradeData.entry_date}</div>
                 `;
             errorsContainer.appendChild(errorItem);
         });
     }
 
-    function loadTransactions () {
+    async function loadTransactions () {
         const transactionsContainer = document.getElementById('transactionsList');
         transactionsContainer.innerHTML = '';
 
@@ -389,7 +397,7 @@
     }
 
     async function deleteTrade () {
-        if (confirm('¿Estás seguro de que quieres borrar este trade?')) {
+        if (confirm('Are you sure you want to delete this trade?')) {
             const url = `{{ url_for('journal_pages.delete_trade', trade_id=0) }}`.replace('0', tradeData.id);
             try {
                 const response = await fetch(url, {
@@ -406,13 +414,13 @@
                     window.location.reload();
                 }
             } catch (error) {
-                alert('Error al borrar el trade');
+                alert('Error deleting the trade');
             }
         }
     }
 
     // Media gallery functionality
-    function initializeMediaGallery () {
+    async function initializeMediaGallery () {
         const mediaGallery = document.getElementById('mediaGallery');
         mediaGallery.innerHTML = '';
 

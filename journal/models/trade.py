@@ -87,7 +87,7 @@ class Trade(Model):
             'profit_loss': self.profit_loss,
             'hashtags': self.hashtags,
             'strategy_id': self.strategy_id,
-            'strategy': {} if 'strategy' in exclude else self.strategy.to_dict(exclude=['trades']+exclude),
+            'strategy': {} if 'strategy' in exclude or self.strategy is None else self.strategy.to_dict(exclude=['trades']+exclude),
             'media': [] if 'media' in exclude else [m.to_dict(exclude=['trade']+exclude) for m in self.media],
             'errors': [] if 'errors' in exclude else [e.to_dict(exclude=['trades']+exclude) for e in self.errors],
             'conditions': [] if 'conditions' in exclude else [c.to_dict(exclude=['trades', 'strategy']+exclude) for c in self.conditions],
@@ -241,9 +241,10 @@ class Trade(Model):
 
     def getCandles(self, timeframe='1m') -> list[Candle]:
         
-        start_datetime = datetime.combine(self.entry_date, datetime.strptime(self.entry_time, '%H:%M:%S').time())
-        end_datetime = datetime.combine(self.exit_date, datetime.strptime(self.exit_time, '%H:%M:%S').time())
-
+        sorted_transactions: list[Transaction] = sorted(self.transactions, key=lambda x: x.datetime)
+        start_datetime = sorted_transactions[0].datetime
+        end_datetime = sorted_transactions[-1].datetime
+        
         candles = Candle.query.filter(
             Candle.symbol == self.symbol,
             Candle.date >= start_datetime,
@@ -257,49 +258,119 @@ class Trade(Model):
         
         return candles
     
-    def get_transaction_datetime(self, tx:Transaction) -> datetime:
-        # Combinar fecha (date) con hora UTC (time)
-        time_str = tx.time or '00:00:00'
-        # Asegurar que tenga formato HH:MM:SS
-        if len(time_str.split(':')) == 2:
-            time_str += ':00'
-        
-        naive_dt = datetime.combine(tx.date, datetime.strptime(time_str, '%H:%M:%S').time())
-        # Convertir a UTC ya que las horas están en UTC
-        return naive_dt.replace(tzinfo=timezone.utc)
-    
     def getStartEndDatetime(self) -> tuple[datetime, datetime, list[Transaction]]:
 
-        sorted_transactions = sorted(self.transactions, key=self.get_transaction_datetime)
+        sorted_transactions: list[Transaction] = sorted(self.transactions, key=lambda x: x.datetime)
 
         # Obtener el rango de tiempo
-        start_datetime = self.get_transaction_datetime(sorted_transactions[0]) - timedelta(minutes=1)
-        end_datetime = self.get_transaction_datetime(sorted_transactions[-1]) + timedelta(minutes=1)
+        start_datetime = sorted_transactions[0].datetime - timedelta(minutes=1)
+        end_datetime = sorted_transactions[-1].datetime + timedelta(minutes=1)
 
         return start_datetime, end_datetime, sorted_transactions
     
-    def equity_curve(self, initial_balance: float = 0):
+    def equity_curve(self) -> list:
+        """
+        Devuelve SOLO el PnL del trade, no el balance total.
+        """
+        if not self.transactions:
+            return []
+
+        start_dt, end_dt, sorted_transactions = self.getStartEndDatetime()
+        candles: list[Candle] = self.getCandles(timeframe="1m")
+
+        df = pd.DataFrame([c.to_dict() for c in candles])
+        if not df.empty:
+            df["datetime"] = pd.to_datetime(df["date"], utc=True)
+            df = df.set_index("datetime").sort_index()
+
+        # Crear eventos relevantes: transacciones + velas
+        events = [(tx.datetime, "tx", tx) for tx in sorted_transactions] + \
+            [(idx, "price", row["close"]) for idx, row in df.iterrows()]
+
+        # Ordenar todos los eventos temporalmente
+        events.sort(key=lambda x: x[0])
+
+        # Estado del trade
+        position = 0
+        avg_price = 0
+        realized_pnl = 0
+        last_price = None
+
+        equity = []
+
+        for dt, etype, data in events:
+            
+            qty = 0
+            last_price = data
+            
+            if etype == "tx":
+                tx: Transaction = data
+                qty = tx.quantity if tx.type == 'LONG' else (-tx.quantity if tx.quantity > 0 else tx.quantity)
+                last_price = tx.price
+                        
+                if tx.type == self.trade_type:  # entrada
+                    if position == 0:
+                        avg_price = last_price
+                        position = qty
+                    else:
+                        # recalcular precio medio
+                        total_cost = avg_price * position + last_price * qty
+                        position += qty
+                        avg_price = total_cost / position
+
+                elif position != 0:
+                    # realized pnl
+                    realized_pnl -= (last_price - avg_price) * qty
+                    position += qty
+                    if position == 0:
+                        avg_price = 0
+
+            # Calcular PnL no realizado
+            if position != 0 and last_price is not None:
+                unrealized = (last_price - avg_price) * position
+                total_pnl = realized_pnl + unrealized
+            else:
+                unrealized = 0
+                total_pnl = realized_pnl
+
+            equity.append({
+                "datetime": dt.isoformat(),
+                "realized_pnl": realized_pnl,
+                "unrealized_pnl": unrealized,
+                "total_pnl": total_pnl,
+                "quantity": qty,
+                "position": position,
+                "avg_price": avg_price,
+                "last_price": last_price,
+                "symbol": self.symbol
+            })
+
+        return equity
+
+    def equity_curve_old(self, initial_balance: float = 0) -> list:
+        
         if not self.transactions:
             return []
 
         start_datetime, end_datetime, sorted_transactions = self.getStartEndDatetime()
 
         # Buscar candles en el rango (date ya es datetime con UTC)
-        candles = self.getCandles(timeframe='1m')
+        candles: list[Candle] = self.getCandles(timeframe='1m')
 
         # Preparar DataFrame de candles
         df_candles = pd.DataFrame([c.to_dict() for c in candles])
-        # date ya es datetime UTC, solo necesitamos asegurar que es datetime
-        df_candles['datetime'] = pd.to_datetime(df_candles['date'], utc=True)
-        df_candles.set_index('datetime', inplace=True)
-        df_candles.sort_index(inplace=True)
+        print(df_candles)
+        if not df_candles.empty:
+            # date ya es datetime UTC, solo necesitamos asegurar que es datetime
+            df_candles['datetime'] = pd.to_datetime(df_candles['date'], utc=True)
+            df_candles.set_index('datetime', inplace=True)
+            df_candles.sort_index(inplace=True)
 
         # Crear lista de transacciones con datetime completo
         transactions_with_dt = []
         for tx in sorted_transactions:
-            tx_dt = self.get_transaction_datetime(tx)
             transactions_with_dt.append({
-                'datetime': tx_dt,
+                'datetime': tx.datetime,
                 'transaction': tx
             })
 
@@ -309,7 +380,7 @@ class Trade(Model):
         avg_price = 0  # Precio promedio de entrada
         commission_total = 0
         tx_index = 0
-        
+        print('Transactions: ', transactions_with_dt)
         # Inicializar current_time
         current_time = start_datetime # + timedelta(minutes=1)
 
@@ -377,8 +448,11 @@ class Trade(Model):
 
             # Obtener precio actual de las candles
             current_price = self._get_price_at_time(df_candles, current_time)
+                
             if current_price is None and avg_price > 0:
                 current_price = avg_price
+            elif df_candles.empty:
+                current_price = tx.price
 
             # Calcular valor de la posición actual
             position_value = 0

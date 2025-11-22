@@ -13,50 +13,50 @@
     <div class="col-md-10">
         <div class="card">
             <div class="card-header">
-                <h4><i class="fas fa-plus me-2"></i>Registrar Nuevo Trade</h4>
+                <h4><i class="fas fa-plus me-2"></i>Register a New Trade</h4>
             </div>
             <div class="card-body">
                 <form method="POST" id="tradeForm" enctype="multipart/form-data">
-                    <!-- Información básica -->
+                    <!-- Basic Information -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Símbolo</label>
+                            <label class="form-label">Symbol</label>
                             <input type="text" name="symbol" class="form-control" value="{{ trade.symbol if trade else '' }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombre de la Compañía</label>
+                            <label class="form-label">Company Name</label>
                             <input type="text" name="company_name" value="{{ trade.company_name if trade else '' }}" class="form-control">
                         </div>
                     </div>
                     
-                    <!-- Tipo y cantidades -->
+                    <!-- Type and Quantities -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Tipo de Operación</label>
+                            <label class="form-label">Operation Type</label>
                             <select name="trade_type" class="form-select" required>
-                                <option value="LONG" {% if trade and trade.trade_type == "LONG" %}selected{% endif %}>Long (Compra)</option>
-                                <option value="SHORT" {% if trade and trade.trade_type == "SHORT" %}selected{% endif %}>Short (Venta)</option>
+                                <option value="LONG" {% if trade and trade.trade_type == "LONG" %}selected{% endif %}>Long (Buy)</option>
+                                <option value="SHORT" {% if trade and trade.trade_type == "SHORT" %}selected{% endif %}>Short (Sell)</option>
                             </select>
                         </div>
                     </div>
                     {% if trade %}
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Cantidad</label>
+                            <label class="form-label">Quantity</label>
                             <input type="number" name="quantity" step="0.0000000001" class="form-control" value="{{ trade.quantity if trade else '' }}">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Comisión</label>
+                            <label class="form-label">Commission</label>
                             <input type="number" name="commission" step="0.0000000001" class="form-control" value="{{ trade.commission if trade else '1.0' }}">
                         </div>
                     </div>
                     {% endif %}
                     <div class="mb-3">
-                        <label class="form-label">Balance total</label>
+                        <label class="form-label">Total Balance</label>
                         <input type="number" name="balance" step="0.0000000001" class="form-control" value="{{ trade.balance if trade else '' }}">
                     </div>
                     {% if trade %}
-                    <!-- Entrada -->
+                    <!-- Entry -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Price</label>
@@ -87,15 +87,15 @@
                     <!-- Salida -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Precio de Salida</label>
+                            <label class="form-label">Exit Price</label>
                             <input type="number" name="exit_price" step="0.0000000001" class="form-control" value="{{ trade.exit_price if trade else '' }}">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Fecha de Salida</label>
+                            <label class="form-label">Exit Date</label>
                             <input type="date" name="exit_date" class="form-control" value="{{ trade.exit_date if trade else date.today() }}">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Hora de Salida</label>
+                            <label class="form-label">Exit Time</label>
                             <input type="time" name="exit_time" step="1" class="form-control" value="{{ trade.exit_time if trade else '' }}">
                         </div>
                     </div>
@@ -106,7 +106,7 @@
                         </label>
                         <div class="transactions-container">
                             <div id="transactions-list">
-                                <!-- Los transactiones se agregarán dinámicamente aquí -->
+                                <!-- Transactions will be added dynamically here -->
                             </div>
                             <div class="text-center mt-3">
                                 <button type="button" class="btn btn-pill bg-primary" onclick="addTransaction()">
@@ -115,16 +115,16 @@
                             </div>
                             <small class="text-muted mt-2 d-block">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Agrega las transacciones que se hayan ejecutado en esta operación
+                                Add the transactions that were executed in this trade
                             </small>
                         </div>
                     </div>
                     
-                    <!-- Estrategia -->
+                    <!-- Strategy -->
                     <div class="mb-3">
-                        <label class="form-label">Estrategia Aplicada</label>
+                        <label class="form-label">Applied Strategy</label>
                         <select name="strategy_id" class="form-select" id="strategySelect" onchange="loadStrategyConditions()">
-                            <option value="">Seleccionar estrategia</option>
+                            <option value="">Select strategy</option>
                             {% for strategy in strategies %}
                                 <option value="{{ strategy.id }}" {% if trade and trade.strategy_id == strategy.id %}selected{% endif %}>
                                     {{ strategy.name }}
@@ -133,42 +133,42 @@
                         </select>
                     </div>
 
-                    <!-- Sección de Condiciones de Estrategia -->
+                    <!-- Strategy conditions section -->
                     <div id="strategyConditions" class="conditions-section">
                         <div class="d-flex align-items-center mb-3">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            <h5 class="mb-0">Condiciones de Puntuación de la Estrategia</h5>
+                            <h5 class="mb-0">Strategy Scoring Conditions</h5>
                         </div>
-                        <p class="text-muted mb-3">Marca las condiciones que se cumplen para calcular automáticamente la puntuación:</p>
+                        <p class="text-muted mb-3">Check the conditions that apply to automatically calculate the score:</p>
                         
                         <div id="conditionsList">
-                            <!-- Las condiciones se cargarán dinámicamente aquí -->
+                            <!-- Conditions will be loaded dynamically here -->
                         </div>
 
                         <div id="scoreDisplay" class="score-display" style="display: none;">
-                            <div>Puntuación Calculada: <span id="calculatedScore">0</span>/<span id="maxScore">10</span></div>
+                            <div>Calculated Score: <span id="calculatedScore">0</span>/<span id="maxScore">10</span></div>
                             <div class="score-breakdown" id="scoreBreakdown"></div>
                         </div>
                         <div class="col-md-4 mb-3 d-none">
-                            <label class="form-label">Puntuación</label>
+                            <label class="form-label">Score</label>
                             <input type="number" min="0" max="100" name="score" class="form-control" placeholder="7" readonly>
-                            <small class="text-muted">Se calculará automáticamente según las condiciones</small>
+                            <small class="text-muted">It will be calculated automatically based on the conditions</small>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Hashtags (separados por comas)</label>
+                        <label class="form-label">Hashtags (separated by commas)</label>
                         <input type="text" name="hashtags" class="form-control" placeholder="tech, earnings, momentum" value="{{ trade.hashtags if trade else '' }}">
                     </div>
 
-                    <!-- Sección de Errores -->
+                    <!-- Errors Section -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">
-                            <i class="fas fa-chart-line me-2"></i>Errores cometidos
+                            <i class="fas fa-chart-line me-2"></i>Errors Made
                         </label>
                         <div class="errors-container">
                             <div id="errors-list">
-                                <!-- Los errores se agregarán dinámicamente aquí -->
+                                <!-- Errors will be added dynamically here -->
                             </div>
                             <div class="text-center mt-3">
                                 <button type="button" class="btn btn-pill bg-primary" onclick="addError()">
@@ -177,22 +177,22 @@
                             </div>
                             <small class="text-muted mt-2 d-block">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Agrega los errores que se hayan cometido en esta operación
+                                Add the errors that were made in this trade
                             </small>
                         </div>
                     </div>
 
                     <!-- Multimedia -->
                     <div class="mb-4">
-                        <label class="form-label"><i class="fas fa-image me-2"></i>Imágenes y Videos</label>
+                        <label class="form-label"><i class="fas fa-image me-2"></i>Images and Videos</label>
                         <div class="card shadow-none">
                             <div class="card-body mt-3">
                                 <div class="mb-3">
-                                    <label class="form-label">Subir Imágenes</label>
+                                    <label class="form-label">Upload Images</label>
                                     <input type="file" name="images" class="form-control" multiple accept="image/*">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Subir Videos</label>
+                                    <label class="form-label">Upload Videos</label>
                                     <input type="file" name="videos" class="form-control" multiple accept="video/*,.mkv">
                                 </div>
                                 <div id="file-preview" class="mt-3"></div>
@@ -200,28 +200,28 @@
                         </div>
                     </div>
 
-                    <!-- Análisis -->
+                    <!-- Analysis -->
                     <div class="mb-3">
-                        <label class="form-label">Descripción General</label>
+                        <label class="form-label">General Description</label>
                         <textarea name="description" class="form-control" rows="3">{{ trade.description if trade else '' }}</textarea>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">¿Por qué fue rentable o no?</label>
+                            <label class="form-label">Why was it profitable or not?</label>
                             <textarea name="why_profitable" class="form-control" rows="3">{{ trade.why_profitable if trade else '' }}</textarea>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Factores que influyeron</label>
+                            <label class="form-label">Influencing Factors</label>
                             <textarea name="influencing_factors" class="form-control" rows="3">{{ trade.influencing_factors if trade else '' }}</textarea>
                         </div>
                     </div>
 
-                    <!-- Botones -->
+                    <!-- Buttons -->
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{{ url_for('journal_pages.journal') }}" class="btn btn-pill bg-secondary">Cancel</a>
                         <button type="submit" class="btn btn-pill bg-success">
-                            <i class="fas fa-save me-2"></i>Registrar Trade
+                            <i class="fas fa-save me-2"></i>Register Trade
                         </button>
                     </div>
                 </form>
@@ -316,9 +316,9 @@
                     <option value="execution" ${category == 'execution' ? 'selected' : ''}>Execution</option>
                 </select>
                 <select name="error_severity" class="form-select" style="max-width: 120px;">
-                    <option value="low" ${severity == 'low' ? 'selected' : ''}>Bajo</option>
-                    <option value="medium" ${severity == 'medium' ? 'selected' : ''}>Medio</option>
-                    <option value="high" ${severity == 'high' ? 'selected' : ''}>Alto</option>
+                    <option value="low" ${severity == 'low' ? 'selected' : ''}>Low</option>
+                    <option value="medium" ${severity == 'medium' ? 'selected' : ''}>Medium</option>
+                    <option value="high" ${severity == 'high' ? 'selected' : ''}>High</option>
                 </select>
                 <button type="button" class="btn btn-pill bg-danger" onclick="removeError(this)">
                     <i class="fas fa-trash"></i>
@@ -350,25 +350,25 @@
             <div class="card-body mt-3">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Fecha de Entrada</label>
+                        <label class="form-label">Entry Date</label>
                         <input type="date" name="transaction_date" class="form-control" value="${date}">
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label class="form-label">Hora de Entrada</label>
+                        <label class="form-label">Entry Time</label>
                         <input type="time" name="transaction_time" class="form-control" value="${time}" step="1">
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label class="form-label">Hora de Entrada</label>
+                        <label class="form-label">Timezone</label>
                         <input type="text" name="transaction_timezone" class="form-control" value="${Intl.DateTimeFormat().resolvedOptions().timeZone}">
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Precio de Entrada</label>
+                        <label class="form-label">Entry Price</label>
                         <input type="number" name="transaction_price" step="0.0000000001" class="form-control" value="${price}">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Tipo de transacción</label>
+                        <label class="form-label">Transaction Type</label>
                         <select name="transaction_type" class="form-select">
                             <option value="LONG" ${type == 'LONG' ? 'selected' : ''}>Long (Compra)</option>
                             <option value="SHORT" ${type == 'SHORT' ? 'selected' : ''}>Short (Venta)</option>
@@ -377,11 +377,11 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Cantidad</label>
+                        <label class="form-label">Quantity</label>
                         <input type="number" name="transaction_quantity" step="0.0000000001" class="form-control" value="${quantity}" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Comisión</label>
+                        <label class="form-label">Commission</label>
                         <input type="number" name="transaction_commission" step="0.0000000001" class="form-control" value="${commission}" required>
                     </div>
                 </div>

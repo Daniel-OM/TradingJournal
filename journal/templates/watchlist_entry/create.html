@@ -186,10 +186,10 @@
                         <textarea name="other_notes" class="form-control" rows="2" value="{{ entry.other_notes if entry else ''}}" placeholder="Cualquier información adicional...">{{ entry.other_notes if entry else ''}}</textarea>
                     </div>
                     
-                    {% if entry %}
+                    {% if entry and entry.id is not none %}
                     <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                         <div>
-                            <a class="btn btn-pill bg-primary" href="{{ url_for('watchlist_endpoints.detail_watchlist_entry', id=entry.id) }}" class="btn bg-secondary">
+                            <a class="btn btn-pill bg-primary" href="{{ url_for('watchlist_pages.detail_watchlist_entry', id=entry.id) }}" class="btn bg-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Go back
                             </a>
                         </div>
@@ -204,7 +204,7 @@
                     </div>
                     {% else %}
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('watchlist_endpoints.watchlist') }}" class="btn bg-secondary me-md-2">Cancelar</a>
+                        <a href="{{ url_for('watchlist_pages.watchlist') }}" class="btn bg-secondary me-md-2">Cancelar</a>
                         <button type="submit" class="btn bg-primary">
                             <i class="fas fa-save me-2"></i>Save
                         </button>
@@ -214,7 +214,7 @@
             </div>
         </div>
 
-        {% if entry %}
+        {% if entry and entry.id is not none %}
         <!-- Consejos -->
         <div class="card mt-3">
             <div class="card-header">
@@ -234,7 +234,7 @@
     </div>
 </div>
 
-{% if entry %}
+{% if entry and entry.id is not none %}
 <!-- Modal de confirmación de eliminación -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
@@ -256,7 +256,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-pill bg-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form method="POST" action="{{ url_for('watchlist_endpoints.delete_watchlist_entry', id=entry.id) }}" style="display: inline;">
+                <form method="POST" action="{{ url_for('watchlist_pages.delete_watchlist_entry', id=entry.id) }}" style="display: inline;">
                     <button type="submit" class="btn btn-pill bg-danger">
                         <i class="fas fa-trash me-2"></i>Eliminar Definitivamente
                     </button>

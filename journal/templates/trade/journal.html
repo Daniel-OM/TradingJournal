@@ -16,7 +16,10 @@
         <button class="nav-btn btn-none ms-3" onclick="changeMonth(1)"><i class="fa-solid fa-greater-than"></i></button>
         
         <a href="{{ url_for('journal_pages.add_trade') }}" class="btn btn-pill bg-primary ms-auto">
-            <i class="fas fa-plus me-2"></i>Añadir Trade
+            <i class="fas fa-plus me-2"></i>Add Trade
+        </a>
+        <a href="#" class="btn btn-pill bg-primary ms-2" onclick="showImportModal()">
+            <i class="fas fa-upload me-2"></i>Import Trades
         </a>
     </div>
 
@@ -35,7 +38,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 id="modalTitle">Trades del día</h2>
-            <span class="close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></span>
+            <span class="close" onclick="closeModal('tradesModal')"><i class="fa-solid fa-xmark"></i></span>
         </div>
         <div class="modal-body">
             <!-- Gráfico de evolución del capital -->
@@ -55,6 +58,49 @@
         </div>
     </div>
 </div>
+<!-- Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Import Trades</h2>
+            <span class="close" onclick="closeModal('importModal')"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="modal-body">
+            <form id="importForm" class="mt-2 ms-4 me-4">
+                <div class="col col-md-8">
+                    <div class="row"><input type="file" name="file" id="csvFile" accept=".csv" required></div>
+                    <div class="row mt-3">
+                        <label>
+                            <input type="checkbox" id="dryRun" name="dry_run">
+                            Do not save in DB
+                        </label>
+                    </div>
+                </div>
+                <div class="col col-md-4">
+                    <label class="form-label">Timezone</label>
+                    <input type="text" id="transaction_timezone" name="transaction_timezone" class="form-control" value="US/Eastern">
+                </div>
+                <div class="col">
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-pill btn-primary mt-4">Import</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="text-center d-none">
+                <div class="loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">In progress...</span>
+                    </div>
+                    <p class="mt-3">Uploading trades...</p>
+                </div>
+            </div>
+
+            <div id="importResults" class="mt-4"></div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
@@ -64,10 +110,10 @@
         let capitalChart = null;
         let currentDate = new Date();
         const monthNames = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
         ];
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         function getLocalDateString(date=null) {
             if (!date) {
@@ -88,7 +134,7 @@
 
             try {
                 const response = await fetch(`{{ url_for('journal_endpoints.month_trades', date=0) }}`.replace('0', dateStr));
-                if (!response.ok) throw new Error('Error al obtener los trades');
+                if (!response.ok) throw new Error('Error fetching trades');
                 const trades = await response.json();
 
                 // Organiza los trades por fecha (usa exit_date o la propiedad que corresponda)
@@ -224,7 +270,7 @@
             // Procesar datos para crear la curva de evolución del capital
             console.log('Trades: ', trades);
             const chartData = processCapitalEvolution(trades);
-            console.log('Datos del gráfico: ', chartData);
+            console.log('Chart data: ', chartData);
 
             // Encontrar valores mínimo y máximo para crear gradientes dinámicos
             const minValue = Math.min(...chartData.values);
@@ -256,7 +302,7 @@
 
             // Crear dataset principal con todos los datos
             const mainDataset = {
-                label: 'Evolución del Capital',
+                label: 'Capital Evolution',
                 data: chartData.values,
                 borderColor: function (ctx) {
                     const value = ctx.parsed?.y ?? chartData.values[ctx.dataIndex];
@@ -269,7 +315,7 @@
                     const { ctx, chartArea, scales } = chart;
 
                     if (!chartArea) {
-                        // Aún no está listo el layout del gráfico (primer render)
+                        // Layout of the chart is not ready yet (first render)
                         return 'rgba(0, 0, 0, 0)';
                     }
 
@@ -299,11 +345,11 @@
                     return gradient;
                 },
                 borderWidth: 3,
-                fill: 'origin', // Llenar hasta el eje y (línea cero)
+                fill: 'origin', // Fill to the y-axis (zero line)
                 tension: 0.4,
                 pointRadius: function (ctx) {
                     const value = ctx.parsed?.y ?? chartData.values[ctx.dataIndex];
-                    return value === 0 ? 4 : 0; // Mostrar puntos solo en valores cero
+                    return value === 0 ? 4 : 0; // Show points only at zero values
                 },
                 pointBackgroundColor: function (ctx) {
                     const value = ctx.parsed?.y ?? chartData.values[ctx.dataIndex];
@@ -314,13 +360,13 @@
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointHoverRadius: 6,
-                spanGaps: true, // Conectar todos los puntos
+                spanGaps: true, // Connect all points
                 segment: {
                     borderColor: function (ctx) {
                         const currentValue = ctx.p1.parsed.y;
                         const previousValue = ctx.p0.parsed.y;
 
-                        // Color del segmento basado en el valor actual
+                        // Color of the segment based on the current value
                         if (currentValue > 0) return '#22c55e';
                         if (currentValue < 0) return '#ef4444';
                         return '#6b7280';
@@ -417,14 +463,14 @@
                     },
                     elements: {
                         point: {
-                            radius: 0 // Por defecto sin puntos, se controla individualmente
+                            radius: 0
                         }
                     }
                 }
             });
         }
 
-        function processCapitalEvolution (trades) {
+        function processCapitalEvolutionOld (trades) {
             const allBalancePoints = [];
 
             // Recopilar todos los puntos de balance de todos los trades
@@ -513,15 +559,56 @@
             return { labels, values };
         }
 
+        function processCapitalEvolution (trades, initialCapital = 0) {
+            const points = [];
+
+            trades.forEach(trade => {
+                if (!trade.equity) return;
+
+                trade.equity.forEach(e => {
+                    points.push({
+                        datetime: new Date(e.datetime),
+                        pnl: e.total_pnl,
+                        tradeId: trade.id
+                    });
+                });
+            });
+
+            if (points.length === 0)
+                return { labels: ["Sin datos"], values: [initialCapital] };
+
+            // Ordenar por tiempo
+            points.sort((a, b) => a.datetime - b.datetime);
+
+            // Último PnL conocido por trade
+            const lastPnl = new Map();
+
+            const labels = [];
+            const values = [];
+
+            for (const p of points) {
+                lastPnl.set(p.tradeId, p.pnl);
+
+                let totalPnl = 0;
+                for (const v of lastPnl.values())
+                    totalPnl += v;
+
+                labels.push(p.datetime.toISOString());
+                values.push(initialCapital + totalPnl);
+            }
+
+            return { labels, values };
+        }
+
         function showTradesModal(date, trades) {
             const modal = document.getElementById('tradesModal');
             const modalTitle = document.getElementById('modalTitle');
             const daySummary = document.getElementById('daySummary');
             const tradesList = document.getElementById('tradesList');
 
-            modalTitle.textContent = `Trades del ${date.getDate()} de ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+            modalTitle.textContent = `Trades from ${date.getDate()} of ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
-            // Crear el gráfico de evolución del capital
+            // Create the capital evolution chart
             createCapitalChart(trades);
 
             // Generate summary
@@ -537,11 +624,11 @@
                     </div>
                 </div>
                 <div class="summary-item">
-                    <div class="summary-label">Trades Ganadores</div>
+                    <div class="summary-label">Winning Trades</div>
                     <div class="summary-value text-profit">${winningTrades}</div>
                 </div>
                 <div class="summary-item">
-                    <div class="summary-label">Trades Perdedores</div>
+                    <div class="summary-label">Losing Trades</div>
                     <div class="summary-value text-loss">${losingTrades}</div>
                 </div>
                 <div class="summary-item">
@@ -552,22 +639,22 @@
 
             // Generate trades list
             if (trades.length === 0) {
-                tradesList.innerHTML = '<div class="no-trades">No hay trades para este día</div>';
+                tradesList.innerHTML = '<div class="no-trades">There are no trades for this day</div>';
             } else {
                 tradesList.innerHTML = trades.map(trade => `
                     <div class="card card-body trade-item d-flex flex-row align-items-center shadow-none" onclick="goToTradeDetails(${trade.id})">
                         <div class="trade-info">
                             <div class="trade-symbol">${trade.symbol} - ${trade.type}</div>
                             <div class="trade-details">
-                                ${trade.time} | Entrada: $${trade.entry} → Salida: $${trade.exit} | Cantidad: ${trade.quantity}
+                                ${trade.time} | Entry: $${trade.entry} → Exit: $${trade.exit} | Quantity: ${trade.quantity}
                             </div>
                         </div>
                         <div class="trade-pnl ${trade.pnl > 0 ? 'text-profit' : trade.pnl < 0 ? 'text-loss' : 'text-breakeven'}">
                             ${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}
                         </div>
                         <div class="trade-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-pill bg-primary" onclick="editTrade(${trade.id})">Editar</button>
-                            <button class="btn btn-pill bg-danger" onclick="deleteTrade(${trade.id})">Borrar</button>
+                            <button class="btn btn-pill bg-primary" onclick="editTrade(${trade.id})">Edit</button>
+                            <button class="btn btn-pill bg-danger" onclick="deleteTrade(${trade.id})">Delete</button>
                         </div>
                     </div>
                 `).join('');
@@ -576,11 +663,16 @@
             modal.style.display = 'block';
         }
 
-        function closeModal() {
-            document.getElementById('tradesModal').style.display = 'none';
+        function showImportModal () {
+            const modal = document.getElementById('importModal');
+            modal.style.display = 'block';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
 
             // Limpiar el gráfico al cerrar
-            if (capitalChart) {
+            if (id == 'tradesModal' && capitalChart) {
                 capitalChart.destroy();
                 capitalChart = null;
             }
@@ -620,17 +712,75 @@
             }
         }
 
+        async function importFile() {
+            const form = document.getElementById('importForm');
+            const file = form.querySelector('#csvFile').files[0];
+            const dryRun = form.querySelector('#dryRun').checked;
+            const timezone = form.querySelector('#transaction_timezone').value;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('dry_run', dryRun);
+            formData.append('transaction_timezone', timezone);
+            try {
+                const spinner = document.querySelector('#importModal #loadingSpinner');
+                spinner.classList.remove('d-none');
+                spinner.querySelector('.loading-spinner').style.display = 'block';
+                const response = await fetch("{{ url_for('journal_endpoints.import_trades') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                const resultsDiv = document.getElementById('importResults');
+
+                if (result.success) {
+                    resultsDiv.innerHTML = `
+                        <h3>✓ Successful import</h3>
+                        <ul>
+                            <li>Executions: ${result.stats.total_executions}</li>
+                            <li>Trades: ${result.stats.trades_created}</li>
+                            <li>Closed: ${result.stats.closed_trades}</li>
+                            <li>Open: ${result.stats.open_trades}</li>
+                        </ul>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3>✗ Error in import</h3>
+                        <ul>
+                            ${result.stats.errors.map(e => `<li>${e}</li>`).join('')}
+                        </ul>
+                    `;
+                }
+                spinner.classList.add('d-none');
+                spinner.querySelector('.loading-spinner').style.display = 'none';
+            } catch (error) {
+                alert('Error: ' + error.message);
+                spinner.classList.add('d-none');
+                spinner.querySelector('.loading-spinner').style.display = 'none';
+            }
+        }
+
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('tradesModal');
-            if (event.target === modal) {
-                closeModal();
+            const modals = ['tradesModal', 'importModal'];
+            for (const modalId of modals) {
+                let modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    closeModal(modalId);
+                }
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize calendar
             getData();
+
+            document.getElementById('importForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                importFile();
+            });
         });
 
     </script>

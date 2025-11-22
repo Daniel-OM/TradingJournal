@@ -10,7 +10,7 @@ class Transaction(Model):
     price = db.Column(db.Float, nullable=False)
     time = db.Column(db.String(10), default=datetime.now(timezone.utc).strftime('%H:%M:%S'))
     quantity = db.Column(db.Float, nullable=False)
-    commission = db.Column(db.Float, nullable=False, default=1.0)
+    commission = db.Column(db.Float, nullable=False, default=0.0)
     type = db.Column(db.String(10), default='LONG')  # LONG/SHORT
     trade_id = db.Column(db.Integer, db.ForeignKey('trade.id'))
     
@@ -29,3 +29,13 @@ class Transaction(Model):
             'trade': {} if 'trade' in exclude else self.trade.to_dict(exclude=['transactions']+exclude),
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+    @property
+    def datetime(self) -> datetime:
+        
+        time_str = self.time or '00:00:00'
+        
+        if len(time_str.split(':')) == 2:
+            time_str += ':00'
+        
+        return datetime.combine(self.date, datetime.strptime(time_str, '%H:%M:%S').time()).replace(tzinfo=timezone.utc)

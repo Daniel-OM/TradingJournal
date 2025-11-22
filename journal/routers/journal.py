@@ -7,19 +7,21 @@ from copy import deepcopy
 
 import numpy as np
 
+from werkzeug.utils import secure_filename
 from werkzeug.datastructures.file_storage import FileStorage
 from sqlalchemy import desc, func, case, extract, and_, or_
-from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort
+from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort, current_app
 from flask_login import login_required, current_user
 from werkzeug.wrappers.response import Response
 
-from ..models.watchlist_entry import WatchlistEntry
+from journal.src.import_das import ImportStats
 
 from ..models.watchlist_entry import WatchlistEntry
 
 from ..config import UPLOAD_FOLDER
-from ..models import db, AccountBalance, Trade, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
+from ..models import db, AccountBalance, Trade, Transaction, Media, Strategy, StrategyCondition, Error, Watchlist, Candle, trade_scoring, trade_errors
 from ..src.performance import TradePerformance
+from ..src.import_das import CSVImporter
 from .utils import save_uploaded_files, calculate_max_drawdown, download_candles, localToUtc
 
 journal_pages = Blueprint(name='journal_pages', import_name=__name__)
@@ -169,7 +171,7 @@ def get_trade(id) -> str:
                                 Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                 Candle.timeframe == '1d').distinct().order_by(Candle.date.asc()).all()
     intraday = Candle.query.filter(Candle.symbol == symbol, 
-                                   Candle.date >= datetime.combine(week_ago, time(0, 0, 0)), 
+                                   Candle.date >= week_ago, 
                                    Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                    Candle.timeframe == '1m').distinct().order_by(Candle.date.asc()).all()
 
@@ -211,7 +213,7 @@ def get_trade(id) -> str:
             'created_at': e.created_at,
         } for e in errors_data],
         "transactions": [
-            t.to_dict() for t in trade.transactions.order_by(db.asc("date"), db.asc("time")).all()
+            t.to_dict(exclude=['trade']) for t in trade.transactions.order_by(db.asc("date"), db.asc("time")).all()
         ],
         "media": [
             {
@@ -304,14 +306,14 @@ def add_trade() -> Response | str:
         today = trade.entry_date or date.today()
         one_year_ago = today - timedelta(days=365)
         week_ago = today - timedelta(days=5)
-        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+        while (datetime.now() - week_ago).days >= 30:
             week_ago = week_ago + timedelta(days=1)
         # Descargar velas con Yahoo Finance
         download_candles(db=db,
                          symbol=symbol,
                          config=[
                              {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                             {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                             {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                          ])
         
         db.session.commit()
@@ -338,7 +340,6 @@ def edit_trade(trade_id):
     
     if request.method == 'POST':
         try:
-            trade_exit_date = trade.exit_date
             trade.entry_date = datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date()
             trade.symbol = request.form['symbol'].upper()
             trade.company_name = request.form.get('company_name', '')
@@ -407,7 +408,7 @@ def edit_trade(trade_id):
                             symbol=symbol,
                             config=[
                                 {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                                {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                             ])
 
             db.session.commit()
@@ -421,7 +422,7 @@ def edit_trade(trade_id):
     strategies = Strategy.query.all()
     errors = Error.query.filter_by(is_active=True).all()
 
-    return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict() for strat in strategies], date=date)
+    return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
 @journal_pages.route('/delete/<int:trade_id>', methods=['POST'])
 @login_required
@@ -473,11 +474,11 @@ def journal_api() -> str:
 
 @journal_bp.route(rule='/trades/<date>/month')
 @login_required
-def month_trades(date) -> Response:
+def month_trades(date:str) -> Response:
     date: datetime = datetime.strptime(date, '%Y-%m-%d')
     start = datetime(date.year, date.month, 1).date()
     end = datetime(date.year, date.month+1, 1).date()
-    trades: list = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
+    trades: list[Trade] = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
     return jsonify([t.to_dict(equity=True) for t in trades])
 
 @journal_bp.route(rule='/add', methods=['GET', 'POST'])
@@ -556,14 +557,14 @@ def add_trade_api() -> Response | str:
         today = trade.entry_date or date.today()
         one_year_ago = today - timedelta(days=365)
         week_ago = today - timedelta(days=5)
-        while (datetime.now() - datetime.combine(week_ago, time(0, 0, 0))).days >= 30:
+        while (datetime.now() - week_ago).days >= 30:
             week_ago = week_ago + timedelta(days=1)
         # Descargar velas con Yahoo Finance
         download_candles(db=db,
                          symbol=symbol,
                          config=[
                              {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                             {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                             {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                          ])
         
         db.session.commit()
@@ -590,7 +591,6 @@ def edit_trade_api(trade_id):
     
     if request.method == 'POST':
         try:
-            trade_exit_date = trade.exit_date
             trade.entry_date = datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date()
             trade.symbol = request.form['symbol'].upper()
             trade.company_name = request.form.get('company_name', '')
@@ -659,7 +659,7 @@ def edit_trade_api(trade_id):
                             symbol=symbol,
                             config=[
                                 {'timeframe': '1d', 'start':one_year_ago, 'end':today},
-                                {'timeframe': '1m', 'start': datetime.combine(week_ago, time(0, 0, 0)), 'end': datetime.combine(today, time(23, 59, 59)) },
+                                {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                             ])
 
             db.session.commit()
@@ -1061,6 +1061,246 @@ def performance_api() -> str:
     charts = { 'net': net_charts, 'gross': gross_charts }
     
     return jsonify(stats=stats, charts=charts)
+
+@journal_bp.route(rule='/import', methods=['POST'])
+@login_required
+def import_trades():
+    """
+    Endpoint para importar CSV.
+    
+    Request:
+        - file: Archivo CSV (multipart/form-data)
+        - dry_run: true/false (opcional, default: false)
+    
+    Response:
+        {
+            "success": true,
+            "stats": {...}
+        }
+    """
+    
+    if not current_user.is_authenticated:
+        return jsonify({"error": "Not authorized"}), 401
+        
+    # Validar archivo
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file: FileStorage = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "Empty filename"}), 400
+    
+    if not file.filename.lower().endswith('.csv') and not file.filename.lower().endswith('.xlsx'):
+        return jsonify({"error": "Only CSV or XLSX files are allowed"}), 400
+    
+    # Guardar archivo temporalmente
+    filename = secure_filename(file.filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    temp_path = os.path.join(UPLOAD_FOLDER, f"{timestamp}_{filename}")
+    file.save(temp_path)
+    
+    try:
+        # Importar
+        dry_run = request.form.get(key='dry_run', default='false').lower() == 'true'
+        timezone = request.form.get(key='transaction_timezone', default='Europe/Madrid')
+
+        importer = CSVImporter(current_app=current_app, trade_model=Trade, 
+                               transaction_model=Transaction, user_id=current_user.id)
+        
+        stats, loged_trades = importer.import_from_file(file_path=temp_path, dry_run=dry_run)
+
+        downloaded: dict[str, list] = {}
+        for trade in loged_trades:
+            db.session.add(instance=trade)
+            db.session.flush()
+            
+            for transaction in trade.transactions:
+                transaction.trade_id = trade.id
+                transaction.time = localToUtc(date=transaction.date, time=transaction.time, tz=timezone if len(timezone) > 0 else 'Europe/Madrid', mode='time') if len(timezone) > 0 else transaction.time
+            '''
+            for transaction in transactions:
+                trade.add_transaction(date=datetime.strptime(transaction.date, '%Y-%m-%d').date(), 
+                                    price=float(transaction.price), 
+                                    time=localToUtc(date=transaction.date, time=transaction.time, tz=timezone if len(timezone) > 0 else 'Europe/Madrid', mode='time') if len(timezone) > 0 else transaction.time, 
+                                    quantity=float(transaction.quantity), 
+                                    commission=float(transaction.commission), type=transaction.type)
+            '''
+            today = trade.entry_date or date.today()
+            one_year_ago = today - timedelta(days=365)
+            week_ago = datetime.combine(today - timedelta(days=5), time(0, 0, 0))
+            while (datetime.now() - week_ago).days >= 30:
+                week_ago = datetime.combine(week_ago + timedelta(days=1), time(0, 0, 0))
+
+            # Descargar velas con Yahoo Finance solo si no se han descargado ya para este símbolo y rango
+            if trade.symbol not in downloaded or [one_year_ago, today] not in downloaded[trade.symbol]['daily'] or [week_ago, datetime.combine(today, time(23, 59, 59))] not in downloaded[trade.symbol]['minute']:
+                download_candles(db=db,
+                                symbol=trade.symbol,
+                                config=[
+                                    {'timeframe': '1d', 'start':one_year_ago, 'end':today},
+                                    {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
+                                ])
+                if trade.symbol not in downloaded:
+                    downloaded[trade.symbol] = {'daily': [[one_year_ago, today]], 'minute': [[week_ago, datetime.combine(today, time(23, 59, 59))]]}
+                else:
+                    downloaded[trade.symbol]['daily'].append([one_year_ago, today])
+                    downloaded[trade.symbol]['minute'].append([week_ago, datetime.combine(today, time(23, 59, 59))])
+                
+        if not dry_run:
+            db.session.commit()
+            stats.success = True
+        else:
+            db.session.rollback()
+            stats.success = False
+            stats.errors.append("DRY RUN - Changes are not saved to the database.")
+            
+        # Log del resultado
+        if stats.success:
+            current_app.logger.info(
+                f"Import successful - User: {current_user.id}, File: {filename}, Trades: {stats.trades_created}"
+            )
+        else:
+            current_app.logger.warning(
+                f"Import failed - User: {current_user.id}, File: {filename}, Errors: {len(stats.errors)}"
+            )
+        
+        return jsonify({
+            "success": stats.success,
+            "message": "Importación completada" if stats.success else "Importación fallida",
+            "stats": {
+                "total_executions": stats.total_executions,
+                "trades_created": stats.trades_created,
+                "closed_trades": stats.closed_trades,
+                "open_trades": stats.open_trades,
+                "transactions_created": stats.transactions_created,
+                "errors": stats.errors
+            }
+        }), 200 if stats.success else 400
+    
+    except FileNotFoundError as e:
+        current_app.logger.error(f"File not found: {e}")
+        return jsonify({"error": "Archivo no encontrado"}), 404
+    
+    except ValueError as e:
+        current_app.logger.error(f"Validation error: {e}")
+        return jsonify({"error": str(e)}), 400
+    
+    except Exception as e:
+        current_app.logger.error(f"Import error: {e}", exc_info=True)
+        return jsonify({
+            "error": "Error interno del servidor",
+            "details": str(e) if current_app.debug else None
+        }), 500
+    
+    finally:
+        # Limpiar archivo temporal
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception as e:
+                current_app.logger.warning(f"Could not delete temp file: {e}")
+
+@journal_bp.route(rule='/import/batch', methods=['POST'])
+@login_required
+def import_batch_trades():
+    """
+    POST /api/trades/import/batch
+    
+    Importa múltiples archivos CSV en una sola petición.
+    
+    Form Data:
+        - files[]: Array de archivos CSV (required)
+        - dry_run: bool (optional, default: false)
+    
+    Returns:
+        JSON con estadísticas de cada archivo
+    """
+    
+    if not current_user.is_authenticated:
+        return jsonify({"error": "No autorizado"}), 401
+    
+    # Validar archivos
+    if 'files[]' not in request.files:
+        return jsonify({"error": "No se proporcionaron archivos"}), 400
+    
+    files = request.files.getlist('files[]')
+    
+    if not files or len(files) == 0:
+        return jsonify({"error": "Lista de archivos vacía"}), 400
+    
+    # Validar que todos sean CSV
+    for file in files:
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({
+                "error": f"Archivo inválido: {file.filename}. Solo CSV permitidos"
+            }), 400
+    
+    # Parámetros comunes
+    dry_run: bool = request.form.get('dry_run', 'false').lower() == 'true'
+    
+    results: dict = {}
+    temp_files: list[str] = []
+    
+    try:
+        # Procesar cada archivo
+        for file in files:
+            filename: str = secure_filename(filename=file.filename)
+            timestamp: str = datetime.now().strftime(format='%Y%m%d_%H%M%S')
+            temp_path: str = os.path.join(UPLOAD_FOLDER, f"{timestamp}_{filename}")
+            
+            temp_files.append(temp_path)
+            file.save(dst=temp_path)
+            
+            try:
+                importer = CSVImporter(current_app=current_app, trade_model=Trade, 
+                               transaction_model=Transaction, user_id=current_user.id, db=db)
+                
+                stats: ImportStats = importer.import_from_csv(csv_path=temp_path, dry_run=dry_run)
+                
+                results[filename] = {
+                    "success": stats.success,
+                    "stats": {
+                        "total_executions": stats.total_executions,
+                        "trades_created": stats.trades_created,
+                        "closed_trades": stats.closed_trades,
+                        "open_trades": stats.open_trades,
+                        "transactions_created": stats.transactions_created,
+                        "errors": stats.errors
+                    }
+                }
+                
+            except Exception as e:
+                results[filename] = {
+                    "success": False,
+                    "error": str(e)
+                }
+        
+        # Resumen total
+        total_success: int = sum(1 for r in results.values() if r.get('success', False))
+        total_trades: int = sum(
+            r.get('stats', {}).get('trades_created', 0) 
+            for r in results.values()
+        )
+        
+        return jsonify({
+            "success": total_success == len(files),
+            "summary": {
+                "total_files": len(files),
+                "successful": total_success,
+                "failed": len(files) - total_success,
+                "total_trades_created": total_trades
+            },
+            "results": results
+        })
+        
+    finally:
+        # Limpiar archivos temporales
+        for temp_path in temp_files:
+            if os.path.exists(path=temp_path):
+                try:
+                    os.remove(path=temp_path)
+                except Exception as e:
+                    current_app.logger.warning(f"Could not delete temp file: {e}")
 
 def get_balance_data():
     """Obtener datos de balance histórico"""
