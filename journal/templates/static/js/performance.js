@@ -1,7 +1,8 @@
 
 class Charts {
-    constructor(data, chartsCommonOptions=null) {
+    constructor(data, chartsCommonOptions=null, show_r=false) {
         this.data = data;
+        this.show_r = show_r;
 
         Chart.defaults.color = '#b0b0b0';
         Chart.defaults.backgroundColor = '#2d2d2d';
@@ -23,9 +24,12 @@ class Charts {
         this.charts = {};
     }
 
-    renderAll(data=null) {
+    renderAll(data=null, show_r=false) {
         if (data) {
             this.data = data;
+        }
+        if (show_r) {
+            this.show_r = show_r;
         }
         console.log('Rendering charts:', data);
         this.renderCharts()
@@ -43,7 +47,7 @@ class Charts {
             data: {
                 labels: this.data.equity_curve?.dates,
                 datasets: [{
-                    label: 'Cumulative P&L',
+                    label: this.show_r ? 'Cumulative Rs' : 'Cumulative P&L',
                     data: this.data.equity_curve?.equity,
                     borderColor: '#007cff',
                     backgroundColor: 'rgba(0, 124, 255, 0.1)',
@@ -77,7 +81,7 @@ class Charts {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `P&L: $${context.parsed.y.toFixed(2)}`;
+                                return this.show_r ? 'Rs: ${context.parsed.y.toFixed(2)}' : `P&L: $${context.parsed.y.toFixed(2)}`;
                             }
                         }
                     }
@@ -127,7 +131,7 @@ class Charts {
             data: {
                 labels: this.data.day_analysis?.days,
                 datasets: [{
-                    label: 'Daily P&L',
+                    label: this.show_r ? 'Daily Rs' : 'Daily P&L',
                     data: this.data.day_analysis?.total_pnl,
                     backgroundColor: function(context) {
                         const value = context.parsed?.y;
@@ -157,7 +161,7 @@ class Charts {
             data: {
                 labels: this.data.month_analysis?.months,
                 datasets: [{
-                    label: 'Monthly P&L',
+                    label: this.show_r ? 'Monthly Rs' : 'Monthly P&L',
                     data: this.data.month_analysis?.total_pnl,
                     backgroundColor: function(context) {
                         const value = context.parsed?.y;
@@ -302,7 +306,7 @@ class Charts {
                         ...this.chartsCommonOptions.scales.y,
                         title: {
                             display: true,
-                            text: 'P&L ($)',
+                            text: this.show_r ? 'P&L (R)' : 'P&L ($)',
                             color: '#b0b0b0'
                         }
                     }
@@ -352,7 +356,7 @@ class Charts {
                         ...this.chartsCommonOptions.scales.y,
                         title: {
                             display: true,
-                            text: 'P&L ($)',
+                            text: this.show_r ? 'P&L (R)' : 'P&L ($)',
                             color: '#b0b0b0'
                         }
                     }
@@ -447,7 +451,7 @@ class Charts {
                         callbacks: {
                             label: function(context) {
                                 const point = context.raw;
-                                return `${point.symbol}: ${point.y.toFixed(2)}% retorno, ${point.x.toFixed(2)}% volatilidad`;
+                                return `${point.symbol}: ${point.y.toFixed(2)}% return, ${point.x.toFixed(2)}% volatility`;
                             }
                         }
                     },
@@ -479,8 +483,8 @@ class Charts {
 }
 
 class TradeCharts extends Charts {
-    constructor(data, chartsCommonOptions=null) {
-        super(data, chartsCommonOptions);
+    constructor(data, chartsCommonOptions=null, show_r=false) {
+        super(data, chartsCommonOptions, show_r);
     }
 
     async renderCharts() {
@@ -498,8 +502,8 @@ class TradeCharts extends Charts {
 }
 
 class WatchlistCharts extends Charts {
-    constructor(data, chartsCommonOptions=null) {
-        super(data, chartsCommonOptions);
+    constructor(data, chartsCommonOptions=null, show_r=false) {
+        super(data, chartsCommonOptions, show_r);
     }
 
     calculateRadius (value, min_value, max_value, min_radius = 3, max_radius = 15) {
@@ -524,7 +528,7 @@ class WatchlistCharts extends Charts {
         const max_min = Math.min(...chartData.heatmap_max.map(h => h.count));
         const q_max = chartData.heatmap_max.reduce((sum, c) => { return sum + c.count; }, 0);
         const heatmapMaxDataset = {
-            label: 'Máximos',
+            label: 'Maximums',
             type: 'bubble',
             xAxisID: 'xMain',
             yAxisID: 'yMain',
@@ -536,7 +540,7 @@ class WatchlistCharts extends Charts {
         const min_min = Math.min(...chartData.heatmap_min.map(h => h.count));
         const q_min = chartData.heatmap_min.reduce((sum, c) => { return sum + c.count; }, 0);
         const heatmapMinDataset = {
-            label: 'Mínimos',
+            label: 'Minimums',
             type: 'bubble',
             xAxisID: 'xMain',
             yAxisID: 'yMain',
@@ -711,7 +715,7 @@ class WatchlistCharts extends Charts {
         const max_max = Math.max(...chartData.heatmap_max.map(h => h.count));
         const max_min = Math.min(...chartData.heatmap_max.map(h => h.count));
         const heatmapMaxDataset = {
-            label: 'Máximos',
+            label: 'Maximums',
             type: 'bubble',
             xAxisID: 'xMain',
             yAxisID: 'yMain',
@@ -722,7 +726,7 @@ class WatchlistCharts extends Charts {
         const min_max = Math.max(...chartData.heatmap_min.map(h => h.count));
         const min_min = Math.min(...chartData.heatmap_min.map(h => h.count));
         const heatmapMinDataset = {
-            label: 'Mínimos',
+            label: 'Minimums',
             type: 'bubble',
             xAxisID: 'xMain',
             yAxisID: 'yMain',
@@ -870,17 +874,21 @@ class WatchlistCharts extends Charts {
 }
 
 class Stats {
-    constructor(data) {
+    constructor(data, show_r=false) {
         this.data = data;
+        this.show_r = show_r;
     }
 
     async renderStats () {
         return;
     }
 
-    renderAll (data = null) {
+    renderAll (data = null, show_r=null) {
         if (data) {
             this.data = data;
+        }
+        if (show_r) {
+            this.show_r = show_r;
         }
         console.log('Rendering stats:', data);
         this.renderStats()
@@ -912,12 +920,12 @@ class Stats {
 }
 
 class TradeStats extends Stats {
-    constructor(data) {
-        super(data);
+    constructor(data, show_r=false) {
+        super(data, show_r);
     }
 
     async renderStats () {
-        document.getElementById('total-pnl').innerHTML = `${formatNumber(this.data.total_pnl, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('total-pnl').innerHTML = `${formatNumber(this.data.total_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('total-pnl').className = 'summary-value ' + (this.data.total_pnl > 0 ? 'text-profit' : 'text-loss');
         document.getElementById('win-rate').innerHTML = `${formatNumber(this.data.win_rate, 'percentage', 1, 2, 'compact')}`;
         document.getElementById('total-trades').textContent = this.data.total_trades;
@@ -925,7 +933,7 @@ class TradeStats extends Stats {
         document.getElementById('risk-reward').className = 'summary-value ' + (this.data.risk_reward > 1 ? 'text-profit' : 'text-loss');
 
         
-        document.getElementById('total-pnl-stat').innerHTML = `${formatNumber(this.data.total_pnl, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('total-pnl-stat').innerHTML = `${formatNumber(this.data.total_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('win-rate-stat').innerHTML = `${formatNumber(this.data.win_rate, 'percentage', 1, 2, 'compact')}`;
         document.getElementById('total-trades-stat').textContent = this.data.total_trades;
 
@@ -933,38 +941,38 @@ class TradeStats extends Stats {
         document.getElementById('losing-trades').innerHTML = `${this.data.losing_trades}`;
         document.getElementById('scratch-trades').innerHTML = `${this.data.scratch_trades}`;
 
-        document.getElementById('avg-trade').innerHTML = `${formatNumber(this.data.avg_trade_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('avg-share').innerHTML = `${formatNumber(this.data.avg_pnl_per_share, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('median').innerHTML = `${formatNumber(this.data.median_trade_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('largest-gain').innerHTML = `${formatNumber(this.data.largest_gain, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('largest-loss').innerHTML = `${formatNumber(this.data.largest_loss, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-trade').innerHTML = `${formatNumber(this.data.avg_trade_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-share').innerHTML = `${formatNumber(this.data.avg_pnl_per_share, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('median').innerHTML = `${formatNumber(this.data.median_trade_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('largest-gain').innerHTML = `${formatNumber(this.data.largest_gain, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('largest-loss').innerHTML = `${formatNumber(this.data.largest_loss, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
 
-        document.getElementById('winning-pnl').innerHTML = `${formatNumber(this.data.winning_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('losing-pnl').innerHTML = `${formatNumber(this.data.losing_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('avg-win').innerHTML = `${formatNumber(this.data.avg_win, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('avg-loss').innerHTML = `${formatNumber(this.data.avg_loss, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('winning-pnl').innerHTML = `${formatNumber(this.data.winning_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('losing-pnl').innerHTML = `${formatNumber(this.data.losing_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-win').innerHTML = `${formatNumber(this.data.avg_win, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-loss').innerHTML = `${formatNumber(this.data.avg_loss, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
 
         document.getElementById('risk-reward-stat').innerHTML = `${this.data.risk_reward.toFixed(2)}`;
         document.getElementById('profit-factor').innerHTML = `${this.data.profit_factor.toFixed(2)}`;
         document.getElementById('sharpe').innerHTML = `${this.data.sharpe_ratio.toFixed(2)}`;
         document.getElementById('drawdown').innerHTML = `${formatNumber(this.data.max_drawdown, 'percentage', 1, 2, 'compact')}`;
-        document.getElementById('std').innerHTML = `${formatNumber(this.data.trade_pnl_std, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('std').innerHTML = `${formatNumber(this.data.trade_pnl_std, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('sqn').innerHTML = `${this.data.sqn.toFixed(2)}`;
 
         document.getElementById('k-ratio').innerHTML = `${this.data.k_ratio.toFixed(2)}`;
         document.getElementById('kelly').innerHTML = `${formatNumber(this.data.kelly_percent, 'percentage', 1, 2, 'compact')}`;
         document.getElementById('p-value').innerHTML = `${this.data.p_value.toFixed(4)}`;
-        document.getElementById('avg-daily').innerHTML = `${formatNumber(this.data.avg_daily_pnl, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-daily').innerHTML = `${formatNumber(this.data.avg_daily_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('avg-volume').innerHTML = `${formatNumber(this.data.avg_daily_volume, 'currency', 1, 2, 'compact')}`;
 
         document.getElementById('max-wins').innerHTML = `${this.data.max_consecutive_wins}`;
         document.getElementById('max-losses').innerHTML = `${this.data.max_consecutive_losses}`;
 
         // General Stats Tab
-        document.getElementById('total-commissions').textContent = formatNumber(this.data.total_commissions, 'currency', 1, 2, 'compact');
-        document.getElementById('total-fees').textContent = formatNumber(this.data.total_fees, 'currency', 1, 2, 'compact');
-        document.getElementById('total-costs').textContent = formatNumber(this.data.total_commissions + this.data.total_fees, 'currency', 1, 2, 'compact');
-        document.getElementById('cost-per-trade').textContent = formatNumber((this.data.total_commissions + this.data.total_fees) / this.data.total_trades, 'currency', 1, 2, 'compact');
+        document.getElementById('total-commissions').textContent = formatNumber(this.data.total_commissions, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
+        document.getElementById('total-fees').textContent = formatNumber(this.data.total_fees, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
+        document.getElementById('total-costs').textContent = formatNumber(this.data.total_commissions + this.data.total_fees, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
+        document.getElementById('cost-per-trade').textContent = formatNumber((this.data.total_commissions + this.data.total_fees) / this.data.total_trades, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
 
         const costImpact = ((this.data.gross?.total_pnl - this.data.net?.total_pnl) / this.data.gross?.total_pnl) * 100;
         document.getElementById('cost-impact').textContent = formatNumber(costImpact, 'percentage', 1, 2, 'compact');
@@ -989,8 +997,8 @@ class TradeStats extends Stats {
 }
 
 class WatchlistStats extends Stats {
-    constructor(data) {
-        super(data);
+    constructor(data, show_r=false) {
+        super(data, show_r);
     }
 
     async renderSectorAnalysis(sector_data) {
@@ -1014,7 +1022,7 @@ class WatchlistStats extends Stats {
     }
 
     async renderStats () {
-        document.getElementById('total-pnl').innerHTML = `${formatNumber(this.data.total_pnl, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('total-pnl').innerHTML = `${formatNumber(this.data.total_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('total-pnl').className = 'summary-value ' + (this.data.total_pnl > 0 ? 'text-profit' : 'text-loss');
         document.getElementById('win-rate').innerHTML = `${formatNumber(this.data.win_rate, 'percentage', 1, 2, 'compact')}`;
         document.getElementById('total-trades').textContent = this.data.total_trades;
@@ -1022,7 +1030,7 @@ class WatchlistStats extends Stats {
         document.getElementById('risk-reward').className = 'summary-value ' + (this.data.risk_reward > 1 ? 'text-profit' : 'text-loss');
 
 
-        document.getElementById('total-pnl-stat').innerHTML = `${formatNumber(this.data.total_pnl, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('total-pnl-stat').innerHTML = `${formatNumber(this.data.total_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('win-rate-stat').innerHTML = `${formatNumber(this.data.win_rate, 'percentage', 1, 2, 'compact')}`;
         document.getElementById('total-trades-stat').textContent = this.data.total_trades;
 
@@ -1030,38 +1038,38 @@ class WatchlistStats extends Stats {
         document.getElementById('losing-trades').innerHTML = `${this.data.losing_trades}`;
         document.getElementById('scratch-trades').innerHTML = `${this.data.scratch_trades}`;
 
-        document.getElementById('avg-trade').innerHTML = `${formatNumber(this.data.avg_trade_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('avg-share').innerHTML = `${formatNumber(this.data.avg_pnl_per_share, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('median').innerHTML = `${formatNumber(this.data.median_trade_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('largest-gain').innerHTML = `${formatNumber(this.data.largest_gain, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('largest-loss').innerHTML = `${formatNumber(this.data.largest_loss, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-trade').innerHTML = `${formatNumber(this.data.avg_trade_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-share').innerHTML = `${formatNumber(this.data.avg_pnl_per_share, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('median').innerHTML = `${formatNumber(this.data.median_trade_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('largest-gain').innerHTML = `${formatNumber(this.data.largest_gain, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('largest-loss').innerHTML = `${formatNumber(this.data.largest_loss, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
 
-        document.getElementById('winning-pnl').innerHTML = `${formatNumber(this.data.winning_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('losing-pnl').innerHTML = `${formatNumber(this.data.losing_pnl, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('avg-win').innerHTML = `${formatNumber(this.data.avg_win, 'currency', 1, 2, 'compact')}`;
-        document.getElementById('avg-loss').innerHTML = `${formatNumber(this.data.avg_loss, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('winning-pnl').innerHTML = `${formatNumber(this.data.winning_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('losing-pnl').innerHTML = `${formatNumber(this.data.losing_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-win').innerHTML = `${formatNumber(this.data.avg_win, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-loss').innerHTML = `${formatNumber(this.data.avg_loss, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
 
         document.getElementById('risk-reward-stat').innerHTML = `${this.data.risk_reward.toFixed(2)}`;
         document.getElementById('profit-factor').innerHTML = `${this.data.profit_factor.toFixed(2)}`;
         document.getElementById('sharpe').innerHTML = `${this.data.sharpe_ratio.toFixed(2)}`;
         document.getElementById('drawdown').innerHTML = `${formatNumber(this.data.max_drawdown, 'percentage', 1, 2, 'compact')}`;
-        document.getElementById('std').innerHTML = `${formatNumber(this.data.trade_pnl_std, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('std').innerHTML = `${formatNumber(this.data.trade_pnl_std, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('sqn').innerHTML = `${this.data.sqn.toFixed(2)}`;
 
         document.getElementById('k-ratio').innerHTML = `${this.data.k_ratio.toFixed(2)}`;
         document.getElementById('kelly').innerHTML = `${formatNumber(this.data.kelly_percent, 'percentage', 1, 2, 'compact')}`;
         document.getElementById('p-value').innerHTML = `${this.data.p_value.toFixed(4)}`;
-        document.getElementById('avg-daily').innerHTML = `${formatNumber(this.data.avg_daily_pnl, 'currency', 1, 2, 'compact')}`;
+        document.getElementById('avg-daily').innerHTML = `${formatNumber(this.data.avg_daily_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}`;
         document.getElementById('avg-volume').innerHTML = `${formatNumber(this.data.avg_daily_volume, 'currency', 1, 2, 'compact')}`;
 
         document.getElementById('max-wins').innerHTML = `${this.data.max_consecutive_wins}`;
         document.getElementById('max-losses').innerHTML = `${this.data.max_consecutive_losses}`;
 
         // General Stats Tab
-        document.getElementById('total-commissions').textContent = formatNumber(this.data.total_commissions, 'currency', 1, 2, 'compact');
-        document.getElementById('total-fees').textContent = formatNumber(this.data.total_fees, 'currency', 1, 2, 'compact');
-        document.getElementById('total-costs').textContent = formatNumber(this.data.total_commissions + this.data.total_fees, 'currency', 1, 2, 'compact');
-        document.getElementById('cost-per-trade').textContent = formatNumber((this.data.total_commissions + this.data.total_fees) / this.data.total_trades, 'currency', 1, 2, 'compact');
+        document.getElementById('total-commissions').textContent = formatNumber(this.data.total_commissions, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
+        document.getElementById('total-fees').textContent = formatNumber(this.data.total_fees, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
+        document.getElementById('total-costs').textContent = formatNumber(this.data.total_commissions + this.data.total_fees, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
+        document.getElementById('cost-per-trade').textContent = formatNumber((this.data.total_commissions + this.data.total_fees) / this.data.total_trades, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact');
 
         const costImpact = ((this.data.gross?.total_pnl - this.data.net?.total_pnl) / this.data.gross?.total_pnl) * 100;
         document.getElementById('cost-impact').textContent = formatNumber(costImpact, 'percentage', 1, 2, 'compact');
@@ -1089,13 +1097,14 @@ class WatchlistStats extends Stats {
 }
 
 class Performance {
-    constructor(stats_data, charts_data, gross=false, endpoint=null, chartsCommonOptions=null, StatsObject=Stats, ChartsObject=Charts) {
+    constructor(stats_data, charts_data, gross=false, show_r=false, endpoint=null, chartsCommonOptions=null, StatsObject=Stats, ChartsObject=Charts) {
         this.stats_data = stats_data;
         this.charts_data = charts_data;
         this.gross = gross;
+        this.show_r = show_r;
         this.endpoint = endpoint;
-        this.statsObject = new StatsObject(this.gross ? this.stats_data.gross : this.stats_data.net);
-        this.chartsObject = new ChartsObject(this.gross ? this.charts_data.gross : this.charts_data.net, chartsCommonOptions);
+        this.statsObject = new StatsObject(this.gross ? this.stats_data.gross : this.stats_data.net, show_r);
+        this.chartsObject = new ChartsObject(this.gross ? this.charts_data.gross : this.charts_data.net, chartsCommonOptions, show_r);
 
         this.init();
     }
@@ -1164,11 +1173,11 @@ class Performance {
     }
     
     async renderStats () {
-        this.statsObject.renderAll(this.gross ? this.stats_data.gross : this.stats_data.net);
+        this.statsObject.renderAll(this.gross ? this.stats_data.gross : this.stats_data.net, this.show_r);
     }
 
     async renderCharts () {
-        this.chartsObject.renderAll(this.gross ? this.charts_data.gross : this.charts_data.net);
+        this.chartsObject.renderAll(this.gross ? this.charts_data.gross : this.charts_data.net, this.show_r);
     }
 
     async changeGrossNet(gross=false) {

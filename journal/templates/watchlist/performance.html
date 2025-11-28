@@ -483,7 +483,7 @@
             document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
             document.getElementById('limit').value = "{{ limit }}" || '';
 
-            perf_object = new Performance(statsData, chartsData, true, null, null, WatchlistStats, WatchlistCharts);
+            perf_object = new Performance(statsData, chartsData, true, show_r, null, null, WatchlistStats, WatchlistCharts);
 
             // Add keyboard shortcuts
             document.addEventListener('keydown', function (e) {

@@ -506,7 +506,7 @@
             document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
             document.getElementById('limit').value = "{{ limit }}" || '';
 
-            perf_object = new Performance(statsData, chartsData, document.getElementById('gross-switch').checked, null, null, TradeStats, TradeCharts);
+            perf_object = new Performance(statsData, chartsData, document.getElementById('gross-switch').checked, show_r, null, null, TradeStats, TradeCharts);
             // Event listeners
             document.getElementById('gross-switch').addEventListener('change', () => {
                 perf_object.changeGrossNet(document.getElementById('gross-switch').checked);

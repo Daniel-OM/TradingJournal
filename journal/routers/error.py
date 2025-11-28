@@ -81,29 +81,12 @@ class ErrorAnalytics:
         ).group_by(Trade.entry_date).all()
         
         return daily_counts
-    
-    @staticmethod
-    def get_most_costly_errors(limit=10):
-        """Obtener los errores más costosos"""
-        error_costs = []
-        
-        for error in Error.query.filter(Error.user_id == current_user.id).all():
-            if error.trades:
-                total_loss = sum(trade.profit_loss for trade in error.trades if trade.profit_loss < 0)
-                error_costs.append({
-                    'error': error,
-                    'total_loss': total_loss,
-                    'avg_loss': total_loss / len(error.trades),
-                    'occurrences': len(error.trades)
-                })
-        
-        return sorted(error_costs, key=lambda x: x['total_loss'])[:limit]
 
 
 
 error_bp = Blueprint(name='error_endpoints', import_name=__name__)
 
-@error_bp.route('/errors')
+@error_bp.route('/')
 @login_required
 def errors():
     # Obtener parámetros de filtro
@@ -225,13 +208,14 @@ def error_trades():
         ).first()
         
         impact_level = impact_query[0] if impact_query else 'medium'
-        
+
+        trade_json = trade.to_dict(force_dollars=False, complete=False, equity=False)
         trades_data.append({
             'id': trade.id,
             'date': trade.date.strftime('%d/%m/%Y'),
             'symbol': trade.symbol,
             'strategy': trade.strategy.name if trade.strategy else 'N/A',
-            'pnl': float(trade.profit_loss or 0),
+            'pnl': float(trade_json.get('profit_loss', 0)),
             'impact_level': impact_level
         })
     

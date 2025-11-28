@@ -50,6 +50,18 @@
                             <input type="number" name="commission" step="0.0000000001" class="form-control" value="{{ trade.commission if trade else '1.0' }}">
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ECN Fee</label>
+                            <input type="number" name="ecn_fee" step="0.0000000001" class="form-control"
+                                value="{{ trade.ecn_fee if trade else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Locates</label>
+                            <input type="number" name="locates" step="0.0000000001" class="form-control"
+                                value="{{ trade.locates if trade else '1.0' }}">
+                        </div>
+                    </div>
                     {% endif %}
                     <div class="mb-3">
                         <label class="form-label">Total Balance</label>
@@ -340,7 +352,7 @@
     }
 
     
-    function addTransaction(date='', time='', price='', quantity='', commission='', type='') {
+    function addTransaction(date='', time='', price='', quantity='', commission='', ecn_fee='', locates='', type='') {
         tcounter++;
         const transactionsList = document.getElementById('transactions-list');
         
@@ -383,6 +395,16 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Commission</label>
                         <input type="number" name="transaction_commission" step="0.0000000001" class="form-control" value="${commission}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">ECN Fee</label>
+                        <input type="number" name="transaction_ecn_fee" step="0.0000000001" class="form-control" value="${ecn_fee}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Locates</label>
+                        <input type="number" name="transaction_locates" step="0.0000000001" class="form-control" value="${locates}" required>
                     </div>
                 </div>
                 <button type="button" class="btn btn-pill bg-danger" onclick="removeTransaction(this)">
@@ -562,6 +584,8 @@
                     price="{{transaction.price}}",
                     quantity="{{transaction.quantity}}",
                     commission="{{transaction.commission}}",
+                    ecn_fee="{{transaction.ecn_fee}}",
+                    locates="{{transaction.locates}}",
                     type="{{transaction.type}}"
                 );
             {% endfor %}

@@ -569,27 +569,21 @@ class Stats:
 
     async def calculateDailyStats(self) -> dict[str, float]:
         """Calcular estadísticas diarias"""
-        
-        # Determinar rango de fechas
-        start_date = min((d['entry_date'] for d in self.data if d['entry_date']), default=None)
-        end_date = max((d['entry_date'] for d in self.data if d['entry_date']), default=None)
 
-        if start_date and end_date:
-            trading_days = (end_date - start_date).days + 1
-        else:
-            first_trade = min(self.data, key=lambda t: t['entry_date'])
-            last_trade = max(self.data, key=lambda t: t['entry_date'])
-            trading_days = (last_trade['entry_date'] - first_trade['entry_date']).days + 1
-        
-        if trading_days == 0:
-            trading_days = 1
-        
-        total_pnl = sum((d['profit_loss'] + d['commission'] if self.gross else d['profit_loss']) for d in self.data)
-        total_volume = sum(d.get('exit_quantity', 0) for d in self.data)
+        days: list = list(set([d['exit_date'].date() for d in self.data]))
+        profits: dict = {k: sum([(d['profit_loss'] + d['commission'] if self.gross else d['profit_loss']) for d in self.data if d['exit_date'].date() == k]) for k in days}
+        wins: list = [v for v in profits.values() if v > 0]
+        losses: list = [v for v in profits.values() if v < 0]
+        total_pnl: float = sum((d['profit_loss'] + d['commission'] if self.gross else d['profit_loss']) for d in self.data)
+        total_volume: float = sum(d.get('exit_quantity', 0) for d in self.data)
         
         return {
-            'avg_daily_pnl': total_pnl / trading_days,
-            'avg_daily_volume': total_volume / trading_days
+            'avg_daily_pnl': total_pnl / len(days) if len(days) > 0 else 0,
+            'avg_daily_volume': total_volume / len(days) if len(days) > 0 else 0,
+            'avg_win_per_day': self.mean(wins) if len(wins) else 0,
+            'avg_loss_per_day': self.mean(losses) if len(losses) else 0,
+            'daily_winrate': (len(wins) / len(days)) if len(days) > 0 else 0,
+            'avg_trades_per_day': len(self.data) / len(days) if len(days) > 0 else 0,
         }
 
     async def getStats(self, values:list=None, scratch_percentage:float=0.01):
@@ -676,6 +670,10 @@ class Stats:
 
             'avg_daily_pnl': round(daily_stats['avg_daily_pnl'], 2),
             'avg_daily_volume': round(daily_stats['avg_daily_volume'], 2),
+            'avg_win_per_day': round(daily_stats['avg_win_per_day'], 2),
+            'avg_loss_per_day': round(daily_stats['avg_loss_per_day'], 2),
+            'daily_winrate': round(daily_stats['daily_winrate'] * 100, 2),
+            'avg_trades_per_day': round(daily_stats['avg_trades_per_day'], 2),
         }
 
     async def calculateMaximumExecutions(self):
@@ -1128,7 +1126,7 @@ class Charts:
 
 class TradePerformance:
 
-    def __init__(self, data: list[Trade], gross:bool=False, exclude:list[str]=['strategy', 'media', 'errors', 'conditions', 'transactions']) -> None:
+    def __init__(self, data: list[Trade], gross:bool=False, show_r:bool=False, exclude:list[str]=['strategy', 'media', 'errors', 'conditions', 'transactions']) -> None:
         self.date_format = '%Y-%m-%d'
         self.time_format = '%H:%M:%S'
         new_data = self.processData(data=data, exclude=exclude)
@@ -1137,6 +1135,7 @@ class TradePerformance:
         # super().__init__(data=self.processData(data=data, exclude=exclude), gross=gross)
         self.date_format = '%Y-%m-%d'
         self.time_format = '%H:%M:%S'
+        self.show_r: bool = show_r
 
     ## PROCESSING
     def getCandles(self, data:list[Trade]):
@@ -1745,6 +1744,32 @@ class WatchlistPerformance:
                     "volume": c["volume"],
                 } for data in self.charts.data for c in data['candles']]
         df = pd.DataFrame(all_rows)
+        if df.empty:
+            return {
+                "line": {
+                    "labels": [],
+                    "datasets": [],
+                },
+                "heatmap_max": [],
+                "heatmap_min": [],
+                "hist_price_max": {
+                    "labels": [],
+                    "data": [],
+                },
+                "hist_price_min": {
+                    "labels": [],
+                    "data": [],
+                },
+                "hist_time_max": {
+                    "labels": [],
+                    "data": [],
+                },
+                "hist_time_min": {
+                    "labels": [],
+                    "data": [],
+                },
+            }
+        print('Watchlist df', df)
         df = df.sort_values(['symbol', 'date']).copy()
         df['price'] = df.groupby('symbol')['close'].pct_change()
         df['price'] = df.groupby('symbol')['price'].cumsum()
@@ -1867,747 +1892,8 @@ class WatchlistPerformance:
             'hold_time_analysis': hold_time_analysis,
             # 'streaks': self.getStreaks(),
             'size_analysis': size_analysis,
-            'monte_carlo_traces': series_analysis['monte_carlo_traces'],
-            'percentile_data': series_analysis['percentile_data'],
+            'monte_carlo_traces': series_analysis.get('monte_carlo_traces', []),
+            'percentile_data': series_analysis.get('percentile_data', []),
             'heatmap_data': execution_heatmap,
             'execution_optimization': execution_optimization
         }
-
-
-
-class WatchlistPerformanceMetrics:
-
-    def __init__(self, entries:list[WatchlistEntry]):
-        self.entries: list[WatchlistEntry] = entries
-
-    def mean(self, numbers):
-        return float(np.mean([n for n in numbers if n is not None])) if (isinstance(numbers, pd.Series) and not numbers.empty) or numbers else None
-    
-    def median(self, numbers):
-        return float(np.median([n for n in numbers if n is not None])) if (isinstance(numbers, pd.Series) and not numbers.empty) or numbers else None
-    
-    def std(self, numbers):
-        return float(np.std([n for n in numbers if n is not None])) if (isinstance(numbers, pd.Series) and not numbers.empty) or numbers else None
-    
-    def max(self, numbers):
-        return float(np.max([n for n in numbers if n is not None])) if (isinstance(numbers, pd.Series) and not numbers.empty) or numbers else None
-    
-    def min(self, numbers):
-        return float(np.min([n for n in numbers if n is not None])) if (isinstance(numbers, pd.Series) and not numbers.empty) or numbers else None
-
-    def dfGetValue(self, col:str, idx:int, df:pd.DataFrame, default=None, type=float):
-        try:
-            return type(df[col].iloc[idx]) if col in df.columns else default
-        except KeyError:
-            print('Key error accessing column:', col, ' with index: ', idx)
-            return default
-
-    def analyze_entry_performance(self, entry: WatchlistEntry):
-        """Analiza el rendimiento de una entrada individual"""
-        
-        # Determinar fechas de análisis
-        start_date = entry.date
-        end_date = entry.date_exit or datetime.now().date()
-        
-        if start_date >= end_date:
-            return None
-        
-        # Obtener datos de velas para el símbolo
-        candles: list[Candle] = Candle.query.filter(
-            and_(
-                Candle.symbol == entry.symbol,
-                Candle.date >= start_date,
-                Candle.date <= end_date,
-                Candle.timeframe == '1d'  # TODO: Use the 1 minute timeframe for analysis too, how do we define when to download the 1 minute data?
-            )
-        ).distinct().order_by(Candle.date.asc()).all()
-        
-        candles_data = pd.DataFrame([c.to_dict() for c in candles])
-        if candles_data.empty:
-            print('No candles for the watchlist entry:')
-            return {
-                'symbol': entry.symbol,
-                'company_name': entry.company_name,
-                'entry_date': start_date.isoformat(),
-                'exit_date': end_date.isoformat(),
-                'days_held': (end_date - start_date).days,
-                'entry_price': entry.price,
-                'final_price': None,
-                'total_return': None,
-                'max_return': None,
-                'min_return': None,
-                'volatility': None,
-                'sector': entry.sector,
-                'industry': entry.industry,
-                'market_cap': entry.market_cap,
-                'score': entry.score,
-                'movement_times': {},
-                'is_profitable': None
-            }
-        candles_data[['open', 'high', 'low', 'close', 'volume']] = candles_data[['open', 'high', 'low', 'close', 'volume']].astype(float).map(float)
-        # Calcular métricas de rendimiento
-        entry_price = entry.price or self.dfGetValue('close', 0, candles_data)  # close del primer candle
-        final_price = self.dfGetValue('close', -1, candles_data)  # close del último candle
-        
-        # Calcular retorno
-        total_return = ((final_price - entry_price) / entry_price) * 100
-        
-        # Encontrar máximo y mínimo durante el período
-        max_price = float(candles_data['high'].max())  # high
-        min_price = float(candles_data['low'].min())  # low
-        
-        max_return = ((max_price - entry_price) / entry_price) * 100
-        min_return = ((min_price - entry_price) / entry_price) * 100
-        
-        # Análisis de tiempo de movimientos significativos
-        movement_times = self.analyze_movement_timing(candles_data, entry_price)
-        
-        # Calcular volatilidad
-        returns = candles_data['close'].pct_change().dropna()
-        volatility = self.std(returns) if not returns.empty else 0
-        
-        return {
-            'symbol': entry.symbol,
-            'company_name': entry.company_name,
-            'entry_date': start_date.isoformat(),
-            'exit_date': end_date.isoformat(),
-            'days_held': (end_date - start_date).days,
-            'entry_price': entry_price,
-            'final_price': final_price,
-            'total_return': round(total_return, 2),
-            'max_return': round(max_return, 2),
-            'min_return': round(min_return, 2),
-            'volatility': round(volatility, 2),
-            'sector': entry.sector,
-            'industry': entry.industry,
-            'market_cap': entry.market_cap,
-            'score': entry.score,
-            'movement_times': movement_times,
-            'is_profitable': total_return > 0
-        }
-        
-    def analyze_movement_timing(self, candles_data:pd.DataFrame, entry_price):
-        """Analiza los horarios de movimientos significativos"""
-        movement_threshold = 0.02  # 2% de movimiento significativo
-        
-        significant_moves = []
-        for i, date, symbol, open_p, high, low, close, volume, session, timeframe, created in candles_data.values:
-            timestamp = datetime.strptime(date, '%Y-%m-%d %H:%M:%S%z')
-            hour = timestamp.hour
-            
-            # Calcular movimiento desde precio de entrada
-            high_move = ((high - entry_price) / entry_price)
-            low_move = ((low - entry_price) / entry_price)
-            
-            if abs(high_move) >= movement_threshold or abs(low_move) >= movement_threshold:
-                significant_moves.append({
-                    'hour': hour,
-                    'high_move': high_move,
-                    'low_move': low_move,
-                    'timestamp': timestamp.isoformat()
-                })
-        
-        # Agrupar por horas
-        hourly_movements = defaultdict(list)
-        for move in significant_moves:
-            hourly_movements[move['hour']].append(move)
-        
-        return dict(hourly_movements)
-
-    def calculate_aggregate_statistics(self, performance_data):
-        """Calcula estadísticas agregadas de toda la watchlist"""
-        if not performance_data:
-            return {}
-        
-        total_returns = [p['total_return'] for p in performance_data]
-        max_returns = [p['max_return'] for p in performance_data]
-        min_returns = [p['min_return'] for p in performance_data]
-        
-        profitable_trades = [p for p in performance_data if p['is_profitable']]
-        losing_trades = [p for p in performance_data if not p['is_profitable']]
-        
-        # Análisis de horarios de movimientos
-        all_movement_times = []
-        for p in performance_data:
-            for hour, moves in p['movement_times'].items():
-                all_movement_times.extend([hour] * len(moves))
-        
-        # Encontrar horas más activas
-        hour_counts = defaultdict(int)
-        for hour in all_movement_times:
-            hour_counts[hour] += 1
-        
-        most_active_hours = sorted(hour_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-        
-        # Análisis por sectores
-        sector_performance = defaultdict(list)
-        for p in performance_data:
-            if p['sector']:
-                sector_performance[p['sector']].append(p['total_return'])
-        
-        sector_stats = {}
-        for sector, returns in sector_performance.items():
-            sector_stats[sector] = {
-                'avg_return': round(self.mean(returns), 2),
-                'count': len(returns),
-                'win_rate': len([r for r in returns if r > 0]) / len(returns) * 100
-            }
-        
-        return {
-            'total_trades': len(performance_data),
-            'profitable_trades': len(profitable_trades),
-            'losing_trades': len(losing_trades),
-            'win_rate': round((len(profitable_trades) / len(performance_data)) * 100, 2),
-            'average_return': round(self.mean(total_returns), 2),
-            'median_return': round(self.median(total_returns), 2),
-            'max_single_return': round(self.max(total_returns), 2),
-            'min_single_return': round(self.min(total_returns), 2),
-            'average_max_return': round(self.mean(max_returns), 2),
-            'average_min_return': round(self.mean(min_returns), 2),
-            'std_deviation': round(self.std(total_returns), 2),
-            'sharpe_ratio': self.calculate_sharpe_ratio(total_returns),
-            'most_active_hours': most_active_hours,
-            'sector_performance': sector_stats,
-            'bias_direction': 'BULLISH' if self.mean(total_returns) > 0 else 'BEARISH'
-        }
-
-    def calculate_sharpe_ratio(self, returns):
-        """Calcula el ratio de Sharpe asumiendo tasa libre de riesgo del 2%"""
-        if not returns or self.std(returns) == 0:
-            return 0
-        
-        risk_free_rate = 2.0  # 2% anualizado
-        excess_returns = self.mean(returns) - risk_free_rate
-        return round(excess_returns / self.std(returns), 2)
-
-    def generate_visualization_data(self, performance_data):
-        """Genera datos para las visualizaciones"""
-        if not performance_data:
-            return {}
-        
-        # Datos para gráfico de retornos
-        returns_distribution = [p['total_return'] for p in performance_data]
-        
-        # Datos para timeline de rendimiento
-        timeline_data = []
-        for p in performance_data:
-            timeline_data.append({
-                'date': p['entry_date'],
-                'return': p['total_return'],
-                'symbol': p['symbol']
-            })
-        
-        timeline_data.sort(key=lambda x: x['date'])
-        
-        # Datos para análisis de horarios
-        hourly_activity = defaultdict(int)
-        for p in performance_data:
-            for hour, moves in p['movement_times'].items():
-                hourly_activity[hour] += len(moves)
-        
-        hours_data = [{'hour': f"{h:02d}:00", 'activity': count} 
-                    for h, count in sorted(hourly_activity.items())]
-        
-        # Datos para scatter plot de riesgo vs retorno
-        risk_return_data = [{
-            'symbol': p['symbol'],
-            'return': p['total_return'],
-            'volatility': p['volatility'],
-            'market_cap': p['market_cap'] or 0
-        } for p in performance_data]
-        
-        return {
-            'returns_distribution': returns_distribution,
-            'timeline': timeline_data,
-            'hourly_activity': hours_data,
-            'risk_return_scatter': risk_return_data
-        }
-    
-    def getAll(self):
-        
-        performance_data = []
-        for entry in self.entries:
-            perf_data = self.analyze_entry_performance(entry)
-            if perf_data:
-                performance_data.append(perf_data)
-
-        stats = self.calculate_aggregate_statistics(performance_data)
-        
-        # Generar datos para visualizaciones
-        visualizations = self.generate_visualization_data(performance_data)
-
-        return {
-            'total_entries': len(self.entries),
-            'analyzed_entries': len(performance_data),
-            'statistics': stats,
-            'visualizations': visualizations,
-            'raw_data': performance_data
-        }
-
-    def to_json(self):
-        """Convertir todos los gráficos a JSON para enviar al frontend"""
-        data = self.getAll()
-        return json.dumps(data, default=str)  # default=str para manejar objetos datetime
-    
-
-from typing import Any
-import json
-
-class WatchlistAnalyzer:
-
-    def __init__(self, entries: list[WatchlistEntry], watchlist:Watchlist):
-        self.entries = entries
-        self.watchlist = watchlist
-        self.candles_data = {}
-        self.is_daytrading = self.watchlist.type.upper() == 'DAY' or self.watchlist.type.upper() == 'SCALP'
-        
-    def analyze(self) -> dict[str, Any]:
-        """Método principal que ejecuta todo el análisis"""
-        # Cargar datos
-        self._load_candles_data()
-        
-        # Determinar si es daytrading o swing/investment
-        time_unit = 'hours' if self.is_daytrading else 'days'
-        
-        # Calcular estadísticas
-        stats = {
-            'watchlist_info': self._get_watchlist_info(),
-            'general_stats': self._calculate_general_stats(self.is_daytrading),
-            'time_analysis': self._analyze_time_patterns(self.is_daytrading),
-            'performance_stats': self._calculate_performance_stats(),
-            'volatility_analysis': self._calculate_volatility_stats(),
-            'breakout_analysis': self._analyze_breakouts(),
-            'chart_data': self._prepare_chart_data(self.is_daytrading),
-            'time_unit': time_unit,
-            'is_daytrading': self.is_daytrading
-        }
-        
-        return stats
-    
-    def _load_candles_data(self):
-        """Cargar datos de velas para todos los símbolos"""
-        
-        for entry in self.entries:
-            start_date = entry.date
-            end_date = entry.date_exit or datetime.now().date()
-            
-            if start_date >= end_date:
-                return None
-                
-            # Determinar timeframe según tipo de watchlist
-            timeframe = '1m' if self.watchlist.type.upper() in ['SCALP', 'DAY'] else '1d'
-            print(f'Loading candles for {entry.symbol} from {entry.date} to {entry.date_exit} with timeframe {timeframe}')
-            candles = Candle.query.filter(
-                and_(
-                    Candle.symbol == entry.symbol,
-                    Candle.timeframe == timeframe,
-                    Candle.date >= start_date,
-                    Candle.date <= end_date
-                )
-            ).distinct().order_by(Candle.date.asc()).all()
-            
-            if candles:
-                self.candles_data[entry.symbol] = {
-                    'entry': entry,
-                    'candles': candles,
-                    'entry_price': entry.price,
-                    'days_in_watchlist': (end_date - start_date).days
-                }
-    
-    def _get_watchlist_info(self) -> dict[str, Any]:
-        """Información básica de la watchlist"""
-        return {
-            'name': self.watchlist.name,
-            'type': self.watchlist.type,
-            'description': self.watchlist.description,
-            'total_entries': len(self.entries),
-            'entries_with_data': len(self.candles_data)
-        }
-    
-    def _calculate_general_stats(self, is_daytrading: bool) -> dict[str, Any]:
-        """Estadísticas generales de rendimiento"""
-        if not self.candles_data:
-            return {}
-            
-        returns = []
-        holding_periods = []
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            entry_price = symbol_data['entry_price']
-            
-            if not candles:
-                continue
-                
-            # Calcular retorno desde precio de entrada hasta último precio
-            final_price = candles[-1].close
-            return_pct = (final_price - entry_price) / entry_price * 100
-            returns.append(return_pct)
-            
-            # Período de tenencia
-            if is_daytrading:
-                hours = len(candles) * (1/60)  # Asumiendo 1min candles
-                holding_periods.append(hours)
-            else:
-                days = (candles[-1].date.date() - candles[0].date.date()).days
-                holding_periods.append(max(1, days))
-        
-        if not returns:
-            return {}
-            
-        return {
-            'total_trades': len(returns),
-            'avg_return': np.mean(returns),
-            'median_return': np.median(returns),
-            'std_return': np.std(returns),
-            'min_return': np.min(returns),
-            'max_return': np.max(returns),
-            'positive_trades': len([r for r in returns if r > 0]),
-            'negative_trades': len([r for r in returns if r < 0]),
-            'win_rate': len([r for r in returns if r > 0]) / len(returns) * 100,
-            'avg_holding_period': np.mean(holding_periods),
-            'mathematical_expectation': np.mean(returns)
-        }
-    
-    def _analyze_time_patterns(self, is_daytrading: bool) -> dict[str, Any]:
-        """Análisis de patrones temporales para máximos y mínimos"""
-        if not self.candles_data:
-            return {}
-            
-        if is_daytrading:
-            return self._analyze_hourly_patterns()
-        else:
-            return self._analyze_daily_patterns()
-    
-    def _analyze_hourly_patterns(self) -> dict[str, Any]:
-        """Análisis por horas del día para daytrading"""
-        high_hours = []
-        low_hours = []
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            
-            if len(candles) < 2:
-                continue
-                
-            # Encontrar máximos y mínimos locales por día
-            df = pd.DataFrame([{
-                'hour': c.date.hour,
-                'high': c.high,
-                'low': c.low,
-                'date': c.date.date()
-            } for c in candles])
-            
-            # Agrupar por día y encontrar máximos/mínimos diarios
-            daily_extremes = df.groupby('date').agg({
-                'high': 'max',
-                'low': 'min'
-            })
-            
-            # Para cada día, encontrar la hora del máximo y mínimo
-            for date in daily_extremes.index:
-                day_data = df[df['date'] == date]
-                
-                max_hour = day_data[day_data['high'] == daily_extremes.loc[date, 'high']]['hour'].iloc[0]
-                min_hour = day_data[day_data['low'] == daily_extremes.loc[date, 'low']]['hour'].iloc[0]
-                
-                high_hours.append(max_hour)
-                low_hours.append(min_hour)
-        
-        # Calcular distribución por horas
-        hour_high_dist = {}
-        hour_low_dist = {}
-        
-        for h in range(24):
-            hour_high_dist[str(h)] = high_hours.count(h)
-            hour_low_dist[str(h)] = low_hours.count(h)
-            
-        return {
-            'most_common_high_hour': max(hour_high_dist.items(), key=lambda x: x[1])[0] if high_hours else None,
-            'most_common_low_hour': max(hour_low_dist.items(), key=lambda x: x[1])[0] if low_hours else None,
-            'hourly_high_distribution': hour_high_dist,
-            'hourly_low_distribution': hour_low_dist,
-            'total_days_analyzed': len(set([c.date.date() for data in self.candles_data.values() for c in data['candles']]))
-        }
-    
-    def _analyze_daily_patterns(self) -> dict[str, Any]:
-        """Análisis por días para swing trading"""
-        high_days = []
-        low_days = []
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            entry_date = symbol_data['entry'].date
-            
-            if len(candles) < 2:
-                continue
-                
-            max_price = max(c.high for c in candles)
-            min_price = min(c.low for c in candles)
-            
-            # Encontrar el día del máximo y mínimo
-            for i, candle in enumerate(candles):
-                if candle.high == max_price:
-                    high_days.append(i + 1)  # +1 porque el primer día es día 1
-                if candle.low == min_price:
-                    low_days.append(i + 1)
-        
-        # Distribución por días
-        max_days = max(high_days + low_days) if (high_days or low_days) else 1
-        day_high_dist = {}
-        day_low_dist = {}
-        
-        for d in range(1, max_days + 1):
-            day_high_dist[str(d)] = high_days.count(d)
-            day_low_dist[str(d)] = low_days.count(d)
-            
-        return {
-            'most_common_high_day': max(day_high_dist.items(), key=lambda x: x[1])[0] if high_days else None,
-            'most_common_low_day': max(day_low_dist.items(), key=lambda x: x[1])[0] if low_days else None,
-            'daily_high_distribution': day_high_dist,
-            'daily_low_distribution': day_low_dist
-        }
-    
-    def _calculate_performance_stats(self) -> dict[str, Any]:
-        """Estadísticas de rendimiento detalladas"""
-        if not self.candles_data:
-            return {}
-            
-        all_returns = []
-        max_favorable = []
-        max_adverse = []
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            entry_price = symbol_data['entry_price']
-            
-            if not candles:
-                continue
-                
-            prices = [c.close for c in candles]
-            highs = [c.high for c in candles]
-            lows = [c.low for c in candles]
-            
-            # Retorno final
-            final_return = (prices[-1] - entry_price) / entry_price * 100
-            all_returns.append(final_return)
-            
-            # Máximo movimiento favorable y adverso
-            max_high = max(highs)
-            min_low = min(lows)
-            
-            max_fav = (max_high - entry_price) / entry_price * 100
-            max_adv = (min_low - entry_price) / entry_price * 100
-            
-            max_favorable.append(max_fav)
-            max_adverse.append(max_adv)
-        
-        if not all_returns:
-            return {}
-            
-        return {
-            'avg_max_favorable': np.mean(max_favorable),
-            'avg_max_adverse': np.mean(max_adverse),
-            'sharpe_ratio': np.mean(all_returns) / np.std(all_returns) if np.std(all_returns) > 0 else 0,
-            'profit_factor': abs(np.mean([r for r in all_returns if r > 0])) / abs(np.mean([r for r in all_returns if r < 0])) if any(r < 0 for r in all_returns) else float('inf'),
-            'max_drawdown': np.min(max_adverse)
-        }
-    
-    def _calculate_volatility_stats(self) -> dict[str, Any]:
-        """Análisis de volatilidad"""
-        if not self.candles_data:
-            return {}
-            
-        daily_ranges = []
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            
-            for candle in candles:
-                daily_range = (candle.high - candle.low) / candle.open * 100
-                daily_ranges.append(daily_range)
-        
-        if not daily_ranges:
-            return {}
-            
-        return {
-            'avg_daily_range': np.mean(daily_ranges),
-            'median_daily_range': np.median(daily_ranges),
-            'volatility': np.std(daily_ranges)
-        }
-    
-    def _analyze_breakouts(self) -> dict[str, Any]:
-        """Análisis de rupturas de máximos/mínimos"""
-        if not self.candles_data:
-            return {}
-            
-        breakout_stats = {
-            'high_breaks': 0,
-            'low_breaks': 0,
-            'total_opportunities': 0
-        }
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            
-            if len(candles) < 2:
-                continue
-                
-            for i in range(1, len(candles)):
-                prev_high = max(c.high for c in candles[:i])
-                prev_low = min(c.low for c in candles[:i])
-                
-                current = candles[i]
-                
-                breakout_stats['total_opportunities'] += 1
-                
-                if current.high > prev_high:
-                    breakout_stats['high_breaks'] += 1
-                if current.low < prev_low:
-                    breakout_stats['low_breaks'] += 1
-        
-        total_ops = breakout_stats['total_opportunities']
-        if total_ops > 0:
-            breakout_stats['high_break_rate'] = breakout_stats['high_breaks'] / total_ops * 100
-            breakout_stats['low_break_rate'] = breakout_stats['low_breaks'] / total_ops * 100
-        
-        return breakout_stats
-    
-    def _prepare_chart_data(self, is_daytrading: bool) -> dict[str, Any]:
-        """Preparar datos para los gráficos"""
-        if not self.candles_data:
-            return {}
-            
-        # Datos para gráfico de Monte Carlo
-        monte_carlo_data = []
-        heatmap_data = []
-        
-        # Normalizar todas las series a partir del precio de entrada (100%)
-        max_length = 0
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            entry_price = symbol_data['entry_price']
-            
-            if not candles:
-                continue
-                
-            normalized_prices = []
-            for i, candle in enumerate(candles):
-                normalized_price = (candle.close / entry_price) * 100
-                
-                if is_daytrading:
-                    time_point = i * (1/60)  # Minutos a horas
-                else:
-                    time_point = i  # Días
-                    
-                normalized_prices.append({
-                    'x': time_point,
-                    'y': normalized_price,
-                    'symbol': symbol_data['entry'].symbol
-                })
-            
-            monte_carlo_data.append(normalized_prices)
-            max_length = max(max_length, len(normalized_prices))
-        
-        # Calcular percentiles y media para cada punto temporal
-        percentile_data = {'mean': [], 'p25': [], 'p75': [], 'p10': [], 'p90': []}
-        
-        for t in range(max_length):
-            values_at_t = []
-            for series in monte_carlo_data:
-                if t < len(series):
-                    values_at_t.append(series[t]['y'])
-            
-            if values_at_t:
-                time_val = t * (1/60 if is_daytrading else 1)
-                percentile_data['mean'].append({'x': time_val, 'y': np.mean(values_at_t)})
-                percentile_data['p25'].append({'x': time_val, 'y': np.percentile(values_at_t, 25)})
-                percentile_data['p75'].append({'x': time_val, 'y': np.percentile(values_at_t, 75)})
-                percentile_data['p10'].append({'x': time_val, 'y': np.percentile(values_at_t, 10)})
-                percentile_data['p90'].append({'x': time_val, 'y': np.percentile(values_at_t, 90)})
-        
-        # Datos para heatmap (probabilidad de máximos/mínimos)
-        heatmap_data = self._generate_heatmap_data(is_daytrading)
-        
-        return {
-            'monte_carlo_traces': monte_carlo_data,
-            'percentile_data': percentile_data,
-            'heatmap_data': heatmap_data
-        }
-    
-    def _generate_heatmap_data(self, is_daytrading: bool) -> list[dict]:
-        """Generar datos para el heatmap de probabilidades"""
-        if not self.candles_data:
-            return []
-            
-        # Grid para el heatmap
-        time_bins = 24 if is_daytrading else 10  # 24 horas o 10 días máximo
-        price_bins = 20  # 20 niveles de precio
-        
-        # Matriz para contar extremos
-        high_matrix = np.zeros((price_bins, time_bins))
-        low_matrix = np.zeros((price_bins, time_bins))
-        total_matrix = np.zeros((price_bins, time_bins))
-        
-        for symbol_data in self.candles_data.values():
-            candles = symbol_data['candles']
-            entry_price = symbol_data['entry_price']
-            
-            if not candles:
-                continue
-                
-            # Normalizar precios (80% - 120% del precio de entrada)
-            price_range = (0.8, 1.2)
-            
-            for i, candle in enumerate(candles):
-                if is_daytrading:
-                    time_idx = min(candle.date.hour, time_bins - 1)
-                else:
-                    time_idx = min(i, time_bins - 1)
-                
-                # Normalizar precio
-                norm_high = candle.high / entry_price
-                norm_low = candle.low / entry_price
-                
-                # Convertir a índices de precio
-                high_price_idx = int((norm_high - price_range[0]) / (price_range[1] - price_range[0]) * (price_bins - 1))
-                low_price_idx = int((norm_low - price_range[0]) / (price_range[1] - price_range[0]) * (price_bins - 1))
-                
-                # Asegurar que están en rango
-                high_price_idx = max(0, min(price_bins - 1, high_price_idx))
-                low_price_idx = max(0, min(price_bins - 1, low_price_idx))
-                
-                # Marcar como extremos si son máximos/mínimos del día o período
-                is_period_high = candle.high == max(c.high for c in candles[max(0, i-5):i+6])  # Ventana de 11 períodos
-                is_period_low = candle.low == min(c.low for c in candles[max(0, i-5):i+6])
-                
-                if is_period_high:
-                    high_matrix[high_price_idx, time_idx] += 1
-                if is_period_low:
-                    low_matrix[low_price_idx, time_idx] += 1
-                    
-                total_matrix[high_price_idx, time_idx] += 1
-                if high_price_idx != low_price_idx:
-                    total_matrix[low_price_idx, time_idx] += 1
-        
-        # Convertir a probabilidades y formato para el gráfico
-        heatmap_data = []
-        for price_idx in range(price_bins):
-            for time_idx in range(time_bins):
-                if total_matrix[price_idx, time_idx] > 0:
-                    high_prob = high_matrix[price_idx, time_idx] / total_matrix[price_idx, time_idx]
-                    low_prob = low_matrix[price_idx, time_idx] / total_matrix[price_idx, time_idx]
-                    
-                    # Combinar probabilidades (verde para máximos, rojo para mínimos)
-                    combined_prob = high_prob - low_prob  # Rango de -1 a 1
-                    
-                    price_level = price_range[0] + (price_idx / (price_bins - 1)) * (price_range[1] - price_range[0])
-                    
-                    heatmap_data.append({
-                        'x': time_idx,
-                        'y': price_level * 100,  # Convertir a porcentaje
-                        'z': combined_prob
-                    })
-        
-        return heatmap_data

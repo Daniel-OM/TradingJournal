@@ -74,6 +74,14 @@
                         <div class="info-label">Commission</div>
                         <div class="info-value" id="commission"></div>
                     </div>
+                    <div class="info-item">
+                        <div class="info-label">ECN Fee</div>
+                        <div class="info-value" id="ecn_fee"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Locates</div>
+                        <div class="info-value" id="locates"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,12 +203,12 @@
         // Load basic trade info
         document.getElementById('tradeSymbol').textContent = tradeData.symbol;
         document.getElementById('tradeSubtitle').textContent =
-            `${tradeData.company_name} - Operación ${tradeData.trade_type}`;
+            `${tradeData.company_name} - ${tradeData.trade_type} operation`;
 
         // Calculate and display profit/loss
         const pnlPercent = ((tradeData.profit_loss / (tradeData.entry_price * tradeData.quantity)) * 100).toFixed(2); // TODO: Calculate the return correctly and with last asset price
         const tradePnl = document.getElementById('tradePnl');
-        tradePnl.textContent = `${tradeData.profit_loss >= 0 ? '+' : ''}$${tradeData.profit_loss.toFixed(2)} (${pnlPercent}%)`;
+        tradePnl.textContent = `${tradeData.profit_loss >= 0 ? '+' : ''}${tradeData.profit_loss ? formatNumber(tradeData.profit_loss, show_r ? 'r_multiple' : 'currency', 1, 2, 'compact') : ''} (${pnlPercent}%)`;
         const pnlParent = tradePnl.parentElement;
         pnlParent.classList.add(tradeData.profit_loss > 0 ? 'bg-success' : tradeData.profit_loss < 0 ? 'bg-danger' : 'bg-warning');
         const pnlGranParent = pnlParent.parentElement;
@@ -209,21 +217,23 @@
         // Load trade details
         document.getElementById('entryDate').textContent = tradeData.entry_date || '';
         document.getElementById('entryTime').textContent = tradeData.entry_time || '';
-        document.getElementById('entryPrice').textContent = `$${tradeData.entry_price?.toFixed(2)}`;
+        document.getElementById('entryPrice').textContent = formatNumber(tradeData.entry_price?.toFixed(2), 'currency', 1, 2, 'compact');
         document.getElementById('exitDate').textContent = tradeData.exit_date || '';
         document.getElementById('exitTime').textContent = tradeData.exit_time || '';
-        document.getElementById('exitPrice').textContent = `$${tradeData.exit_price?.toFixed(2)}`;
-        document.getElementById('stopLoss').textContent = `$${tradeData.stop_loss?.toFixed(2)}`;
-        document.getElementById('takeProfit').textContent = `$${tradeData.take_profit?.toFixed(2)}`;
-        document.getElementById('quantity').textContent = tradeData.quantity ? `${tradeData.quantity} acciones` : '';
-        document.getElementById('pendingQuantity').textContent = tradeData.quantity && tradeData.exit_quantity ? `${tradeData.exit_quantity - tradeData.quantity} acciones` : '';
-        document.getElementById('balance').textContent = `$${tradeData.balance?.toFixed(2)}`;
-        document.getElementById('commission').textContent = `$${tradeData.commission?.toFixed(2)}`;
+        document.getElementById('exitPrice').textContent = formatNumber(tradeData.exit_price?.toFixed(2), 'currency', 1, 2, 'compact');
+        document.getElementById('stopLoss').textContent = formatNumber(tradeData.stop_loss?.toFixed(2), 'currency', 1, 2, 'compact');
+        document.getElementById('takeProfit').textContent = formatNumber(tradeData.take_profit?.toFixed(2), 'currency', 1, 2, 'compact');
+        document.getElementById('quantity').textContent = tradeData.quantity ? formatNumber(tradeData.quantity, 'financial', 1, 2, 'compact') : '';
+        document.getElementById('pendingQuantity').textContent = tradeData.quantity && tradeData.exit_quantity ? formatNumber(tradeData.exit_quantity - tradeData.quantity, 'financial', 1, 2, 'compact') : '';
+        document.getElementById('balance').textContent = formatNumber(tradeData.balance, 'currency', 1, 2, 'compact');
+        document.getElementById('commission').textContent = formatNumber(tradeData.commission, show_r ? 'r_multiple' : 'currency', 1, 4, 'compact');
+        document.getElementById('ecn_fee').textContent = formatNumber(tradeData.ecn_fee, show_r ? 'r_multiple' : 'currency', 1, 4, 'compact');
+        document.getElementById('locates').textContent = formatNumber(tradeData.locates, show_r ? 'r_multiple' : 'currency', 1, 4, 'compact');
 
         // Load result info
-        document.getElementById('profitLoss').textContent = tradeData.profit_loss ? `${tradeData.profit_loss >= 0 ? '+' : '-'}$${tradeData.profit_loss.toFixed(2)}` : '';
+        document.getElementById('profitLoss').textContent = tradeData.profit_loss ? formatNumber(tradeData.profit_loss, show_r ? 'r_multiple' : 'currency', 1, 2, 'compact') : '';
         document.getElementById('profitLoss').className = tradeData.profit_loss ? `stat-value ${tradeData.profit_loss >= 0 ? 'positive' : 'negative'}` : '';
-        document.getElementById('return').textContent = `${pnlPercent >= 0 ? '+' : ''}${pnlPercent}%`;
+        document.getElementById('return').textContent = formatNumber(pnlPercent, 'percentage', 1, 2, 'compact');
         document.getElementById('return').className = `stat-value ${pnlPercent >= 0 ? 'positive' : 'negative'}`;
         document.getElementById('strategy').textContent = tradeData.strategy?.name;
 
@@ -313,7 +323,7 @@
                 totalScoreDiv.className = 'card shadow-none final-score';
                 totalScoreDiv.innerHTML = `
                     <div class="info-label">Puntuación Total Ponderada</div>
-                    <div class="score ${totalScore / totalMaxPoints < 0.5 ? 'text-loss' : 'text-profit'}">${(totalScore / totalMaxPoints * 100).toFixed(0)}%</div>
+                    <div class="score ${totalScore / totalMaxPoints < 0.5 ? 'text-loss' : 'text-profit'}">${formatNumber(totalScore / totalMaxPoints * 100, 'percentage', 0, 0, 'compact')}%</div>
                 `;
                 scoringContainer.appendChild(totalScoreDiv);
             } else {
@@ -357,8 +367,8 @@
             transactionItem.className = 'card shadow-none transaction-item mb-2';
 
             const amount = transaction.type === 'LONG'
-                ? -(transaction.quantity * transaction.price + transaction.commission)
-                : (transaction.quantity * transaction.price - transaction.commission);
+                ? -(transaction.quantity * transaction.price + transaction.commission + transaction.ecn_fee + transaction.locates)
+                : (transaction.quantity * transaction.price - transaction.commission - transaction.ecn_fee - transaction.locates);
 
             const amountClass = amount >= 0 ? 'text-profit' : 'text-loss';
             const transactionTypeText = transaction.type === 'LONG' ? 'Buy' : 'Sell';
@@ -374,9 +384,9 @@
             transactionItem.innerHTML = `
                     <div>
                         <div class="transaction-date">${formattedDate} - ${transaction.time}</div>
-                        <div class="transaction-details text-muted">${transactionTypeText}: ${transaction.quantity} acciones a ${transaction.price.toFixed(2)} - Comisión: ${transaction.commission.toFixed(2)}</div>
+                        <div class="transaction-details text-muted">${transactionTypeText}: ${transaction.quantity} @ ${transaction.price.toFixed(2)} - Commission: ${transaction.commission.toFixed(2)}</div>
                     </div>
-                    <div class="transaction-amount ${amountClass}">${amount >= 0 ? '+' : '-'}${Math.abs(amount).toFixed(2)}</div>
+                    <div class="transaction-amount ${amountClass}">${formatNumber(amount, 'currency', 1, 2, 'compact')}</div>
                 `;
             transactionsContainer.appendChild(transactionItem);
         });
@@ -440,7 +450,7 @@
                 let url = "{{ url_for('serve_media', filename='0') }}".replace('0', media.url);
                 mediaItem.innerHTML = `
                         <video src="${url}" controls width="100%" height="120" style="object-fit:cover;" poster="${media.poster || ''}">
-                            Tu navegador no soporta video.
+                            Your browser does not support video.
                         </video>
                     `;
                 mediaItem.addEventListener('click', () => {

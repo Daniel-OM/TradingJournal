@@ -18,7 +18,7 @@
     {% block navbar %}
     <nav class="navbar navbar-expand-lg rounded"> 
         <div class="container-fluid card card-body d-flex flex-row"> 
-            <a class="navbar-brand" href="{{ url_for('index_endpoints.index') }}">
+            <a class="navbar-brand" href="{{ url_for('index_pages.index') }}">
                 <i class="fas fa-chart-line me-2"></i>Trading Journal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false"> 
@@ -26,7 +26,7 @@
             </button> 
             <div class="collapse navbar-collapse" id="navbar"> 
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0"> 
-                    <li class="nav-item"> <a class="nav-link active" aria-current="page" href="{{ url_for('index_endpoints.index') }}">Home</a> </li> 
+                    <li class="nav-item"> <a class="nav-link active" aria-current="page" href="{{ url_for('index_pages.index') }}">Home</a> </li> 
                     <li class="nav-item"> <a class="nav-link" href="{{ url_for('watchlist_pages.watchlist') }}">Watchlist</a> </li> 
                     <li class="nav-item"> <a class="nav-link" href="{{ url_for('journal_pages.journal') }}">Journal</a> </li> 
                     <li class="nav-item"> <a class="nav-link" href="{{ url_for('journal_pages.performance') }}">Performance</a> </li> 
@@ -34,7 +34,7 @@
                     <li class="nav-item"> <a class="nav-link" href="{{ url_for('strategy_endpoints.strategies') }}">Strategies</a> </li> 
                     <li class="nav-item"> <a class="nav-link" href="{{ url_for('screener_pages.screeners') }}">Screeners</a> </li> 
                     <li class="nav-item"> <a class="nav-link" href="{{ url_for('asset_pages.asset') }}">Assets</a> </li> 
-                    <li class="nav-item"> <a class="nav-link" href="{{ url_for('index_endpoints.settings') }}">Settings</a> </li> 
+                    <li class="nav-item"> <a class="nav-link" href="{{ url_for('index_pages.settings') }}">Settings</a> </li> 
                 </ul>
             </div> 
         </div> 
@@ -66,6 +66,9 @@
     <!--
     <script src="{{ url_for('static', filename='chartjs-4.5.0-dist/chart.js') }}"></script>
     -->
+    <script>
+        var show_r = "{{ show_r }}" === "True";
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

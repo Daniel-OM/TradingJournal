@@ -2,11 +2,14 @@ import os
 from flask import Flask, send_from_directory, abort
 from flask_compress import Compress
 from flask_cors import CORS
+from flask_login import current_user
 
 from .config import DevConfig, ProdConfig
 from .login import login_manager
 from .models import db, migrate
-from .routers import index_bp, strategy_bp, watchlist_bp, watchlist_pages, journal_bp, journal_pages, error_bp, user_bp, asset_pages, asset_bp, screener_pages, screener_bp, ai_bp
+from .routers import (index_bp, index_pages, strategy_bp, watchlist_bp, watchlist_pages, 
+                      journal_bp, journal_pages, error_bp, user_bp, asset_pages, asset_bp, 
+                      screener_pages, screener_bp, ai_bp)
 
 def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
 
@@ -28,7 +31,8 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
 
     app.jinja_env.auto_reload = True
                 
-    app.register_blueprint(blueprint=index_bp, url_prefix='/')
+    app.register_blueprint(blueprint=index_pages, url_prefix='/')
+    app.register_blueprint(blueprint=index_bp, url_prefix='/api/')
     app.register_blueprint(blueprint=user_bp, url_prefix='/user')
     app.register_blueprint(blueprint=strategy_bp, url_prefix='/strategy')
     app.register_blueprint(blueprint=watchlist_pages, url_prefix='/watchlist')
@@ -54,6 +58,13 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
     with app.app_context():
         db.create_all()
         
+    @app.context_processor
+    def inject_user():
+        return dict(
+            user=current_user,
+            show_r=current_user.settings[-1].show_r if current_user.is_authenticated else False
+        )
+    
     @app.route('/media/<path:filename>')
     def serve_media(filename):
         media_folder = os.path.join(app.instance_path)

@@ -1,5 +1,5 @@
 
-from .index import index_bp
+from .index import index_bp, index_pages
 from .user import user_bp
 from .strategy import strategy_bp
 from .watchlist import watchlist_bp, watchlist_pages

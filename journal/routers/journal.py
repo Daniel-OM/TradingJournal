@@ -29,22 +29,7 @@ journal_pages = Blueprint(name='journal_pages', import_name=__name__)
 @journal_pages.route('/')
 @login_required
 def journal() -> str:
-    # Obtener datos del calendario
-    balances: list[AccountBalance] = AccountBalance.query.filter(AccountBalance.user_id==current_user.id).order_by(AccountBalance.date).all()
-    calendar_data: dict = {}
-    for balance in balances:
-        calendar_data[balance.date.strftime('%Y-%m-%d')] = {
-            'return': balance.daily_return,
-            'balance': balance.balance
-        }
-    
-    selected_date: str | None = request.args.get('date')
-    trades: list[Trade] = []
-    if selected_date:
-        trades = Trade.query.filter(Trade.exit_date == selected_date, Trade.user_id==current_user.id).all()
-    
-    return render_template(template_name_or_list='trade/journal.html', calendar_data=calendar_data, 
-                         trades=trades, selected_date=selected_date)
+    return render_template(template_name_or_list='trade/journal.html')
     
 @journal_pages.route(rule='/performance')
 @login_required
@@ -175,29 +160,30 @@ def get_trade(id) -> str:
                                    Candle.date <= datetime.combine(today, time(23, 59, 59)), 
                                    Candle.timeframe == '1m').distinct().order_by(Candle.date.asc()).all()
 
+    trade_json = trade.to_dict(exclude=['trades', 'trade', 'conditions', 'errors', 'media', 'candles'], force_dollars=False, equity=False, complete=True)
     trade_data = {
         "id": trade.id,
-        "symbol": trade.symbol,
-        "company_name": trade.company_name,
-        "entry_date": trade.entry_date.isoformat() if trade.entry_date else None,
-        "exit_date": trade.exit_date.isoformat() if trade.exit_date else None,
-        "entry_time": trade.entry_time,
-        "exit_time": trade.exit_time,
-        "entry_price": trade.entry_price,
-        "exit_price": trade.exit_price,
-        "stop_loss": trade.stop_loss,
-        "take_profit": trade.take_profit,
-        "quantity": trade.quantity,
-        "exit_quantity": trade.exit_quantity,
-        "balance": trade.balance,
-        "commission": trade.commission,
-        "trade_type": trade.trade_type,
-        "profit_loss": trade.profit_loss,
-        "description": trade.description,
-        "why_profitable": trade.why_profitable,
-        "influencing_factors": trade.influencing_factors,
-        "hashtags": trade.hashtags,
-        "strategy": trade.strategy.to_dict() if trade.strategy else None,
+        "symbol": trade_json.get('symbol', None),
+        "company_name": trade_json.get('company_name', None),
+        "entry_date": trade_json.get('entry_date', None),
+        "exit_date": trade_json.get('exit_date', None),
+        "entry_time": trade_json.get('entry_time', None),
+        "exit_time": trade_json.get('exit_time', None),
+        "entry_price": trade_json.get('entry_price', None),
+        "exit_price": trade_json.get('exit_price', None),
+        "stop_loss": trade_json.get('stop_loss', None),
+        "take_profit": trade_json.get('take_profit', None),
+        "quantity": trade_json.get('quantity', None),
+        "exit_quantity": trade_json.get('exit_quantity', None),
+        "balance": trade_json.get('balance', None),
+        "commission": trade_json.get('commission', None),
+        "trade_type": trade_json.get('trade_type', None),
+        "profit_loss": trade_json.get('profit_loss', None),
+        "description": trade_json.get('description', None),
+        "why_profitable": trade_json.get('why_profitable', None),
+        "influencing_factors": trade_json.get('influencing_factors', None),
+        "hashtags": trade_json.get('hashtags', None),
+        "strategy": trade_json.get('strategy', None),
         "conditions": [{
             'scoring_id': s.scoring_id,
             'value': s.value,
@@ -212,15 +198,13 @@ def get_trade(id) -> str:
             'impact_level': e.impact_level,
             'created_at': e.created_at,
         } for e in errors_data],
-        "transactions": [
-            t.to_dict(exclude=['trade']) for t in trade.transactions.order_by(db.asc("date"), db.asc("time")).all()
-        ],
+        "transactions": trade_json.get('transactions', []),
         "media": [
             {
-                **m.to_dict(),
+                **m,
                 **{"alt": f"Media {i + 1}"}
             }
-            for i, m in enumerate(trade.media.all())
+            for i, m in enumerate(trade_json.get('media', []))
         ],
         "candles": {
             "1d": [t.to_dict() for t in daily],
@@ -231,29 +215,58 @@ def get_trade(id) -> str:
     return render_template('trade/detail.html', trade_data=trade_data)
 
 @journal_pages.route(rule='/add', methods=['GET', 'POST'])
+@journal_pages.route(rule='/add/<int:trade_id>', methods=['GET', 'POST'])
 @login_required
-def add_trade() -> Response | str:
+def add_trade(trade_id:int=None) -> Response | str:
 
     if request.method == 'POST':
         symbol = request.form['symbol']
 
         # try:
         # Crear el trade básico primero
-        trade = Trade(
-            symbol=symbol,
-            company_name=request.form.get('company_name', ''),
-            balance=request.form.get('balance', 0.0),
-            trade_type=request.form['trade_type'],
-            description=request.form.get('description', ''),
-            why_profitable=request.form.get('why_profitable', ''),
-            influencing_factors=request.form.get('influencing_factors', ''),
-            strategy_id=request.form.get('strategy_id') if request.form.get('strategy_id') else None,
-            stop_loss=float(request.form['stop_loss']) if request.form.get('stop_loss') else None,
-            take_profit=float(request.form['take_profit']) if request.form.get('take_profit') else None,
-            hashtags=request.form.get('hashtags', ''),
-            user_id=current_user.id
-        )
-        
+        if trade_id:
+            trade: Trade = Trade.query.get_or_404(trade_id)
+            trade.entry_date = datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date()
+            trade.symbol = request.form['symbol'].upper()
+            trade.company_name = request.form.get('company_name', '')
+            trade.entry_price = float(request.form['entry_price'])
+            trade.entry_time = request.form.get('entry_time', '')
+            trade.quantity = float(request.form['quantity'])
+            trade.trade_type = request.form['trade_type']
+            trade.description = request.form.get('description', '').replace('\n', ' ').replace('\r', ' ').replace('\t', '    ')
+            trade.why_profitable = request.form.get('why_profitable', '')
+            trade.influencing_factors = request.form.get('influencing_factors', '')
+            trade.strategy_id = request.form.get('strategy_id') if request.form.get('strategy_id') else None
+            trade.stop_loss = float(request.form['stop_loss']) if request.form.get('stop_loss') else None
+            trade.take_profit = float(request.form['take_profit']) if request.form.get('take_profit') else None
+            trade.hashtags = request.form.get('hashtags', '')
+
+            # Si hay datos de salida, actualizar y recalcular PnL
+            if request.form.get('exit_price'):
+                trade.exit_price = float(request.form['exit_price'])
+                trade.exit_time = request.form.get('exit_time', '')
+                trade.exit_date = datetime.strptime(request.form['exit_date'], '%Y-%m-%d').date()
+
+                if trade.trade_type == 'LONG':
+                    trade.profit_loss = (trade.exit_price - trade.entry_price) * trade.quantity - trade.commission
+                else:
+                    trade.profit_loss = (trade.entry_price - trade.exit_price) * trade.quantity - trade.commission
+        else:
+            trade = Trade(
+                symbol=symbol,
+                company_name=request.form.get('company_name', ''),
+                balance=request.form.get('balance', 0.0),
+                trade_type=request.form['trade_type'],
+                description=request.form.get('description', ''),
+                why_profitable=request.form.get('why_profitable', ''),
+                influencing_factors=request.form.get('influencing_factors', ''),
+                strategy_id=request.form.get('strategy_id') if request.form.get('strategy_id') else None,
+                stop_loss=float(request.form['stop_loss']) if request.form.get('stop_loss') else None,
+                take_profit=float(request.form['take_profit']) if request.form.get('take_profit') else None,
+                hashtags=request.form.get('hashtags', ''),
+                user_id=current_user.id
+            )
+            
         db.session.add(trade)
         db.session.flush([trade])
 
@@ -264,19 +277,24 @@ def add_trade() -> Response | str:
         transaction_type: list[str] = request.form.getlist('transaction_type')
         transaction_quantity: list[str] = request.form.getlist('transaction_quantity')
         transaction_commission: list[str] = request.form.getlist('transaction_commission')
+        transaction_ecn_fee: list[str] = request.form.getlist('transaction_ecn_fee')
+        transaction_locates: list[str] = request.form.getlist('transaction_locates')
+        trade.remove_transactions()
         for i in range(len(transaction_date)):
             trade.add_transaction(date=datetime.strptime(transaction_date[i], '%Y-%m-%d').date(), 
                                   price=float(transaction_price[i]), 
                                 time=localToUtc(date=transaction_date[i], time=transaction_time[i], tz=transaction_timezone[i] if len(transaction_timezone) > 0 else 'Europe/Madrid', mode='time') if len(transaction_timezone) > 0 else transaction_time[i], 
                                 quantity=float(transaction_quantity[i]), 
-                                commission=float(transaction_commission[i]), type=transaction_type[i])
+                                commission=float(transaction_commission[i]),
+                                ecn_fee=float(transaction_ecn_fee[i]),
+                                locates=float(transaction_locates[i]), type=transaction_type[i])
 
         error_id: list[str] = request.form.getlist('error_id')
         error_descriptions: list[str] = request.form.getlist('error_description')
         error_category: list[str] = request.form.getlist('error_category')
         error_severity: list[str] = request.form.getlist('error_severity')
+        trade.remove_errors()
         for i in range(len(error_id)):
-            print(dict(id=error_id[i], description=error_descriptions[i], impact_level=error_severity[i], category=error_category[i]))
             trade.add_error(id=error_id[i], description=error_descriptions[i], user_id=current_user.id, impact_level=error_severity[i], category=error_category[i])
         
         # Guardar archivos multimedia
@@ -422,7 +440,7 @@ def edit_trade(trade_id):
     strategies = Strategy.query.all()
     errors = Error.query.filter_by(is_active=True).all()
 
-    return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
+    return render_template('trade/create.html', trade=trade.to_dict(exclude=['trades', 'trade'], force_dollars=True), strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
 @journal_pages.route('/delete/<int:trade_id>', methods=['POST'])
 @login_required
@@ -479,7 +497,7 @@ def month_trades(date:str) -> Response:
     start = datetime(date.year, date.month, 1).date()
     end = datetime(date.year, date.month+1, 1).date()
     trades: list[Trade] = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
-    return jsonify([t.to_dict(equity=True) for t in trades])
+    return jsonify([t.to_dict(exclude=['strategy', 'errors', 'conditions', 'transactions'],equity=True) for t in trades])
 
 @journal_bp.route(rule='/add', methods=['GET', 'POST'])
 @login_required
@@ -515,12 +533,16 @@ def add_trade_api() -> Response | str:
         transaction_type: list[str] = request.form.getlist('transaction_type')
         transaction_quantity: list[str] = request.form.getlist('transaction_quantity')
         transaction_commission: list[str] = request.form.getlist('transaction_commission')
+        transaction_ecn_fee: list[str] = request.form.getlist('transaction_ecn_fee')
+        transaction_locates: list[str] = request.form.getlist('transaction_locates')
         for i in range(len(transaction_date)):
             trade.add_transaction(date=datetime.strptime(transaction_date[i], '%Y-%m-%d').date(), 
                                   price=float(transaction_price[i]), 
                                 time=localToUtc(date=transaction_date[i], time=transaction_time[i], tz=transaction_timezone[i] if len(transaction_timezone) > 0 else 'Europe/Madrid', mode='time') if len(transaction_timezone) > 0 else transaction_time[i], 
                                 quantity=float(transaction_quantity[i]), 
-                                commission=float(transaction_commission[i]), type=transaction_type[i])
+                                commission=float(transaction_commission[i]),
+                                ecn_fee=float(transaction_ecn_fee[i]),
+                                locates=float(transaction_locates[i]), type=transaction_type[i])
 
         error_id: list[str] = request.form.getlist('error_id')
         error_descriptions: list[str] = request.form.getlist('error_description')
@@ -1043,7 +1065,7 @@ def performance_api() -> str:
     all_trades = base_query.order_by(Trade.entry_date).distinct().all()
 
     # Calculate statistics and charts data
-    stats_object = TradePerformance(data=all_trades)
+    stats_object = TradePerformance(data=all_trades, show_r=current_user.settings.show_r)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -1081,7 +1103,7 @@ def import_trades():
     
     if not current_user.is_authenticated:
         return jsonify({"error": "Not authorized"}), 401
-        
+    
     # Validar archivo
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -1091,7 +1113,7 @@ def import_trades():
     if file.filename == '':
         return jsonify({"error": "Empty filename"}), 400
     
-    if not file.filename.lower().endswith('.csv') and not file.filename.lower().endswith('.xlsx'):
+    if not any(el in file.filename.lower().split('.')[-1] for el in ['csv', 'xls', 'xlsx']):
         return jsonify({"error": "Only CSV or XLSX files are allowed"}), 400
     
     # Guardar archivo temporalmente

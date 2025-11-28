@@ -2,33 +2,57 @@
 
 // Format currency values
 function formatCurrency (value, min_decimals = 1, max_decimals = 2, notation = null) {
-    // Use notation = 'compact' for financial amounts
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: min_decimals,
-        maximumFractionDigits: max_decimals,
-        notation: notation
-    }).format(value);
+    if (value) {
+        // Use notation = 'compact' for financial amounts
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: min_decimals,
+            maximumFractionDigits: max_decimals,
+            notation: notation
+        }).format(value);
+    } else {
+        return '-';
+    }
+}
+function formatRMultiple (value, min_decimals = 1, max_decimals = 2, notation = null) {
+    if (value) {
+        // Use notation = 'compact' for financial amounts
+        return `${new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: min_decimals,
+            maximumFractionDigits: max_decimals,
+            notation: notation
+        }).format(value)} R`;
+    } else {
+        return '-';
+    }
 }
 
 // Format percentage values
 function formatPercentage (value, min_decimals = 1, max_decimals = 2) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'percent',
-        minimumFractionDigits: min_decimals,
-        maximumFractionDigits: max_decimals
-    }).format(value / 100);
+    if (value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'percent',
+            minimumFractionDigits: min_decimals,
+            maximumFractionDigits: max_decimals
+        }).format(value > 1 ? value / 100 : value);
+    } else {
+        return '-';
+    }
 }
 
 // Format compact values
 function formatFinancial (value, min_decimals = 1, max_decimals = 2, notation = null) {
     // Use notation = 'compact' for financial amounts
-    return new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: min_decimals,
-        maximumFractionDigits: max_decimals,
-        notation: notation
-    }).format(value);
+    if (value) {
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: min_decimals,
+            maximumFractionDigits: max_decimals,
+            notation: notation
+        }).format(value);
+    } else{
+        return '-'
+    }
 }
 
 function formatNumber (n, mode = null, min_decimals = 1, max_decimals = 2, notation = null) {
@@ -39,8 +63,12 @@ function formatNumber (n, mode = null, min_decimals = 1, max_decimals = 2, notat
         return formatPercentage(n, min_decimals, max_decimals);
     } else if (mode == 'financial') {
         return formatFinancial(n, min_decimals, max_decimals, notation);
-    } else {
+    } else if (mode == 'r_multiple') {
+        return formatRMultiple(n, min_decimals, max_decimals, notation);
+    } else if (n) {
         return n.toFixed(max_decimals);
+    } else {
+        return '-';
     }
 }
 
