@@ -1,7 +1,7 @@
 
 from .base import Model, db, migrate
 from .user import User
-from .setting import Setting
+from .setting import Setting, Risk
 from .balance import AccountBalance
 
 from .strategy import Strategy

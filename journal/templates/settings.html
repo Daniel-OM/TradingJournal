@@ -3,72 +3,40 @@
 
 {% block style %}
 <style>
-    .container {
-        box-shadow: none;
-    }
-    
-    .card-strategy {
-        border-left: 4px solid #0d6efd;
-        margin-bottom: 1rem;
-    }
-    .criteria-item {
-        background-color: #f8f9fa;
-        border-left: 3px solid #28a745;
-        margin: 0.5rem 0;
-        padding: 0.75rem;
-    }
-    .criteria-row {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        margin-bottom: 0.5rem;
-        padding: 0.75rem;
-    }
-    .btn-remove-criteria {
-        color: #dc3545;
-        border: none;
-        background: none;
-        padding: 0.25rem;
-    }
-    .btn-remove-criteria:hover {
-        color: #c82333;
-        background-color: #f5c6cb;
-        border-radius: 0.25rem;
-    }
-    .collapse-content {
-        background-color: #f8f9fa;
-        border-top: 1px solid #dee2e6;
+    .date-input {
+        padding: 8px 12px;
+        font-size: 15px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<h2><i class="fas fa-cog me-2"></i>Configuración</h2>
+<h2><i class="fas fa-cog me-2"></i>Settings</h2>
 
-<!-- Configuraciones Adicionales -->
+<!-- Additional Settings -->
 <div class="card">
     <div class="card-header">
-        <h5><i class="fas fa-tools me-2"></i>Configuraciones Adicionales</h5>
+        <h5><i class="fas fa-tools me-2"></i>Additional Settings</h5>
     </div>
     <div class="card-body">
-        <form method="POST">
+        <form>
             <div class="row">
                 <input type="hidden" class="form-control" name="setting_id" value="{{ setting.id if setting.id else '' }}">
-                <div class="col-md-4">
+                <div class="col col-md-4">
                     <div class="form-group mb-3">
-                        <label class="form-label">Capital Inicial</label>
+                        <label class="form-label">Initial Capital</label>
                         <input type="number" class="form-control" name="balance" value="{{ setting.balance if setting.balance else 10000 }}" step="0.00001">
-                        <small class="form-text text-muted">Capital inicial para cálculos de rendimiento</small>
+                        <small class="form-text text-muted">Initial capital for performance calculations</small>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col col-md-4">
                     <div class="form-group mb-3">
-                        <label class="form-label">Comisiones por Trade</label>
+                        <label class="form-label">Commission per Trade</label>
                         <input type="number" class="form-control" name="commission" value="{{ setting.commission if setting.commission else 1.00 }}" step="0.01">
-                        <small class="form-text text-muted">Comisión fija por operación</small>
+                        <small class="form-text text-muted">Fixed commission per trade</small>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col col-md-4">
                     <div class="form-group mb-3">
                         <label class="form-label">Timezone</label>
                         <select class="form-select" name="timezone">
@@ -78,11 +46,265 @@
                         </select>
                     </div>
                 </div>
+                <div class="col col-md-4">
+                    <div class="form-group mb-3">
+                        <div class="form-check form-switch ms-auto">
+                            <input class="form-check-input" type="checkbox" role="switch" id="r-switch" {{'checked' if setting.show_r else ''}}>
+                            <label class="form-check-label" for="r-switch">Show in R multiples?</label>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button type="submit" class="btn btn-success">
-                <i class="fas fa-save me-2"></i>Guardar Configuraciones
-            </button>
+            <div class="ms-auto">
+                <button id="settingsButton" type="button" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>Save
+                </button>
+            </div>
         </form>
+        <hr>
+        <div class="col">
+            {% if risks|length > 1 %}
+                {% for risk in risks %}
+                <div class="row" name="risk" data-saved="true" data-date="{{risk.date}}">
+                    <div class="d-flex flex-column col col-md-4 form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="risk-start-date" value="{{ risk.date }}"
+                            class="date-input rounded">
+                    </div>
+                    <div class="col col-md-4 form-group">
+                        <label class="form-label">Risk</label>
+                        <input type="number" class="form-control" name="risk-value" value="{{ risk.risk }}"
+                            placeholder="Risk per trade in dollars" step="0.01">
+                        <small class="form-text text-muted">Risk per trades in dollars</small>
+                    </div>
+                    <div class="col d-flex align-content-center">
+                        <button type="button" class="btn btn-pill bg-success mt-auto mb-auto" onclick="saveRisk(this)">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button type="button" class="btn btn-pill bg-danger mt-auto mb-auto" onclick="removeRisk(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="row" name="risk" data-saved="false">
+                    <div class="d-flex flex-column col col-md-4 form-group mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="risk-start-date" class="date-input rounded">
+                    </div>
+                    <div class="col col-md-4 form-group mb-3">
+                        <label class="form-label">Risk</label>
+                        <input type="number" class="form-control" name="risk-value" placeholder="Risk per trade in dollars" step="0.01">
+                        <small class="form-text text-muted">Risk per trades in dollars</small>
+                    </div>
+                    <div class="col d-flex align-content-center">
+                        <button type="button" class="btn btn-pill bg-success mt-auto mb-auto" onclick="saveRisk(this)">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button type="button" class="btn btn-pill bg-danger mt-auto mb-auto" onclick="removeRisk(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+            <button class="btn btn-none d-flex align-items-center" type="button" id="addRiskBtn">
+                <i class="fas fa-plus me-1"></i>
+                Add risk value
+            </button>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block modals %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let risks = {{ risks|tojson }};
+
+
+class ApiCalls {
+    constructor() {
+        this.postSettingUrl = "{{ url_for('index_endpoints.post_settings') }}"
+        this.createRiskUrl = `{{ url_for('index_endpoints.create_risk', date='0') }}`;
+        this.updateRiskUrl = "{{ url_for('index_endpoints.update_risk', date='0') }}";
+        this.deleteRiskUrl = "{{ url_for('index_endpoints.delete_risk', date='0') }}";
+    }
+
+    async postSetting (balance, commission, timezone, show_r) {
+        fetch(this.postSettingUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                balance: balance,
+                commission: commission,
+                timezone: timezone,
+                show_r: show_r
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+            
+            document.querySelector('input[name="balance"]').value = data.data.balance;
+            document.querySelector('input[name="commission"]').value = data.data.commission;
+            document.querySelector('select[name="timezone"]').value = data.data.timezone;
+            document.getElementById('r-switch').checked = data.data.show_r;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    async deleteRisk (date) {
+        await fetch(this.deleteRiskUrl.replace('0', date), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    async updateRisk (date, risk) {
+        fetch(this.updateRiskUrl.replace('0', date), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                risk: risk
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    async createRisk (date, risk) {
+        fetch(this.createRiskUrl.replace('0', date), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                risk: risk
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+async function removeRisk (button) {
+    const div = button.closest('div[name="risk"]');
+    if (div.getAttribute('data-saved') === 'true') {
+        let api_calls = new ApiCalls();
+        await api_calls.deleteRisk(div.getAttribute('data-date'));
+    }
+    div.remove();
+}
+
+async function saveRisk (button) {
+    const div = button.closest('div[name="risk"]');
+    const startDate = div.querySelector('input[name="risk-start-date"]').value;
+    const riskValue = div.querySelector('input[name="risk-value"]').value;
+    let api_calls = new ApiCalls();
+    if (div.getAttribute('data-saved') === 'true') {
+        if (startDate == div.getAttribute('data-date')) {
+            await api_calls.updateRisk(startDate, riskValue);
+        } else {
+            await api_calls.deleteRisk(div.getAttribute('data-date'));
+            await api_calls.createRisk(startDate, riskValue);
+            div.setAttribute('data-date', startDate);
+        }
+    } else {
+        await api_calls.createRisk(startDate, riskValue);
+        div.setAttribute('data-saved', 'true');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const addRiskBtn = document.getElementById('addRiskBtn');
+    addRiskBtn.addEventListener('click', function () {
+        const riskContainer = document.createElement('div');
+        riskContainer.classList.add('row');
+        riskContainer.setAttribute('name', 'risk');
+        riskContainer.innerHTML = `
+            <div class="row" name="risk" data-saved="false">
+                <div class="d-flex flex-column col col-md-4 form-group mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="risk-start-date" class="date-input rounded">
+                </div>
+                <div class="col col-md-4 form-group mb-3">
+                    <label class="form-label">Risk</label>
+                    <input type="number" class="form-control" name="risk-value" placeholder="Risk per trade in dollars"
+                        step="0.01">
+                    <small class="form-text text-muted">Risk per trades in dollars</small>
+                </div>
+                <div class="col d-flex align-content-center">
+                    <button type="button" class="btn btn-pill bg-success mt-auto mb-auto" onclick="saveRisk(this)">
+                        <i class="fas fa-save"></i>
+                    </button>
+                    <button type="button" class="btn btn-pill bg-danger mt-auto mb-auto" onclick="removeRisk(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.querySelector('[name="risk"]').appendChild(riskContainer);
+    });
+
+    document.getElementById('settingsButton').addEventListener('click', function () {
+        const select = document.querySelector('select[name="timezone"]');
+
+        let api_calls = new ApiCalls(); 
+        api_calls.postSetting(
+            document.querySelector('input[name="balance"]').value,
+            document.querySelector('input[name="commission"]').value,
+            select.options[select.selectedIndex].value,
+            document.getElementById('r-switch').checked,
+        )
+    });
+});
+</script>
 {% endblock %}

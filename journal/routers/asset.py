@@ -7,7 +7,7 @@ import pandas as pd
 from flask import Blueprint, Response, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required
 
-from ..config import POLYGON_FREE
+from ..config import MASSIVE_FREE
 from ..src.yahoofinance import YahooTicker, YahooFinance
 from ..src.benzinga import Benzinga
 from ..src.finviz import FinvizScraper, FinvizTicker
@@ -438,7 +438,7 @@ def get_stock_candles(symbol):
     try:
         symbol = symbol.upper()
         
-        candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=POLYGON_FREE, yahoo=True) # TODO: This should be yahoo=False but as we don't pay this is set this way so it does not give any error 
+        candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=MASSIVE_FREE, yahoo=True) # TODO: This should be yahoo=False but as we don't pay this is set this way so it does not give any error 
 
         
         return jsonify({
@@ -459,7 +459,7 @@ def get_stock_gap_stats(symbol):
     try:
         symbol = symbol.upper()
         
-        candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=POLYGON_FREE, yahoo=True) # TODO: This should be yahoo=False but as we don't pay this is set this way so it does not give any error 
+        candles = getPrice(symbol=symbol, start=(datetime.now() - timedelta(days=365)), end=datetime.now(), timeframe='1d', free=MASSIVE_FREE, yahoo=True) # TODO: This should be yahoo=False but as we don't pay this is set this way so it does not give any error 
 
         candles['gap'] = candles['open'] / candles['close'].shift(1) - 1
         candles['ret'] = candles['close'] / candles['open'] - 1
@@ -479,7 +479,7 @@ def get_stock_gap_stats(symbol):
         
         mapping = df.set_index('date')['date_plus_3'].reindex(day1['date'].tolist()).to_dict()
         print('Mapping: ',mapping)
-        windows = [getPrice(symbol=symbol, start=start, end=end, timeframe='1m', free=POLYGON_FREE, yahoo=False) for start, end in reversed(list(mapping.items()))]
+        windows = [getPrice(symbol=symbol, start=start, end=end, timeframe='1m', free=MASSIVE_FREE, yahoo=False) for start, end in reversed(list(mapping.items()))]
 
         def _secondsToTimeStr(sec: float) -> str:
             if np.isnan(sec):

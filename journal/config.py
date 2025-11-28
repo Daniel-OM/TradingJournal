@@ -17,8 +17,8 @@ ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 MAX_IMAGE_SIZE = 50 * 1024 * 1024  # 50MB
 MAX_VIDEO_SIZE = 1 * 1024 * 1024 * 1024  # 1Gb
-POLYGON_KEY = os.getenv("POLYGON_KEY", None)
-POLYGON_FREE = os.getenv("POLYGON_FREE", "False").lower() in ("true", "1", "t")
+MASSIVE_KEY = os.getenv("MASSIVE_KEY", None)
+MASSIVE_FREE = os.getenv("MASSIVE_FREE", "False").lower() in ("true", "1", "t")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", None)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))

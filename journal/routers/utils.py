@@ -6,10 +6,10 @@ import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import flash
 
-from ..config import UPLOAD_FOLDER, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE, POLYGON_KEY, POLYGON_FREE
+from ..config import UPLOAD_FOLDER, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE, MASSIVE_KEY, MASSIVE_FREE
 from ..models import Trade, Candle
 from ..src.yahoofinance import YahooTicker
-from ..src.polygon import Polygon
+from ..src.massive import Massive
 
 def allowed_file(filename, allowed_extensions) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
@@ -106,12 +106,12 @@ def getPrice(symbol:str, start:datetime, end:datetime, timeframe:str='1d', free:
             elif timestamp == 'M':
                 timestamp = 'month'
             
-            pol = Polygon(api_key=POLYGON_KEY, free=POLYGON_FREE if free is None else free)
+            pol = Massive(api_key=MASSIVE_KEY, free=MASSIVE_FREE if free is None else free)
             data = pol.aggregates(symbol=symbol, multiplier=multiplier, timespan=timestamp, start=start.strftime('%Y-%m-%d'), end=end.strftime('%Y-%m-%d'), adjusted=False, df=True)
             data['date'] = data.index
             return data.rename(columns={c: c.lower() for c in data.columns})
     except Exception as e:
-        print(f"Error downloading data for {symbol} from Polygon: {e}")
+        print(f"Error downloading data for {symbol} from Massive: {e}")
         yf = YahooTicker(symbol)
         return yf.getPrice(start=start, end=end, timeframe=timeframe, df=True)
 

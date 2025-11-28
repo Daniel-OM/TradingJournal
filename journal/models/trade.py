@@ -7,8 +7,8 @@ from sqlalchemy import and_
 from .base import Model, db
 from .error import Error, trade_errors
 from .transaction import Transaction
-from .strategy_condition import StrategyCondition
 from .candle import Candle
+from .setting import Risk
 
 # Tabla de asociación para la relación muchos a muchos entre Watchlist y Level
 trade_scoring = db.Table('trade_scoring',
@@ -34,7 +34,9 @@ class Trade(Model):
     quantity = db.Column(db.Float)
     exit_quantity = db.Column(db.Float)
     balance = db.Column(db.Float)
-    commission = db.Column(db.Float)
+    commission = db.Column(db.Float, default=0)
+    ecn_fee = db.Column(db.Float, default=0)
+    locates = db.Column(db.Float, default=0)
     trade_type = db.Column(db.String(10), default='LONG')  # LONG/SHORT
     description = db.Column(db.Text)
     why_profitable = db.Column(db.Text)
@@ -62,8 +64,26 @@ class Trade(Model):
                 kwargs[field] = None
         
         super().__init__(**kwargs)
-        
-    def to_dict(self, exclude:list=[], equity:bool=False):
+
+    @property
+    def gross_profit_loss(self) -> float:
+        value: float = self.profit_loss + self.commission + self.ecn_fee + (self.locates * self.quantity)
+        if self.user.settings[-1].show_r:
+            r: float = self.getRisk()
+            return value / r
+        else:
+            return value
+
+    @property
+    def error_descriptions(self) -> list[str]:
+        """Lista de descripciones de errores para este trade"""
+        return [error.description for error in self.errors]
+    
+    def to_dict(self, exclude:list=[], equity:bool=False, force_dollars:bool=False, complete:bool=True) -> dict:
+        if self.user.settings[-1].show_r and not force_dollars:
+            r: float = self.getRisk()
+        if not complete:
+            exclude += ['strategy', 'media', 'errors', 'conditions', 'transactions']
         return {
             'id': self.id,
             'entry_date': self.entry_date.isoformat() if self.entry_date else None,
@@ -79,42 +99,43 @@ class Trade(Model):
             'quantity': self.quantity,
             'exit_quantity': self.exit_quantity,
             'balance': self.balance,
-            'commission': self.commission,
+            'commission': self.commission / r if self.user.settings[-1].show_r and self.commission and not force_dollars else self.commission,
+            'ecn_fee': self.ecn_fee / r if self.user.settings[-1].show_r and self.ecn_fee and not force_dollars else self.ecn_fee,
+            'locates': self.locates / r if self.user.settings[-1].show_r and self.locates and not force_dollars else self.locates,
             'trade_type': self.trade_type,
             'description': self.description,
             'why_profitable': self.why_profitable,
             'influencing_factors': self.influencing_factors,
-            'profit_loss': self.profit_loss,
+            'profit_loss': self.profit_loss / r if self.user.settings[-1].show_r and self.profit_loss and not force_dollars else self.profit_loss,
             'hashtags': self.hashtags,
             'strategy_id': self.strategy_id,
             'strategy': {} if 'strategy' in exclude or self.strategy is None else self.strategy.to_dict(exclude=['trades']+exclude),
             'media': [] if 'media' in exclude else [m.to_dict(exclude=['trade']+exclude) for m in self.media],
             'errors': [] if 'errors' in exclude else [e.to_dict(exclude=['trades']+exclude) for e in self.errors],
             'conditions': [] if 'conditions' in exclude else [c.to_dict(exclude=['trades', 'strategy']+exclude) for c in self.conditions],
-            'transactions': [] if 'transactions' in exclude else [c.to_dict(exclude=['trade']+exclude) for c in self.transactions],
+            'transactions': [] if 'transactions' in exclude else [c.to_dict(exclude=['trade']+exclude, force_dollars=force_dollars) for c in self.transactions.order_by(db.asc("date"), db.asc("time")).all()],
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'equity': self.equity_curve() if equity else [],
+            'equity': self.equity_curve(force_dollars=force_dollars) if equity else [],
         }
-    
-    @property
-    def error_descriptions(self) -> list[str]:
-        """Lista de descripciones de errores para este trade"""
-        return [error.description for error in self.errors]
     
     def toDatetime(self, date_input:str|date, time_input:str|datetime) -> datetime:
         date_input = date_input if isinstance(date_input, date) else datetime.strptime(date_input, '%Y-%m-%d').date()
         time_input = time_input if isinstance(time_input, datetime) else datetime.strptime(time_input, '%H:%M:%S').time()
         return datetime.combine(date_input, time_input, tzinfo=timezone.utc)
     
-    def add_transaction(self, date, price:float, time, quantity:float, commission:float, type:str):
+    def add_transaction(self, date, price:float, time, quantity:float, type:str, commission:float=0, ecn_fee:float=0, locates:float=0):
         
         if self.entry_date is None:
             self.entry_date = date
             self.entry_time = time
         if self.commission is None:
             self.commission = 0.0
+        if self.ecn_fee is None:
+            self.ecn_fee = 0.0
+        if self.locates is None:
+            self.locates = 0.0
             
-        self.commission += commission
+        self.commission += commission + ecn_fee + locates
 
         if type == self.trade_type:
             if self.quantity is None:
@@ -141,7 +162,13 @@ class Trade(Model):
             self.exit_date = date
             self.exit_time = time
 
-        db.session.add(Transaction(date=date, price=price, time=time, commission=commission, quantity=quantity, type=type, trade_id=self.id))
+        db.session.add(Transaction(date=date, price=price, time=time, commission=commission, ecn_fee=ecn_fee, locates=locates, quantity=quantity, type=type, trade_id=self.id))
+        db.session.commit()
+
+    def remove_transactions(self) -> None:
+        for transaction in self.transactions:
+            transaction.delete()
+            
         db.session.commit()
 
     def add_error(self, description, user_id:int=None, id=None, impact_level='medium', category='general'):
@@ -268,7 +295,7 @@ class Trade(Model):
 
         return start_datetime, end_datetime, sorted_transactions
     
-    def equity_curve(self) -> list:
+    def equity_curve(self, force_dollars:bool=False) -> list:
         """
         Devuelve SOLO el PnL del trade, no el balance total.
         """
@@ -290,6 +317,10 @@ class Trade(Model):
         # Ordenar todos los eventos temporalmente
         events.sort(key=lambda x: x[0])
 
+        # Obtain the R multiple value
+        if self.user.settings[-1].show_r and not force_dollars:
+            r: float = self.getRisk()
+            
         # Estado del trade
         position = 0
         avg_price = 0
@@ -335,9 +366,9 @@ class Trade(Model):
 
             equity.append({
                 "datetime": dt.isoformat(),
-                "realized_pnl": realized_pnl,
-                "unrealized_pnl": unrealized,
-                "total_pnl": total_pnl,
+                "realized_pnl": realized_pnl / r if self.user.settings[-1].show_r and realized_pnl and not force_dollars else realized_pnl,
+                "unrealized_pnl": unrealized / r if self.user.settings[-1].show_r and unrealized and not force_dollars else unrealized,
+                "total_pnl": total_pnl / r if self.user.settings[-1].show_r and total_pnl and not force_dollars else total_pnl,
                 "quantity": qty,
                 "position": position,
                 "avg_price": avg_price,
@@ -556,3 +587,7 @@ class Trade(Model):
         mfe = max((candle.high - self.entry_price if self.trade_type.upper() == 'LONG' else self.entry_price - candle.low) for candle in candles)
 
         return mae, mfe
+        
+    def getRisk(self) -> float:
+        risk = self.user.getRiskAtDate(target_date=self.entry_date)
+        return 1.0 if risk is None else getattr(risk, 'risk', 1.0)

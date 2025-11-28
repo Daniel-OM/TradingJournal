@@ -20,7 +20,7 @@ class TradeSide(Enum):
         v = str(value).strip().upper()
         if v in ('B', 'BUY', 'LONG'):
             return cls.LONG
-        elif v in ('S', 'SELL', 'SHORT'):
+        elif v in ('S', 'T', 'SELL', 'SHORT'):
             return cls.SHORT
         return cls.LONG  # default
 
@@ -31,6 +31,9 @@ class Execution:
     datetime: datetime
     price: float
     quantity: float
+    commission: float
+    ecn_fee: float
+    locates: float
     side: TradeSide
     raw_data: pd.Series
     
@@ -42,35 +45,7 @@ class Execution:
     @property
     def notional(self) -> float:
         """Valor nocional de la ejecución"""
-        return self.price * self.quantity
-    
-    @classmethod
-    def from_row(cls, row: pd.Series, 
-                 time_col: str = 'time',
-                 price_col: str = 'price',
-                 qty_col: str = 'qty',
-                 side_col: str = 'B/S') -> Execution:
-        """Factory method para crear Execution desde pandas Series"""
-        dt: datetime = cls._parse_datetime(row=row, time_col=time_col)
-        side: TradeSide = TradeSide.from_string(value=row[side_col])
-        
-        return cls(
-            datetime=dt,
-            price=float(row[price_col]),
-            quantity=float(row[qty_col]),
-            side=side,
-            raw_data=row
-        )
-    
-    @staticmethod
-    def _parse_datetime(row: pd.Series, time_col: str) -> datetime:
-        """Parsea datetime desde row"""
-        time_str: str = str(row[time_col]).strip()
-        try:
-            dt: datetime = datetime.strptime(time_str, '%m/%d/%y %H:%M:%S')
-            return dt.replace(tzinfo=timezone.utc)
-        except ValueError as e:
-            raise ValueError(f"Error parseando tiempo '{time_str}': {e}")
+        return self.price * self.quantity - self.commission - self.ecn_fee - self.locates
     
     def split(self, qty_to_take: float) -> tuple[Execution, Optional[Execution]]:
         """
@@ -86,6 +61,9 @@ class Execution:
             datetime=self.datetime,
             price=self.price,
             quantity=qty_to_take,
+            commission=self.commission * (qty_to_take / self.quantity),
+            ecn_fee=self.ecn_fee * (qty_to_take / self.quantity),
+            locates=self.locates * (qty_to_take / self.quantity),
             side=self.side,
             raw_data=self.raw_data.copy()
         )
@@ -94,6 +72,9 @@ class Execution:
             datetime=self.datetime,
             price=self.price,
             quantity=remaining_qty,
+            commission=self.commission * (remaining_qty / self.quantity),
+            ecn_fee=self.ecn_fee * (remaining_qty / self.quantity),
+            locates=self.locates * (remaining_qty / self.quantity),
             side=self.side,
             raw_data=self.raw_data.copy()
         )
@@ -159,6 +140,20 @@ class Trade:
         return sum(e.quantity for e in self.entries)
     
     @property
+    def commission(self) -> float:
+        """Cantidad total de salida"""
+        return sum(e.commission for e in self.executions)
+    
+    @property
+    def ecn_fee(self) -> float:
+        """Cantidad total de salida"""
+        return sum(e.ecn_fee for e in self.executions)
+
+    @property
+    def locates(self) -> float:
+        return sum(e.locates for e in self.executions)
+    
+    @property
     def exit_quantity(self) -> float:
         """Cantidad total de salida"""
         return sum(e.quantity for e in self.exits)
@@ -194,6 +189,9 @@ class Trade:
             'entry_vwap': self.entry_vwap,
             'exit_vwap': self.exit_vwap,
             'gross_pnl': self.gross_pnl,
+            'commission': self.commission,
+            'ecn_fee': self.ecn_fee,
+            'locates': self.locates,
             'is_closed': self.is_closed,
             'n_executions': len(self.executions)
         }
@@ -278,16 +276,22 @@ class TradeSplitter:
     """
     
     def __init__(self, 
-                 symbol_col: str = 'symb',
-                 time_col: str = 'time',
-                 price_col: str = 'price',
-                 qty_col: str = 'qty',
-                 side_col: str = 'B/S') -> None:
-        self.symbol_col: str = symbol_col
-        self.time_col: str = time_col
-        self.price_col: str = price_col
-        self.qty_col: str = qty_col
-        self.side_col: str = side_col
+                 symbol_col: list[str] = ['symb'],
+                 time_col: list[str] = ['time'],
+                 price_col: list[str] = ['price'],
+                 qty_col: list[str] = ['qty'],
+                 side_col: list[str] = ['b/s'],
+                 commission_col: list[str] = ['comm'],
+                 ecn_fee_col: list[str] = ['ecn_fee'],
+                 locates_col: list[str] = ['locates']) -> None:
+        self.symbol_col: list[str] = [e.lower().strip() for e in symbol_col]
+        self.time_col: list[str] = [e.lower().strip() for e in time_col]
+        self.price_col: list[str] = [e.lower().strip() for e in price_col]
+        self.qty_col: list[str] = [e.lower().strip() for e in qty_col]
+        self.side_col: list[str] = [e.lower().strip() for e in side_col]
+        self.commission_col: list[str] = [e.lower().strip() for e in commission_col]
+        self.ecn_fee_col: list[str] = [e.lower().strip() for e in ecn_fee_col]
+        self.locates_col: list[str] = [e.lower().strip() for e in locates_col]
     
     def split(self, df: pd.DataFrame) -> dict[str, list[Trade]]:
         """
@@ -300,6 +304,7 @@ class TradeSplitter:
             dict[symbol -> list[Trade]]
         """
         self._validate_dataframe(df=df)
+        self._get_cols(df=df)
         
         # Parsear todas las ejecuciones una sola vez (vectorizado donde posible)
         executions_by_symbol: dict[str, list[Execution]] = self._parse_executions(df)
@@ -320,16 +325,28 @@ class TradeSplitter:
         """Valida que el DataFrame tenga las columnas necesarias"""
         required: list[str] = [self.symbol_col, self.time_col, self.price_col, 
                    self.qty_col, self.side_col]
-        missing: list[str] = [col for col in required if col not in df.columns]
+        missing: list[str] = [' or '.join(col) for col in required if not any(el in df.columns for el in col)]
         
         if missing:
             raise ValueError(f"Faltan columnas requeridas: {missing}")
-    
+
+    def _get_cols(self, df: pd.DataFrame) -> None:
+        
+        self.symbol_col: str = next((col for col in self.symbol_col if col in df.columns), '')
+        self.time_col: str = next((col for col in self.time_col if col in df.columns), '')
+        self.price_col: str = next((col for col in self.price_col if col in df.columns), '')
+        self.qty_col: str = next((col for col in self.qty_col if col in df.columns), '')
+        self.side_col: str = next((col for col in self.side_col if col in df.columns), '')
+        self.commission_col: str = next((col for col in self.commission_col if col in df.columns), '')
+        self.ecn_fee_col: str = next((col for col in self.ecn_fee_col if col in df.columns), '')
+        self.locates_col: str = next((col for col in self.locates_col if col in df.columns), '')
+        
     def _parse_executions(self, df: pd.DataFrame) -> dict[str, list[Execution]]:
         """
         Parsea DataFrame en Executions agrupadas por símbolo.
         Optimizado con operaciones vectorizadas.
         """
+        
         # Crear copia y parsear tiempos
         df = df.copy()
         df['_parsed_dt'] = pd.to_datetime(
@@ -348,6 +365,9 @@ class TradeSplitter:
                     datetime=row['_parsed_dt'],
                     price=float(row[self.price_col]),
                     quantity=float(row[self.qty_col]),
+                    ecn_fee=float(row.get(self.ecn_fee_col, 0)),
+                    locates=float(row.get(self.locates_col, 0)),
+                    commission=float(row.get(self.commission_col, 0)),
                     side=TradeSide.from_string(row[self.side_col]),
                     raw_data=row
                 )
@@ -406,9 +426,19 @@ class CSVImporter:
             user_id: ID del usuario propietario de los trades
             commission_per_trade: Comisión por ejecución (default: $1.00)
         """
+        self.required_cols: list[list[str]] = [['symb', 'symbol'], ['time', 'date/time'], ['price'], ['qty'], ['b/s']]
         self.user_id: int = user_id
         self.commission_per_trade: float = 0.0
-        self.splitter = TradeSplitter()
+        self.splitter = TradeSplitter(
+            symbol_col = ['symb', 'symbol'],
+            time_col = ['time', 'date/time'],
+            price_col = ['price'],
+            qty_col = ['qty'],
+            side_col = ['b/s'],
+            commission_col = ['comm'],
+            ecn_fee_col = ['ecn_fee'],
+            locates_col = ['locates']
+        )
         self.stats = ImportStats()
         self.current_app = current_app
         self.trade_model = trade_model
@@ -470,15 +500,22 @@ class CSVImporter:
         
         try:
             if path.suffix.lower() == '.xlsx':
-                df: pd.DataFrame = pd.read_excel(path)
+                df: pd.DataFrame = pd.read_excel(path, engine='openpyxl')
+            elif path.suffix.lower() == '.xls':
+                try:
+                    df: pd.DataFrame = pd.read_excel(path, engine='xlrd')
+                except:
+                    raise ValueError('The format ".xls" for the file is too old, please, convert it to ".xlsx".')
             else:
                 df: pd.DataFrame = pd.read_csv(path)
+            
         except Exception as e:
             raise ValueError(f"Error reading file: {e}")
         
         # Validar columnas requeridas
-        required: list[str] = ['symb', 'time', 'price', 'qty', 'B/S']
-        missing: list[str] = [col for col in required if col not in df.columns]
+        df.fillna(0, inplace=True)
+        df.columns = [col.lower().strip().replace(' ', '_') for col in df.columns]
+        missing: list[str] = [' or '.join(col) for col in self.required_cols if not any(el in df.columns for el in col)]
         if missing:
             raise ValueError(f"Faltan columnas en CSV: {missing}")
         
@@ -514,7 +551,9 @@ class CSVImporter:
             exit_time=trade.end_datetime.strftime('%H:%M:%S') if trade.is_closed else None,
             exit_price=trade.exit_vwap if trade.is_closed else None,
             exit_quantity=trade.exit_quantity if trade.exit_quantity > 0 else None,
-            commission=total_commission,
+            commission=trade.commission,
+            ecn_fee=trade.ecn_fee,
+            locates=trade.locates,
             profit_loss=net_pnl,
             strategy_id=None,
             user_id=self.user_id,
@@ -539,7 +578,9 @@ class CSVImporter:
             time=execution.datetime.strftime('%H:%M:%S'),
             price=execution.price,
             quantity=execution.quantity,
-            commission=self.commission_per_trade,
+            commission=execution.commission,
+            ecn_fee=execution.ecn_fee,
+            locates=execution.locates,
             type=execution.side.name,
             trade_id=trade_id
         )

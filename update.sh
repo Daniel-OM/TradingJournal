@@ -119,6 +119,10 @@ if [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
     fi
     deactivate
 
+    # Migrando cambios a la base de datos si es necesario
+    echo "🗄️  Aplicando migraciones de base de datos..."
+    FLASK_APP=flask.wsgi:app flask db upgrade
+
     # Guardar nueva versión
     echo "$LATEST_TAG" > "$LAST_VERSION_FILE"
 

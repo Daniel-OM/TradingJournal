@@ -4,7 +4,7 @@ from flask_login import login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import or_
 
-from ..models import db, User
+from ..models import db, User, Setting
 
 user_bp = Blueprint(name='user_endpoints', import_name=__name__)
 
@@ -14,7 +14,7 @@ def login():
         user: User = User.query.filter(or_(User.username==request.form.get('username', ''), User.email==request.form.get('email', ''))).first()
         if user and check_password_hash(user.password, request.form.get('password', '')):
             login_user(user)
-            return redirect(url_for('index_endpoints.index'))
+            return redirect(url_for('index_pages.index'))
         flash('Nombre de usuario o contraseña incorrectos')
     return render_template('user/login.html')
 
@@ -25,7 +25,15 @@ def register():
         new_user = User(username=request.form.get('username', ''), 
                         email=request.form.get('email', ''), 
                         password=hashed_pw)
-        db.session.add(new_user)
+        db.session.add(instance=new_user)
+        db.session.flush()
+        setting = Setting(
+            balance=1000.0,
+            commission=1.0,
+            timezone='UTC',
+            user_id=new_user.id
+        )
+        db.session.add(instance=setting)
         db.session.commit()
         return redirect(url_for('user_endpoints.login'))
     return render_template('user/register.html')
