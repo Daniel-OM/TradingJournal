@@ -495,7 +495,7 @@ def journal_api() -> str:
 def month_trades(date:str) -> Response:
     date: datetime = datetime.strptime(date, '%Y-%m-%d')
     start = datetime(date.year, date.month, 1).date()
-    end = datetime(date.year, date.month+1, 1).date()
+    end = (start.replace(day=28) + timedelta(days=4)).replace(day=1)
     trades: list[Trade] = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
     return jsonify([t.to_dict(exclude=['strategy', 'errors', 'conditions', 'transactions'],equity=True) for t in trades])
 

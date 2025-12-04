@@ -139,7 +139,8 @@ class Massive(DataProvider):
     Former Massive API.
     '''
 
-    BASE_URL: str = 'https://api.massive.io'
+    DEPRECATED_BASE_URL: str = 'https://api.polygon.io'
+    BASE_URL: str = 'https://api.massive.com'
 
     def __init__(self,api_key:str='cUlHULSDVdLm9Up1TsKxF3RU2dEKm3nq', 
                  free:bool=False) -> None:
