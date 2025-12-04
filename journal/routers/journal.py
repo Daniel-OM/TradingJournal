@@ -1,5 +1,6 @@
 
 import os
+from typing import Any
 from datetime import date, datetime, timedelta, time
 from collections import defaultdict
 import asyncio
@@ -26,7 +27,7 @@ from .utils import save_uploaded_files, calculate_max_drawdown, download_candles
 
 journal_pages = Blueprint(name='journal_pages', import_name=__name__)
 
-@journal_pages.route('/')
+@journal_pages.route(rule='/')
 @login_required
 def journal() -> str:
     return render_template(template_name_or_list='trade/journal.html')
@@ -42,6 +43,9 @@ def performance() -> str:
     watchlist_id = request.args.get('watchlist', type=int)
     limit = request.args.get('limit', type=int)
     side = request.args.get('side', type=str)  # LONG or SHORT
+    # Tags filter: comma separated list of tags. Mode can be 'include' or 'exclude'
+    tags_param = request.args.get('tags', type=str)
+    tags_mode = request.args.get('tags_mode', type=str)
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)
     
@@ -85,6 +89,20 @@ def performance() -> str:
     # Aplicar límite
     if limit:
         base_query = base_query.limit(limit)
+
+    # Filtrar por tags (almacenados en Trade.hashtags como string, p.e. 'tag1,tag2')
+    if tags_param and tags_param.strip():
+        # construir lista de tags limpiadas
+        tags_list = [t.strip() for t in tags_param.split(',') if t.strip()]
+        if tags_list:
+            conds = [Trade.hashtags.ilike(f"%{t}%") for t in tags_list]
+            # modo por defecto: include -> devolver trades que contengan al menos uno de los tags
+            if tags_mode and tags_mode.lower() == 'exclude':
+                # excluir trades que contengan cualquiera de los tags; mantener los que no tengan tags (NULL)
+                base_query = base_query.filter((Trade.hashtags == None) | ~or_(*conds))
+            else:
+                # include: mantener solo trades que contengan al menos uno de los tags
+                base_query = base_query.filter(or_(*conds))
     
     # Get data
     all_trades = base_query.order_by(Trade.entry_date).distinct().all()
@@ -110,7 +128,7 @@ def performance() -> str:
     strategies = Strategy.query.filter(Strategy.user_id == current_user.id).all()
     
     return render_template('trade/performance.html', stats=stats, strategies=strategies, charts=charts, 
-                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol if asset_symbol else '', watchlist_id=watchlist_id, limit=limit, side=side)
+                           start=start, end=end, strategy_id=strategy_id, asset_symbol=asset_symbol if asset_symbol else '', watchlist_id=watchlist_id, limit=limit, side=side, tags=tags_param or '', tags_mode=tags_mode or 'include')
 
 @journal_pages.route(rule='/trade/<int:id>')
 @login_required
@@ -177,6 +195,7 @@ def get_trade(id) -> str:
         "exit_quantity": trade_json.get('exit_quantity', None),
         "balance": trade_json.get('balance', None),
         "commission": trade_json.get('commission', None),
+        "locates": trade_json.get('locates', None),
         "trade_type": trade_json.get('trade_type', None),
         "profit_loss": trade_json.get('profit_loss', None),
         "description": trade_json.get('description', None),
@@ -348,9 +367,9 @@ def add_trade(trade_id:int=None) -> Response | str:
     
     return render_template('trade/create.html', strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
-@journal_pages.route('/edit/<int:trade_id>', methods=['GET', 'POST'])
+@journal_pages.route(rule='/edit/<int:trade_id>', methods=['GET', 'POST'])
 @login_required
-def edit_trade(trade_id):
+def edit_trade(trade_id) -> Response | str:
     trade: Trade = Trade.query.get_or_404(trade_id)
 
     if trade.user_id != current_user.id:
@@ -418,6 +437,7 @@ def edit_trade(trade_id):
         
 
             # Descargar velas con Yahoo Finance
+            '''
             today = trade.exit_date if trade.exit_date else date.today()
             one_year_ago = trade.entry_date - timedelta(days=365)
             week_ago = trade.entry_date - timedelta(days=5)
@@ -428,7 +448,7 @@ def edit_trade(trade_id):
                                 {'timeframe': '1d', 'start':one_year_ago, 'end':today},
                                 {'timeframe': '1m', 'start': week_ago, 'end': datetime.combine(today, time(23, 59, 59)) },
                             ])
-
+            '''
             db.session.commit()
             flash('Trade actualizado correctamente', 'success')
             return redirect(url_for('journal_pages.journal'))
@@ -440,11 +460,11 @@ def edit_trade(trade_id):
     strategies = Strategy.query.all()
     errors = Error.query.filter_by(is_active=True).all()
 
-    return render_template('trade/create.html', trade=trade.to_dict(exclude=['trades', 'trade'], force_dollars=True), strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
+    return render_template(template_name_or_list='trade/create.html', trade=trade.to_dict(exclude=['trades', 'trade'], force_dollars=True), strategies=strategies, errors=errors, date=date)
 
-@journal_pages.route('/delete/<int:trade_id>', methods=['POST'])
+@journal_pages.route(rule='/delete/<int:trade_id>', methods=['POST'])
 @login_required
-def delete_trade(trade_id):
+def delete_trade(trade_id) -> Response:
     trade: Trade = Trade.query.get_or_404(trade_id)
 
     if trade.user_id != current_user.id:
@@ -470,7 +490,7 @@ def delete_trade(trade_id):
 
 journal_bp = Blueprint(name='journal_endpoints', import_name=__name__)
 
-@journal_bp.route('/')
+@journal_bp.route(rule='/')
 @login_required
 def journal_api() -> str:
     # Obtener datos del calendario
@@ -495,7 +515,7 @@ def journal_api() -> str:
 def month_trades(date:str) -> Response:
     date: datetime = datetime.strptime(date, '%Y-%m-%d')
     start = datetime(date.year, date.month, 1).date()
-    end = datetime(date.year, date.month+1, 1).date()
+    end = (start.replace(day=28) + timedelta(days=4)).replace(day=1)
     trades: list[Trade] = Trade.query.filter((start <= Trade.exit_date) & (Trade.exit_date < end) & (Trade.user_id==current_user.id)).all()
     return jsonify([t.to_dict(exclude=['strategy', 'errors', 'conditions', 'transactions'],equity=True) for t in trades])
 
@@ -603,9 +623,9 @@ def add_trade_api() -> Response | str:
     
     return render_template('trade/create.html', strategies=strategies, errors=errors, json_strategies=[strat.to_dict(exclude=['trades']) for strat in strategies], date=date)
 
-@journal_bp.route('/edit/<int:trade_id>', methods=['GET', 'POST'])
+@journal_bp.route(rule='/edit/<int:trade_id>', methods=['GET', 'POST'])
 @login_required
-def edit_trade_api(trade_id):
+def edit_trade_api(trade_id) -> Response | str:
     trade: Trade = Trade.query.get_or_404(trade_id)
 
     if trade.user_id != current_user.id:
@@ -697,9 +717,9 @@ def edit_trade_api(trade_id):
 
     return render_template('trade/create.html', trade=trade, strategies=strategies, errors=errors, json_strategies=[strat.to_dict() for strat in strategies], date=date)
 
-@journal_bp.route('/delete/<int:trade_id>', methods=['POST'])
+@journal_bp.route(rule='/delete/<int:trade_id>', methods=['POST'])
 @login_required
-def delete_trade_api(trade_id):
+def delete_trade_api(trade_id) -> Response:
     trade: Trade = Trade.query.get_or_404(trade_id)
 
     if trade.user_id != current_user.id:
@@ -722,9 +742,9 @@ def delete_trade_api(trade_id):
 
     return redirect(url_for('journal_pages.journal'))
 
-@journal_bp.route('/complete-performance')
+@journal_bp.route(rule='/complete-performance')
 @login_required
-def globalPerformance():
+def globalPerformance() -> str:
     # Obtener filtros
     start = request.args.get('start', type=str)
     end = request.args.get('end', type=str)
@@ -1324,7 +1344,7 @@ def import_batch_trades():
                 except Exception as e:
                     current_app.logger.warning(f"Could not delete temp file: {e}")
 
-def get_balance_data():
+def get_balance_data() -> list[dict[str, Any]]:
     """Obtener datos de balance histórico"""
     balances = AccountBalance.query.filter(AccountBalance.user_id == current_user.id).order_by(AccountBalance.date).all()
     return [{'date': b.date.strftime('%Y-%m-%d'), 'balance': float(b.balance)} for b in balances]

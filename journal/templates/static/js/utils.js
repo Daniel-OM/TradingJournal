@@ -57,6 +57,7 @@ function formatFinancial (value, min_decimals = 1, max_decimals = 2, notation = 
 
 function formatNumber (n, mode = null, min_decimals = 1, max_decimals = 2, notation = null) {
     // Use notation = 'compact' for financial amounts
+    console.log(n, mode);
     if (mode === 'currency') {
         return formatCurrency(n, min_decimals, max_decimals, notation);
     } else if (mode === 'percentage') {

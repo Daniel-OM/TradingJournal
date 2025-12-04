@@ -997,6 +997,40 @@ class Charts:
             'chart_type': 'multi_bar'
         }
     
+    async def getBestAndWorstSymbols(self) -> dict:
+        """Retorna los 5 mejores y 5 peores activos con estadísticas detalladas"""
+        if not self.data or not self.pnl_values or len(self.pnl_values) <= 0:
+            return {'best': [], 'worst': []}
+        
+        stats = defaultdict(lambda: {'pnl': [], 'wins': 0, 'win': 0, 'loss': 0, 'total': 0})
+        
+        for i, d in enumerate(self.data):
+            stats[d['symbol']] = self._getStatRequirements(stats[d['symbol']], pnl=self.pnl_values[i])
+        
+        # Construir lista de símbolos con estadísticas
+        symbol_list = []
+        for symbol, stat in stats.items():
+            total_pnl, avg_pnl, avg_win, avg_loss, win_rate, expectancy, trade_count = self._calculateStats(stat)
+            symbol_list.append({
+                'symbol': symbol,
+                'total_pnl': total_pnl,
+                'avg_pnl': avg_pnl,
+                'win_rate': win_rate,
+                'trade_count': int(trade_count),
+                'avg_win': avg_win,
+                'avg_loss': avg_loss,
+                'expectancy': expectancy
+            })
+        
+        # Ordenar por total P&L
+        symbol_list_sorted = sorted(symbol_list, key=lambda x: x['total_pnl'], reverse=True)
+        
+        # Top 5 mejores y 5 peores
+        best = symbol_list_sorted[:5]
+        worst = symbol_list_sorted[-5:][::-1]  # Invertir para mostrar de peor a menos peor
+        
+        return {'best': best, 'worst': worst}
+    
     async def getHoldTimeAnalysis(self) -> dict:
         """Análisis de tiempo de mantenimiento vs P&L"""
         
@@ -1089,7 +1123,7 @@ class Charts:
 
     async def getAll(self):
         """Obtener todos los gráficos de una vez"""
-        equity_curve, daily_pnl, monthly_pnl, pnl_distribution, hour_analysis, day_analysis, weekday_analysis, month_analysis, year_analysis, symbol_performance, hold_time_analysis, size_analysis = \
+        equity_curve, daily_pnl, monthly_pnl, pnl_distribution, hour_analysis, day_analysis, weekday_analysis, month_analysis, year_analysis, symbol_performance, best_worst_symbols, hold_time_analysis, size_analysis = \
         await asyncio.gather(
             self.getEquityCurve(),
             self.getPnlTimeHistogram(mode='daily'),
@@ -1101,6 +1135,7 @@ class Charts:
             self.getStatsByTime(mode='monthly'),
             self.getStatsByTime(mode='yearly'),
             self.getStatsBySymbol(),
+            self.getBestAndWorstSymbols(),
             self.getHoldTimeAnalysis(),
             self.getSizeAnalysis()
         )
@@ -1115,6 +1150,7 @@ class Charts:
             'month_analysis': month_analysis,
             'year_analysis': year_analysis,
             'symbol_performance': symbol_performance,
+            'best_worst_symbols': best_worst_symbols,
             'hold_time_analysis': hold_time_analysis,
             # 'streaks': self.getStreaks(),
             'size_analysis': size_analysis
@@ -1155,8 +1191,8 @@ class TradePerformance:
             all_candles: list[Candle] = self.getCandles(data=data)
             return [{**d.to_dict(exclude=exclude),
                      **{'side': d.trade_type.upper() == 'LONG', 
-                        'entry_date': datetime.combine(d.entry_date, datetime.strptime(d.entry_time, self.time_format).time() or datetime.min.time()),
-                        'exit_date': datetime.combine(d.exit_date, datetime.strptime(d.exit_time, self.time_format).time() or datetime.min.time()),
+                        'entry_date': datetime.combine(d.entry_date, (datetime.strptime(d.entry_time, self.time_format).time() if d.entry_time != '' else None) or datetime.min.time()),
+                        'exit_date': datetime.combine(d.exit_date, (datetime.strptime(d.exit_time, self.time_format).time() if d.entry_time != '' else None) or datetime.min.time()),
                         'candles': [c.to_dict() for c in all_candles
                                     if c.symbol == d.symbol and d.entry_date <= c.date.date() <= (d.exit_date or (datetime.now() if isinstance(d.entry_date, datetime) else date.today()))]
                         }
@@ -1377,7 +1413,7 @@ class TradePerformance:
             self.gross = gross
             self.charts.getPnl()
         
-        equity_curve, daily_pnl, monthly_pnl, pnl_distribution, hour_analysis, day_analysis, weekday_analysis, month_analysis, year_analysis, symbol_performance, hold_time_analysis, size_analysis, trade_speed = \
+        equity_curve, daily_pnl, monthly_pnl, pnl_distribution, hour_analysis, day_analysis, weekday_analysis, month_analysis, year_analysis, symbol_performance, hold_time_analysis, size_analysis, best_worst_symbols, trade_speed = \
         await asyncio.gather(
             self.charts.getEquityCurve(),
             self.charts.getPnlTimeHistogram(mode='daily'),
@@ -1391,6 +1427,7 @@ class TradePerformance:
             self.charts.getStatsBySymbol(),
             self.charts.getHoldTimeAnalysis(),
             self.charts.getSizeAnalysis(),
+            self.charts.getBestAndWorstSymbols(),
             self.tradeSpeed()
         )
         return {
@@ -1405,6 +1442,7 @@ class TradePerformance:
             'year_analysis': year_analysis,
             'symbol_performance': symbol_performance,
             'hold_time_analysis': hold_time_analysis,
+            'best_worst_symbols': best_worst_symbols,
             # 'streaks': self.getStreaks(),
             'size_analysis': size_analysis,
             'trade_speed': trade_speed

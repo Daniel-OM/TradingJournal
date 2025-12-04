@@ -1,7 +1,6 @@
 
 import datetime as dt
 from random import choice
-from warnings import filters
 
 import certifi
 import numpy as np

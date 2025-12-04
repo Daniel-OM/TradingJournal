@@ -3,7 +3,35 @@
 
 {% block title %}Performance - Trading Journal</title>{% endblock %}
 
-{% block style %}{% endblock %}
+{% block style %}
+<style>
+    .card-profit {
+        background-color: rgb(from var(--profit-color) r g b / 0.1);
+        border: 1px solid rgb(from var(--profit-color) r g b / 0.25);
+        
+        &:not(:last-child) {
+            margin-bottom: 0.5em;
+        }
+
+        .card-body {
+            background-color: transparent;
+        }
+    }
+
+    .card-loss {
+        background-color: rgb(from var(--loss-color) r g b / 0.1);
+        border: 1px solid rgb(from var(--loss-color) r g b / 0.25);
+        
+        &:not(:last-child) {
+            margin-bottom: 0.5em;
+        }
+
+        .card-body {
+            background-color: transparent;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -47,6 +75,17 @@
                 <div class="filter-group">
                     <label>Limit</label>
                     <input id="limit" type="number" min="0" step="1" placeholder="e.g., 100" class="rounded">
+                </div>
+                <div class="filter-group">
+                    <label>Tags</label>
+                    <input id="tags-input" type="text" placeholder="comma separated tags, e.g., momentum,newsletter" class="rounded" value="fatfinguer">
+                </div>
+                <div class="filter-group">
+                    <label>Tags Mode</label>
+                    <select id="tags-mode" class="rounded">
+                        <option value="include">Include</option>
+                        <option value="exclude" selected>Exclude</option>
+                    </select>
                 </div>
             </div>
             <div class="filter-actions align-items-center">
@@ -403,17 +442,31 @@
     </div>
 
     <!-- Symbol Performance -->
-    <div class="col-lg-6 mb-4">
+    <div class="col-12 mb-4">
         <div class="card">
-            <div class="d-block card-header">
-                <i class="fas fa-chart-pie me-2"></i>Top Symbols Performance
-            </div>
-            <div class="card-body">
-                <div class="chart-container mt-0 small">
-                    <canvas id="symbolChart"></canvas>
+            <div class="row">
+                <!-- Top 5 Best Performers -->
+                <div class="col col-lg-6 pe-0">
+                    <div class="d-block card-header">
+                        <i class="fas fa-arrow-trend-up me-2"></i>Top 5 Best Performers
+                    </div>
+                    <div class="card-body" id="bestSymbolsList">
+                        <div class="text-muted text-center py-4">No data available</div>
+                    </div>
+                </div>
+            
+                <!-- Top 5 Worst Performers -->
+                <div class="col col-lg-6 ps-0">
+                    <div class="d-block card-header">
+                        <i class="fas fa-arrow-trend-down me-2"></i>Top 5 Worst Performers
+                    </div>
+                    <div class="card-body" id="worstSymbolsList">
+                        <div class="text-muted text-center py-4">No data available</div>
+                    </div>
                 </div>
             </div>
         </div>
+        
     </div>
 
     <!-- Hold Time Analysis -->
@@ -472,11 +525,23 @@
                 strategy: document.getElementById('strategy').value,
                 symbol: document.getElementById('symbol').value,
                 side: document.getElementById('side').value,
-                limit: document.getElementById('limit').value
+                limit: document.getElementById('limit').value,
+                tags: document.getElementById('tags-input') ? document.getElementById('tags-input').value : '',
+                tags_mode: document.getElementById('tags-mode') ? document.getElementById('tags-mode').value : 'include'
             };
 
-            // En una aplicación real, esto haría una petición al servidor
-            window.location.href = `{{ url_for('journal_pages.performance') }}?start=${filters.start}&end=${filters.end}&strategy=${filters.strategy}&symbol=${filters.symbol}&side=${filters.side}&limit=${filters.limit}`;
+            // Build query params safely
+            const params = new URLSearchParams();
+            if (filters.start) params.set('start', filters.start);
+            if (filters.end) params.set('end', filters.end);
+            if (filters.strategy) params.set('strategy', filters.strategy);
+            if (filters.symbol) params.set('symbol', filters.symbol);
+            if (filters.side) params.set('side', filters.side);
+            if (filters.limit) params.set('limit', filters.limit);
+            if (filters.tags) params.set('tags', filters.tags);
+            if (filters.tags_mode) params.set('tags_mode', filters.tags_mode);
+
+            window.location.href = `{{ url_for('journal_pages.performance') }}?${params.toString()}`;
         }
 
         async function resetFilters () {
@@ -486,6 +551,8 @@
             document.getElementById('symbol').value = '';
             document.getElementById('side').value = '';
             document.getElementById('limit').value = '';
+            if (document.getElementById('tags-input')) document.getElementById('tags-input').value = '';
+            if (document.getElementById('tags-mode')) document.getElementById('tags-mode').value = 'include';
 
             applyFilters();
         }
@@ -505,6 +572,13 @@
             document.querySelector(`option[value="${ "{{ side or 'BOTH' }}" }"]`).selected = true;
             document.getElementById('symbol').value = "{{ asset_symbol if asset_symbol != 'None' else '' }}" || '';
             document.getElementById('limit').value = "{{ limit }}" || '';
+            // Initialize tags input and mode from server
+            if (document.getElementById('tags-input')) document.getElementById('tags-input').value = "{{ tags|e }}" || '';
+            if (document.getElementById('tags-mode')) {
+                const initMode = "{{ tags_mode|e }}" || 'include';
+                const option = document.querySelector(`#tags-mode option[value="${initMode}"]`);
+                if (option) option.selected = true;
+            }
 
             perf_object = new Performance(statsData, chartsData, document.getElementById('gross-switch').checked, show_r, null, null, TradeStats, TradeCharts);
             // Event listeners

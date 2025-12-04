@@ -32,7 +32,8 @@ class Charts {
             this.show_r = show_r;
         }
         console.log('Rendering charts:', data);
-        this.renderCharts()
+        this.renderCharts();
+        this.renderBestWorstSymbols();
     }
     
     async renderEquityChart() {
@@ -478,6 +479,51 @@ class Charts {
                 }
             }
         });
+    }
+
+    async renderBestWorstSymbols() {
+        const data = this.data.best_worst_symbols;
+        if (!data || !data.best || !data.worst) return;
+
+        const createSymbolRow = (symbol, isProfit) => {
+            const rowClass = isProfit ? 'card-profit' : 'card-loss';
+            console.log('symbol row:', symbol);
+            return `
+                <div class="card ${rowClass}">
+                    <div class="card-body d-flex flex-row pt-1 pb-1">
+                        <div class="fw-bold">${symbol.symbol}</div>
+                        <div class="ms-auto me-auto">
+                            <span class="text-muted">Total P&L:</span>
+                            <span class="">${formatNumber(symbol.total_pnl, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}</span>
+                        </div>
+                        <div class="ms-auto me-auto">
+                            <span class="text-muted">Exp.:</span>
+                            <span class="">${formatNumber(symbol.expectancy, this.show_r ? 'r_multiple' : 'currency', 1, 2, 'compact')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // Renderizar mejores activos
+        const bestContainer = document.getElementById('bestSymbolsList');
+        if (bestContainer) {
+            if (data.best && data.best.length > 0) {
+                bestContainer.innerHTML = data.best.map(s => createSymbolRow(s, true)).join('');
+            } else {
+                bestContainer.innerHTML = '<div class="text-muted text-center py-4">No data available</div>';
+            }
+        }
+
+        // Renderizar peores activos
+        const worstContainer = document.getElementById('worstSymbolsList');
+        if (worstContainer) {
+            if (data.worst && data.worst.length > 0) {
+                worstContainer.innerHTML = data.worst.map(s => createSymbolRow(s, false)).join('');
+            } else {
+                worstContainer.innerHTML = '<div class="text-muted text-center py-4">No data available</div>';
+            }
+        }
     }
     
 }

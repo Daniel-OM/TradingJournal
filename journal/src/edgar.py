@@ -347,7 +347,10 @@ class SECFiling:
 
         time.sleep(0.6)   # <= ~1.6 req/s; sé más conservador si vas a hacer muchas peticiones
         self.r = self.session.get(url=url, params=params, timeout=30)
-        self.r.raise_for_status()
+        try:
+            self.r.raise_for_status()
+        except Exception as e:
+            print(e)
         return self.r
 
     def _toNumeric(self, val:str) -> float | str:

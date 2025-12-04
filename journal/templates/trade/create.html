@@ -80,7 +80,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Time</label>
-                            <input type="time" name="entry_time" step="1" class="form-control" value="{{ trade.entry_time if trade else '' }}">
+                            <input type="time" name="entry_time" step="1" class="form-control" value="{{ trade.entry_time.split('+')[0] if trade else '' }}">
                         </div>
                     </div>
                     {% endif %}
@@ -108,7 +108,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Exit Time</label>
-                            <input type="time" name="exit_time" step="1" class="form-control" value="{{ trade.exit_time if trade else '' }}">
+                            <input type="time" name="exit_time" step="1" class="form-control" value="{{ trade.exit_time.split('+')[0] if trade else '' }}">
                         </div>
                     </div>
                     {% endif %}
@@ -248,7 +248,18 @@
     let counter = 0;
     let tcounter = 0;
     let strategyConditions = {};
-    const strategiesData = JSON.parse('{{json_strategies|tojson}}');
+    let strategiesData = null;
+
+    async function getStrategies() {
+        const response = await fetch("{{ url_for('strategy_endpoints.get_strategies') }}");
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error when loading data');
+        }
+
+        strategiesData = await response.json();
+    }
 
     // Función para manejar los combo inputs personalizados
     function initComboInputs () {
@@ -423,7 +434,8 @@
         transactionDiv.remove();
     }
 
-    function loadStrategyConditions() {
+    async function loadStrategyConditions() {
+        await getStrategies();
         const strategyId = document.getElementById('strategySelect').value;
         const conditionsSection = document.getElementById('strategyConditions');
         const conditionsList = document.getElementById('conditionsList');
@@ -575,7 +587,7 @@
     });
 
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
         {% if trade %}
             {% for transaction in trade.transactions %}
                 addTransaction(
@@ -593,7 +605,7 @@
                 addError(id="{{error.id}}", value="{{error.description}}", category="{{error.category}}", severity="{{error.severity}}");
             {% endfor %}
 
-            loadStrategyConditions();
+            await loadStrategyConditions();
             {% for condition in trade.conditions %}
                 document.getElementById(`condition_{{condition.id}}`).click();
             {% endfor %}

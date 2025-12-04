@@ -7,7 +7,7 @@ from flask_login import current_user
 from .config import DevConfig, ProdConfig
 from .login import login_manager
 from .models import db, migrate
-from .routers import (index_bp, index_pages, strategy_bp, watchlist_bp, watchlist_pages, 
+from .routers import (index_bp, index_pages, strategy_pages, strategy_bp, watchlist_bp, watchlist_pages, 
                       journal_bp, journal_pages, error_bp, user_bp, asset_pages, asset_bp, 
                       screener_pages, screener_bp, ai_bp)
 
@@ -34,7 +34,8 @@ def create_app(config_class:(DevConfig | ProdConfig)) -> Flask:
     app.register_blueprint(blueprint=index_pages, url_prefix='/')
     app.register_blueprint(blueprint=index_bp, url_prefix='/api/')
     app.register_blueprint(blueprint=user_bp, url_prefix='/user')
-    app.register_blueprint(blueprint=strategy_bp, url_prefix='/strategy')
+    app.register_blueprint(blueprint=strategy_pages, url_prefix='/strategy')
+    app.register_blueprint(blueprint=strategy_bp, url_prefix='/api/strategy')
     app.register_blueprint(blueprint=watchlist_pages, url_prefix='/watchlist')
     app.register_blueprint(blueprint=watchlist_bp, url_prefix='/api/watchlist')
     app.register_blueprint(blueprint=journal_pages, url_prefix='/journal')

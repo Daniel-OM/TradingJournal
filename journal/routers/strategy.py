@@ -3,14 +3,15 @@ from datetime import date, datetime, timezone
 from sqlalchemy import desc
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
+from werkzeug import Response
 
 from ..models import db, Strategy, StrategyCondition
 
-strategy_bp = Blueprint(name='strategy_endpoints', import_name=__name__)
+strategy_pages = Blueprint(name='strategy_pages', import_name=__name__)
 
-@strategy_bp.route('/', methods=['GET', 'POST'])
+@strategy_pages.route(rule='/', methods=['GET', 'POST'])
 @login_required
-def strategies():
+def strategies() -> Response | str:
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -88,7 +89,16 @@ def strategies():
                 flash('Scoring criteria deleted successfully!', 'info')
         
         db.session.commit()
-        return redirect(url_for('strategy_endpoints.strategies'))
+        return redirect(url_for('strategy_pages.strategies'))
 
     strategies = Strategy.query.all()
     return render_template('strategy/create.html', date=date, strategies=strategies, json_strategies=[s.to_dict() for s in strategies])
+
+
+strategy_bp = Blueprint(name='strategy_endpoints', import_name=__name__)
+
+@strategy_bp.route(rule='/', methods=['GET', 'POST'])
+@login_required
+def get_strategies() -> jsonify:
+    strategies: list[Strategy] = Strategy.query.filter(Strategy.user_id == current_user.id).order_by(desc(Strategy.created_at)).all()
+    return jsonify([strat.to_dict(exclude=['trades']) for strat in strategies])
