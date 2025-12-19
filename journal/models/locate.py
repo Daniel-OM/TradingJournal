@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from .base import Model, db
 from .setting import Risk
 
-class Locate(Model):
+""" class Locate(Model):
     __tablename__ = 'locate'
 
     date = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
@@ -30,4 +30,4 @@ class Locate(Model):
 
     def getRisk(self) -> Risk:
         risk = self.user.getRiskAtDate(target_date=self.date)
-        return 1.0 if risk is None else getattr(risk, 'risk', 1.0)
+        return 1.0 if risk is None else getattr(risk, 'risk', 1.0) """

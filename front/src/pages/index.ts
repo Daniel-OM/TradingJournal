@@ -1,0 +1,12 @@
+export { HomePage } from './HomePage';
+export { LoginPage } from './LoginPage';
+export { RegisterPage } from './RegisterPage';
+export { TradesPage } from './TradesPage';
+export { TradeDetailPage } from './TradeDetailPage';
+export { TradeFormPage } from './TradeFormPage';
+export { StrategiesPage } from './StrategiesPage';
+export { WatchlistsPage } from './WatchlistsPage';
+export { PerformancePage } from './PerformancePage';
+export { TestLoginPage } from './TestLoginPage';
+export { AssetsPage } from './AssetsPage';
+export { SettingsPage } from './SettingsPage';

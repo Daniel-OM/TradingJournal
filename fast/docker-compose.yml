@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://trading_journal:trading_journal@db:5432/trading_journal
+      - SECRET_KEY=change_me_with_a_long_random_string_in_production
+      - DEBUG=False
+    depends_on:
+      - db
+    volumes:
+      - ./instance/media:/app/instance/media
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=trading_journal
+      - POSTGRES_PASSWORD=trading_journal
+      - POSTGRES_DB=trading_journal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading_journal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

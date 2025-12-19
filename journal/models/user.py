@@ -17,7 +17,7 @@ class User(Model, UserMixin):
     trades = db.relationship('Trade', back_populates='user', lazy=True)
     watchlists = db.relationship('Watchlist', back_populates='user', lazy=True)
     risks = db.relationship('Risk', back_populates='user', lazy=True)
-    locates = db.relationship('Locate', back_populates='user', lazy=True)
+    #locates = db.relationship('Locate', back_populates='user', lazy=True)
     
     def to_dict(self, exclude:list=[]):
         return {
